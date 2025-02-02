@@ -1,4 +1,4 @@
-# Contributing to touchHLE
+ # Contributing to touchHLE
 
 Please  also read the [code of conduct](CODE_OF_CONDUCT.md).
 
