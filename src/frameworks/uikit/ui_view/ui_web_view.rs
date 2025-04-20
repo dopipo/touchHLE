@@ -5,7 +5,8 @@
  */
 //! `UIWebView`.
 
-use crate::objc::{id, objc_classes, ClassExports};
+use crate::frameworks::foundation::{NSUInteger, NSInteger};
+use crate::objc::{id, msg, nil, objc_classes, retain, ClassExports, NSZonePtr};
 
 pub const CLASSES: ClassExports = objc_classes! {
 
@@ -13,16 +14,49 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @implementation UIWebView: UIView
 
-// NSCoding implementation
-- (id)initWithCoder:(id)_coder {
-    todo!()
++ (id)instanceMethodSignatureForSelector:(NSUInteger)_selector {
+    msg![env; this init]
 }
 
-- (())setScalesPageToFit:(bool)_scales {
++ (id)methodReturnType {
+    nil
+}
+
++ (id)numberOfArguments {
+    nil
+}
+
+// NSCopying implementation
+- (id)copyWithZone:(NSZonePtr)_zone {
+    retain(env, this)
+}
+
+- (id)loadRequest:(NSUInteger)request {
+    msg![env; this init]
+}
+
+- (id)request {
+    nil
+}
+
+- (id)stringByEvaluatingJavaScriptFromString:(NSUInteger)string {
+    msg![env; this init]
+}
+
+- (())loadHTMLString:(NSInteger)string baseURL:(bool)_url {
     // TODO
 }
-- (())setDelegate:(id)_delegate {
-    // TODO
+
+- (())setScalesPageToFit:(bool)fit {
+    log!("TODO: setScalesPageToFit:{}", fit);
+}
+
+- (())setDelegate:(bool)delegate {
+    log!("TODO: setDelegate:{}", delegate);
+}
+
+- (())setDetectsPhoneNumbers:(bool)numbers {
+    log!("TODO: setDetectsPhoneNumbers:{}", numbers);
 }
 
 @end
