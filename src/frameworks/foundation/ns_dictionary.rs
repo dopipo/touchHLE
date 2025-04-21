@@ -540,6 +540,37 @@ pub const CLASSES: ClassExports = objc_classes! {
     init_with_objects_and_keys(env, this, first_object, dots.start())
 }
 
+- (id)addEntriesFromDictionary {
+    this
+}
+
+- (id)allValues {
+    nil
+}
+
+- (id)dictionaryRepresentation {
+    this
+}
+- (id)headingAvailable {
+    nil
+}
+
+- (id)isGyroAvailable {
+    nil
+}
+
+- (id)keyEnumerator {
+    nil
+}
+
+- (id)locationServicesEnabled {
+    nil
+}
+
+- (id)objectEnumerator {
+    nil
+}
+
 - (id)init {
     *env.objc.borrow_mut(this) = <DictionaryHostObject as Default>::default();
     this
