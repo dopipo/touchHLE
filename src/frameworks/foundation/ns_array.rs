@@ -7,7 +7,7 @@
 
 use super::ns_enumerator::{fast_enumeration_helper, NSFastEnumerationState};
 use super::ns_property_list_serialization::deserialize_plist_from_file;
-use super::{ns_keyed_unarchiver, ns_string, ns_url, NSInteger, NSNotFound, NSUInteger};
+use super::{ns_keyed_unarchiver, ns_string, ns_url, NSNotFound, NSOrderedAscending, NSOrderedDescending, NSOrderedSame, NSInteger, NSUInteger};
 use crate::abi::{CallFromHost, GuestFunction};
 use crate::fs::GuestPath;
 use crate::mem::{MutPtr, MutVoidPtr};
@@ -16,6 +16,7 @@ use crate::objc::{
     NSZonePtr, SEL,
 };
 use crate::Environment;
+use std::cmp::Ordering;
 
 struct ObjectEnumeratorHostObject {
     /// the enumerated collection, NSArray *
@@ -438,6 +439,27 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.borrow_mut::<ArrayHostObject>(this).array = array;
 }
 
+- (())sortUsingDescriptors:(id)descs {
+     let mut v = mem::take(&mut env.objc.borrow_mut::<ArrayHostObject>(this).array);
+     v.sort_by(|&a, &b| {
+         let mut order = NSOrderedAscending;
+         let descs_count: NSUInteger = msg![env; descs count];
+         for i in 0..descs_count {
+             let desc = msg![env; descs objectAtIndex: i];
+             order = msg![env; desc compareObject: a toObject: b];
+             if order != 0 {
+                 break
+             }
+         }
+         match order {
+             NSOrderedAscending => Ordering::Less,
+             NSOrderedSame => Ordering::Equal,
+             NSOrderedDescending => Ordering::Greater,
+             _ => panic!(),
+         }
+     });
+     env.objc.borrow_mut::<ArrayHostObject>(this).array = v;
+}
 // NSFastEnumeration implementation
 - (NSUInteger)countByEnumeratingWithState:(MutPtr<NSFastEnumerationState>)state
                                   objects:(MutPtr<id>)stackbuf
