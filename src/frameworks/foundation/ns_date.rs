@@ -8,7 +8,7 @@
 use super::ns_string::from_rust_ordering;
 use super::{NSComparisonResult, NSTimeInterval};
 use crate::frameworks::core_foundation::time::{apple_epoch, SECS_FROM_UNIX_TO_APPLE_EPOCHS};
-use crate::frameworks::foundation::NSInteger,
+use crate::frameworks::foundation::NSInteger;
 use crate::objc::{
     autorelease, id, msg, msg_class, objc_classes, release, ClassExports, HostObject, NSZonePtr,
 };
