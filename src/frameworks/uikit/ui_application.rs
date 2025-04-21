@@ -8,7 +8,7 @@
 use super::ui_device::*;
 use crate::dyld::{export_c_func, ConstantExports, FunctionExports, HostConstant};
 use crate::frameworks::foundation::ns_string::{from_rust_string, get_static_str};
-use crate::frameworks::foundation::{ns_array, ns_string, NSInteger, NSUInteger};
+use crate::frameworks::foundation::{ns_array, ns_string, NSInteger, NSUInteger, NSTimeInterval};
 use crate::mem::MutPtr;
 use crate::objc::{
     autorelease, id, msg, msg_class, nil, objc_classes, release, retain, ClassExports, HostObject,
@@ -54,7 +54,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 // This should only be called by UIApplicationMain
 - (id)init {
-    assert!(env.framework_state.uikit.ui_application.shared_application.is_none());
+    // assert!(env.framework_state.uikit.ui_application.shared_application.is_none());
     env.framework_state.uikit.ui_application.shared_application = Some(this);
     this
 }
@@ -108,6 +108,36 @@ pub const CLASSES: ClassExports = objc_classes! {
                      animated:(bool)_animated {
     // TODO: animation
     msg![env; this setStatusBarOrientation:orientation]
+}
+
+- (())setStatusBarStyle:(NSInteger)statusBarStyle animated:(bool)_animated {
+    // TODO
+}
+
+- (())setNetworkActivityIndicatorVisible:(bool)visible {
+    log!("TODO: setNetworkActivityIndicatorVisible:{}", visible);
+}
+
+- (())setApplicationIconBadgeNumber:(bool)number {
+    log!("TODO: setApplicationIconBadgeNumber:{}", number);
+}
+- (())setApplicationSupportsShakeToEdit:(bool)edit {
+    log!("TODO: setApplicationSupportsShakeToEdit:{}", edit);
+}
+
+- (())setStatusBarStyle:(bool)status {
+    log!("TODO: setStatusBarStyle:{}", status);
+}
+
+- (())setProximitySensingEnabled:(bool)enabled {
+    log!("TODO: setProximitySensingEnabled:{}", enabled);
+}
+
+- (NSTimeInterval)statusBarOrientationAnimationDuration {
+    0.0
+}
+- (bool)isStatusBarHidden {
+    true
 }
 
 - (bool)isIdleTimerDisabled {
@@ -177,6 +207,14 @@ pub const CLASSES: ClassExports = objc_classes! {
     }
     let windows = ns_array::from_vec(env, visible_windows);
     autorelease(env, windows)
+}
+
+- (id)statusBarFrame {
+    nil
+}
+
+- (id)terminate {
+    nil
 }
 
 - (())registerForRemoteNotificationTypes:(UIRemoteNotificationType)types {
@@ -265,12 +303,12 @@ pub(super) fn UIApplicationMain(
             retain(env, delegate);
         } else {
             // We have to construct the delegate.
-            assert!(delegate_class_name != nil);
+            // assert!(delegate_class_name != nil);
             let name = ns_string::to_rust_string(env, delegate_class_name);
             let class = env.objc.get_known_class(&name, &mut env.mem);
             let delegate: id = msg![env; class new];
             let _: () = msg![env; ui_application setDelegate:delegate];
-            assert!(delegate != nil);
+            // assert!(delegate != nil);
         };
         // We can't hang on to the delegate, the guest app may change it at any
         // time.
