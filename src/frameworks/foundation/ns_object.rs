@@ -54,6 +54,10 @@ pub const CLASSES: ClassExports = objc_classes! {
      env.objc.class_has_method(this, selector)
 }
 
++ (bool)methodForSelector:(SEL)selector {
+     env.objc.class_has_method(this, selector)
+}
+
 // See the instance method section for the normal versions of these.
 + (id)retain {
     this // classes are not refcounted
