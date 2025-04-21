@@ -291,6 +291,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg_class![env; _touchHLE_NSString allocWithZone:zone]
 }
 
++ (id)dataUsingEncoding:(NSUInteger)_encoding {
+    msg![env; this init]
+}
+
 + (id)stringWithString:(id)string { // NSString*
     let new: id = msg![env; this alloc];
     let new: id = msg![env; new initWithString:string];
