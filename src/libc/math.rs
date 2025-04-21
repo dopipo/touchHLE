@@ -1102,3 +1102,4 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(sqlite3_column_count(_, _)),
     export_c_func!(sqlite3_column_name(_, _)),
     export_c_func!(sqlite3_bind_parameter_index(_, _)),
+];
