@@ -291,6 +291,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg_class![env; _touchHLE_NSString allocWithZone:zone]
 }
 
++ (id)bytes {
+    nil
+}
+
 + (id)dataUsingEncoding:(NSUInteger)_encoding {
     msg![env; this init]
 }
