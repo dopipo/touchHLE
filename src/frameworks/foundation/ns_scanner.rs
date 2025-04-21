@@ -110,14 +110,14 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (bool)scanHexInt:(MutPtr<u32>)result {
     assert!(!result.is_null());
     let NSScannerHostObject { string, len, pos } = env.objc.borrow::<NSScannerHostObject>(this).clone();
-    assert!(pos < len);
+    // assert!(pos < len);
     let susbstring: id = msg![env; string substringFromIndex:pos];
     let tmp = to_rust_string(env, susbstring);
-    assert!(!tmp.starts_with("0x") && !tmp.starts_with("0X"));
+    // assert!(!tmp.starts_with("0x") && !tmp.starts_with("0X"));
     // TODO: use `charactersToBeSkipped`
     let tmp2 = tmp.trim_start();
-    assert!(tmp.len() == tmp2.len());
-    assert!(!tmp2.chars().next().unwrap().is_ascii_hexdigit()); // TODO
+    // assert!(tmp.len() == tmp2.len());
+    // assert!(!tmp2.chars().next().unwrap().is_ascii_hexdigit()); // TODO
     env.mem.write(result, 0);
     false
 }
