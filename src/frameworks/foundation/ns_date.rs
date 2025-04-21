@@ -191,6 +191,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     from_rust_ordering(host_object.time_interval.total_cmp(&another_date_host_object.time_interval))
 }
 
+- (())descriptionWithCalendarFormat:(NSInteger)format timeZone:(bool)_zone locale:(bool)_locale {
+    // TODO
+}
+
 @end
 
 };
