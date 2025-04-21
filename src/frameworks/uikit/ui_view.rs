@@ -199,6 +199,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     State::get_mut(env).animations.last_mut().unwrap().repeat_count = repeatCount;
 }
 
++ (())setAnimationBeginsFromCurrentState:(bool)currentState {
+    log!("TODO: [UIView setAnimationBeginsFromCurrentState:{:?}]", currentState);
+}
+
 + (())setAnimationDelegate:(id)delegate {
     log_dbg!("[UIView setAnimationDelegate:{:?}]", delegate);
     retain(env, delegate);
