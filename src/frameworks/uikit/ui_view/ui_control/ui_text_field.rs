@@ -33,12 +33,39 @@ type UITextAutocorrectionType = NSInteger;
 
 // TODO: Actually send notification on text change
 const UITextFieldTextDidChangeNotification: &str = "UITextFieldTextDidChangeNotification";
+const UITextFieldTextDidEndEditingNotification: &str = "UITextFieldTextDidEndEditingNotification";
+const UITextFieldTextDidBeginEditingNotification: &str = "UITextFieldTextDidBeginEditingNotification";
+const UITextFieldDidEndEditingReason: &str = "UITextFieldDidEndEditingReason";
+const UITextFieldDidEndEditingReasonKey: &str = "UITextFieldDidEndEditingReasonKey";
+const UITextFieldDidEndEditingReasonCommitted: &str = "UITextFieldDidEndEditingReasonCommitted";
 
 /// `NSNotificationName` values.
-pub const CONSTANTS: ConstantExports = &[(
+pub const CONSTANTS: ConstantExports = &[
+    (
     "_UITextFieldTextDidChangeNotification",
     HostConstant::NSString(UITextFieldTextDidChangeNotification),
-)];
+    ),
+    (
+    "_UITextFieldTextDidEndEditingNotification",
+    HostConstant::NSString(UITextFieldTextDidEndEditingNotification),
+    ),
+    (
+    "_UITextFieldTextDidBeginEditingNotification",
+    HostConstant::NSString(UITextFieldTextDidBeginEditingNotification),
+    ),
+    (
+    "_UITextFieldDidEndEditingReason",
+    HostConstant::NSString(UITextFieldDidEndEditingReason),
+    ),
+    (
+    "_UITextFieldDidEndEditingReasonKey",
+    HostConstant::NSString(UITextFieldDidEndEditingReasonKey),
+    ),
+    (
+    "_UITextFieldDidEndEditingReasonCommitted",
+    HostConstant::NSString(UITextFieldDidEndEditingReasonCommitted),
+    ),
+];
 
 struct UITextFieldHostObject {
     superclass: super::UIControlHostObject,
