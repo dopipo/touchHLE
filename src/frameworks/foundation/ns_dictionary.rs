@@ -10,7 +10,7 @@ use super::ns_property_list_serialization::{
     deserialize_plist_from_file, NSPropertyListBinaryFormat_v1_0,
 };
 use super::ns_string::{from_rust_string, get_static_str, to_rust_string};
-use super::{ns_array, ns_keyed_unarchiver, ns_string, ns_url, NSUInteger};
+use super::{ns_array, ns_keyed_unarchiver, ns_string, ns_url, NSInteger, NSUInteger};
 use crate::abi::{CallFromHost, GuestFunction, VaList};
 use crate::frameworks::core_foundation::{CFHashCode, CFIndex};
 use crate::frameworks::foundation::ns_file_manager::{NSFileModificationDate, NSFileSize};
@@ -588,6 +588,63 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (id)description {
     build_description(env, this)
+}
+
+@end
+
+@implementation NSCondition: NSMutableDictionary
+@end
+
+@implementation NSNetServiceBrowser: NSMutableDictionary
+@end
+
+@implementation NSIndexPath: NSObject
+@end
+
+@implementation NSInvocation: NSObject
+
++ (id)invocationWithMethodSignature:(NSUInteger)signature {
+    msg![env; this init]
+}
+
++ (id)invoke {
+    nil
+}
+
++ (())setTarget:(bool)target {
+    log!("TODO: setTarget:{}", target);
+}
+
++ (())setSelector:(bool)selector {
+    log!("TODO: setSelector:{}", selector);
+}
+
++ (())setArgument:(NSInteger)argument atIndex:(bool)_index {
+    // TODO
+}
+
+@end
+
+@implementation NSInputStream: NSObject
+
++ (id)inputStreamWithFileAtPath:(NSUInteger)_path {
+    msg![env; this init]
+}
+
++ (id)hasBytesAvailable {
+    nil
+}
+
++ (id)open {
+    nil
+}
+
++ (id)close {
+    nil
+}
+
++ (())read:(NSInteger)read maxLength:(bool)_length {
+    // TODO
 }
 
 @end
