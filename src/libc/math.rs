@@ -997,6 +997,9 @@ fn CFRunLoopSourceCreate(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
 fn CFRunLoopStop(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
     arg1.min(arg2)
 }
+fn CFRunLoopContainsTimer(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
 fn lstat(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
     arg1.min(arg2)
 }
@@ -1258,5 +1261,6 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CFRunLoopRun(_, _)),
     export_c_func!(CFRunLoopSourceCreate(_, _)),
     export_c_func!(CFRunLoopStop(_, _)),
+    export_c_func!(CFRunLoopContainsTimer(_, _)),
     export_c_func!(lstat(_, _)),
 ];
