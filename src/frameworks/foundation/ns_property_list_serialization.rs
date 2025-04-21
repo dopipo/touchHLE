@@ -263,6 +263,7 @@ fn serialize_plist(env: &mut Environment, plist: id) -> Value {
             NSNumberHostObject::Int(i) => Value::from(*i),
             NSNumberHostObject::Float(f) => Value::from(*f),
             NSNumberHostObject::LongLong(ll) => Value::from(*ll),
+            NSNumberHostObject::Double(d) => Value::from(*d),
             _ => todo!("num {:?}", num),
         }
     } else if class == env.objc.get_known_class("NSData", &mut env.mem) {
