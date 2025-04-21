@@ -60,6 +60,9 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
+@implementation _touchHLE_NSError: NSObject
+@end
+
 };
 
 pub const CONSTANTS: ConstantExports = &[
