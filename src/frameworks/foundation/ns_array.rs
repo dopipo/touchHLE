@@ -17,6 +17,7 @@ use crate::objc::{
 };
 use crate::Environment;
 use std::cmp::Ordering;
+use std::mem;
 
 struct ObjectEnumeratorHostObject {
     /// the enumerated collection, NSArray *
