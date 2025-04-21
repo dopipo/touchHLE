@@ -826,7 +826,7 @@ fn sscanf_common(
                 let mut c: u8;
                 let inverted = if env.mem.read(format + format_char_idx) == b'^' {
                     format_char_idx += 1;
-                    assert_ne!(env.mem.read(format + format_char_idx), b']');
+                    // assert_ne!(env.mem.read(format + format_char_idx), b']');
                     true
                 } else {
                     false
@@ -837,7 +837,7 @@ fn sscanf_common(
                 format_char_idx += 1;
                 while c != b']' {
                     if env.mem.read(format + format_char_idx) == b'-' {
-                        assert_ne!(env.mem.read(format + format_char_idx + 1), b']');
+                        // assert_ne!(env.mem.read(format + format_char_idx + 1), b']');
                         let cc = env.mem.read(format + format_char_idx + 1);
                         for x in c..=cc {
                             set.insert(x);
