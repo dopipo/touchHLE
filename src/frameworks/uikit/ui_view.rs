@@ -852,6 +852,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this init]
 }
 
+- (id)progress {
+    nil
+}
+
 - (())setProgressViewStyle:(bool)style {
     log!("TODO: setProgressViewStyle:{}", style);
 }
