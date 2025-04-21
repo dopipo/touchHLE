@@ -51,6 +51,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
++ (id)whitespaceAndNewlineCharacterSet {
+    nil
+}
+
 + (id)whitespaceCharacterSet {
     // Unicode General Category Zs and CHARACTER TABULATION (U+0009).
     let chars = [
