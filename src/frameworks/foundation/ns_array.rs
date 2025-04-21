@@ -508,6 +508,30 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.borrow_mut::<ArrayHostObject>(this).array.pop().unwrap();
 }
 
+- (())writeToFile:(NSInteger)file atomically:(bool)_atomically encoding:(bool)_encoding error:(bool)_error {
+    // TODO
+}
+
+- (())writeToFile:(NSInteger)file atomically:(bool)_atomically {
+    // TODO
+}
+
+- (())exchangeObjectAtIndex:(NSInteger)_index withObjectAtIndex:(bool)_object {
+    // TODO
+}
+
+- (())initWithArray:(NSInteger)array copyItems:(bool)_items {
+    // TODO
+}
+
+- (())insertObject:(NSInteger)object atIndex:(bool)_index {
+    // TODO
+}
+
+- (())pathForResource:(NSInteger)resource ofType:(bool)_type {
+    // TODO
+}
+
 @end
 
 };
