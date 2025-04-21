@@ -477,6 +477,21 @@ pub const CLASSES: ClassExports = objc_classes! {
     release(env, object)
 }
 
+- (())removeObject:(id)needle {
+    let mut objects = mem::take(&mut env.objc.borrow_mut::<ArrayHostObject>(this).array);
+    retain(env, needle);
+    objects.retain(|&obj| {
+        if obj == needle || msg![env; needle isEqual: obj] {
+            release(env, obj);
+            false
+        } else {
+            true
+        }
+    });
+    release(env, needle);
+    env.objc.borrow_mut::<ArrayHostObject>(this).array = objects;
+}
+
 - (())removeLastObject {
     let object = env.objc.borrow_mut::<ArrayHostObject>(this).array.pop().unwrap();
     release(env, object)
