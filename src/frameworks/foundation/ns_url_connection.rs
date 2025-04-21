@@ -21,6 +21,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, new)
 }
 
++ (())sendSynchronousRequest:(NSInteger)request returningResponse:(bool)_response error:(bool)_error {
+    // TODO
+}
+
 - (id)initWithRequest:(id)request // NSURLRequest *
              delegate:(id)delegate {
     msg![env; this initWithRequest:request delegate:delegate startImmediately:true]
@@ -38,10 +42,6 @@ pub const CLASSES: ClassExports = objc_classes! {
     );
     release(env, this);
     nil
-}
-
-- (())sendSynchronousRequest:(NSInteger)request returningResponse:(bool)_response error:(bool)_error {
-    // TODO
 }
 
 @end
