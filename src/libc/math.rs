@@ -436,7 +436,453 @@ fn fmin(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn fminf(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
     arg1.min(arg2)
 }
-
+fn poll(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn pthread_condattr_init(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn pthread_mutexattr_setpshared(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn pthread_yield_np(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glCreateShader(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glShaderSource(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glSampleCoverage(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glCompileShader(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glGetShaderiv(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glCreateProgram(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glAttachShader(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glLinkProgram(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glGetProgramiv(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glGetAttribLocation(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glGetUniformLocation(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glPointSizePointerOES(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glDrawTexfOES(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glDeleteShader(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glGetFixedv(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glGetTexEnvxv(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glDrawTexiOES(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn abort(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn AudioServicesCreateSystemSoundID(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn AudioServicesDisposeSystemSoundID(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn AudioQueueEnqueueBufferWithParameters(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn AudioQueueSetProperty(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn asctime(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn backtrace_symbols(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn backtrace(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn class_getInstanceSize(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn compress2(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn creat(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn ctime(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn flockfile(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn funlockfile(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn __srget(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn fscanf(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn getc(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn ungetc(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sranddev(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn srandomdev(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn strerror_r(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn strcasestr(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn task_get_exception_ports(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn gethostent(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn CGColorEqualToColor(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGColorGetConstantColor(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextAddArcToPoint(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextAddLineToPoint(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextAddPath(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextAddRect(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextBeginPath(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextClip(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextClipToMask(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextClipToRect(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextClosePath(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextDrawLayerInRect(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextDrawLinearGradient(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextDrawPath(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextFillEllipseInRect(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextFillPath(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextMoveToPoint(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSelectFont(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetTextDrawingMode(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetAllowsAntialiasing(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetAlpha(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetFillColorWithColor(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetFont(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetInterpolationQuality(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetLineCap(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetLineDash(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetLineJoin(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetLineWidth(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetRGBStrokeColor(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetShadow(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetShadowWithColor(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetShouldAntialias(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetStrokeColorWithColor(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetShouldSmoothFonts(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetTextPosition(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextStrokePath(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextStrokeEllipseInRect(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGDataProviderCreateDirect(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGDataProviderCreateSequential(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGDataProviderCreateWithCFData(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGDataProviderCreateWithFilename(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGDataProviderCreateWithURL(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGFontCreateWithFontName(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGFontCreateWithDataProvider(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGGradientCreateWithColorComponents(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGImageCreate(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGImageCreateCopy(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGImageCreateWithJPEGDataProvider(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGImageCreateWithImageInRect(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGImageCreateWithMask(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGLayerCreateWithContext(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGLayerGetContext(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGPathAddLines(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGPathAddRect(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGPathCloseSubpath(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGPathCreateCopy(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGPathCreateMutable(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGPathRelease(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGRectIntersection(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGRectGetHeight(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGRectIsNull(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGRectInset(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGRectIntersectsRect(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGRectGetMidX(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn ExtAudioFileWrapAudioFileID(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn ExtAudioFileOpenURL(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn ExtAudioFileGetProperty(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn ExtAudioFileSetProperty(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn ExtAudioFileDispose(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn NSDefaultMallocZone(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn NSZoneMalloc(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn UIApplicationDidReceiveMemoryWarningNotification(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn UIGraphicsEndImageContext(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn UIGraphicsGetImageFromCurrentImageContext(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn UIImageWriteToSavedPhotosAlbum(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn UIRectFill(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn UIRectFrame(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn pthread_attr_setinheritsched(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn pthread_attr_setschedpolicy(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn pthread_get_stackaddr_np(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn pthread_get_stacksize_np(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn sqlite3_open(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_errcode(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_errmsg(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_prepare_v2(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_step(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_finalize(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_mprintf(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_close(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_reset(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_bind_int(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_bind_double(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_bind_parameter_count(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_get_table(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_free_table(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_exec(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_column_int(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_bind_text(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_column_text(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_last_insert_rowid(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_prepare(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_column_count(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_column_name(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_bind_parameter_index(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
     export_c_func!(fabs(_)),
@@ -512,4 +958,146 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(fmaxf(_, _)),
     export_c_func!(fmin(_, _)),
     export_c_func!(fminf(_, _)),
-];
+    export_c_func!(poll(_, _)),
+    export_c_func!(pthread_condattr_init(_, _)),
+    export_c_func!(pthread_mutexattr_setpshared(_, _)),
+    export_c_func!(pthread_yield_np(_, _)),
+    export_c_func!(glCreateShader(_, _)),
+    export_c_func!(glShaderSource(_, _)),
+    export_c_func!(glSampleCoverage(_, _)),
+    export_c_func!(glCompileShader(_, _)),
+    export_c_func!(glGetShaderiv(_, _)),
+    export_c_func!(glCreateProgram(_, _)),
+    export_c_func!(glAttachShader(_, _)),
+    export_c_func!(glLinkProgram(_, _)),
+    export_c_func!(glGetProgramiv(_, _)),
+    export_c_func!(glGetAttribLocation(_, _)),
+    export_c_func!(glGetUniformLocation(_, _)),
+    export_c_func!(glDrawTexfOES(_, _)),
+    export_c_func!(glDeleteShader(_, _)),
+    export_c_func!(glGetFixedv(_, _)),
+    export_c_func!(glPointSizePointerOES(_, _)),
+    export_c_func!(glGetTexEnvxv(_, _)),
+    export_c_func!(glDrawTexiOES(_, _)),
+    export_c_func!(abort(_, _)),
+    export_c_func!(AudioServicesCreateSystemSoundID(_, _)),
+    export_c_func!(AudioServicesDisposeSystemSoundID(_, _)),
+    export_c_func!(AudioQueueEnqueueBufferWithParameters(_, _)),
+    export_c_func!(AudioQueueSetProperty(_, _)),
+    export_c_func!(asctime(_, _)),
+    export_c_func!(backtrace_symbols(_, _)),
+    export_c_func!(backtrace(_, _)),
+    export_c_func!(class_getInstanceSize(_, _)),
+    export_c_func!(compress2(_, _)),
+    export_c_func!(creat(_, _)),
+    export_c_func!(ctime(_, _)),
+    export_c_func!(flockfile(_, _)),
+    export_c_func!(funlockfile(_, _)),
+    export_c_func!(__srget(_, _)),
+    export_c_func!(fscanf(_, _)),
+    export_c_func!(getc(_, _)),
+    export_c_func!(ungetc(_, _)),
+    export_c_func!(CGColorEqualToColor(_, _)),
+    export_c_func!(CGColorGetConstantColor(_, _)),
+    export_c_func!(CGContextAddArcToPoint(_, _)),
+    export_c_func!(CGContextAddLineToPoint(_, _)),
+    export_c_func!(CGContextAddPath(_, _)),
+    export_c_func!(CGContextAddRect(_, _)),
+    export_c_func!(CGContextBeginPath(_, _)),
+    export_c_func!(CGContextClip(_, _)),
+    export_c_func!(CGContextClipToMask(_, _)),
+    export_c_func!(CGContextClipToRect(_, _)),
+    export_c_func!(CGContextClosePath(_, _)),
+    export_c_func!(CGContextDrawLayerInRect(_, _)),
+    export_c_func!(CGContextDrawLinearGradient(_, _)),
+    export_c_func!(CGContextDrawPath(_, _)),
+    export_c_func!(CGContextFillEllipseInRect(_, _)),
+    export_c_func!(CGContextFillPath(_, _)),
+    export_c_func!(CGContextMoveToPoint(_, _)),
+    export_c_func!(CGContextSelectFont(_, _)),
+    export_c_func!(CGContextSetTextDrawingMode(_, _)),
+    export_c_func!(CGContextSetAllowsAntialiasing(_, _)),
+    export_c_func!(CGContextSetAlpha(_, _)),
+    export_c_func!(CGContextSetFillColorWithColor(_, _)),
+    export_c_func!(CGContextSetFont(_, _)),
+    export_c_func!(CGContextSetInterpolationQuality(_, _)),
+    export_c_func!(CGContextSetLineCap(_, _)),
+    export_c_func!(CGContextSetLineDash(_, _)),
+    export_c_func!(CGContextSetLineJoin(_, _)),
+    export_c_func!(CGContextSetLineWidth(_, _)),
+    export_c_func!(CGContextSetRGBStrokeColor(_, _)),
+    export_c_func!(CGContextSetShadow(_, _)),
+    export_c_func!(CGContextSetShadowWithColor(_, _)),
+    export_c_func!(CGContextSetShouldAntialias(_, _)),
+    export_c_func!(CGContextSetStrokeColorWithColor(_, _)),
+    export_c_func!(CGContextSetShouldSmoothFonts(_, _)),
+    export_c_func!(CGContextSetTextPosition(_, _)),
+    export_c_func!(CGContextStrokePath(_, _)),
+    export_c_func!(CGContextStrokeEllipseInRect(_, _)),
+    export_c_func!(CGDataProviderCreateDirect(_, _)),
+    export_c_func!(CGDataProviderCreateSequential(_, _)),
+    export_c_func!(CGDataProviderCreateWithCFData(_, _)),
+    export_c_func!(CGDataProviderCreateWithURL(_, _)),
+    export_c_func!(CGDataProviderCreateWithFilename(_, _)),
+    export_c_func!(CGFontCreateWithFontName(_, _)),
+    export_c_func!(CGFontCreateWithDataProvider(_, _)),
+    export_c_func!(CGGradientCreateWithColorComponents(_, _)),
+    export_c_func!(CGImageCreate(_, _)),
+    export_c_func!(CGImageCreateCopy(_, _)),
+    export_c_func!(CGImageCreateWithJPEGDataProvider(_, _)),
+    export_c_func!(CGImageCreateWithImageInRect(_, _)),
+    export_c_func!(CGImageCreateWithMask(_, _)),
+    export_c_func!(CGLayerCreateWithContext(_, _)),
+    export_c_func!(CGLayerGetContext(_, _)),
+    export_c_func!(CGPathAddLines(_, _)),
+    export_c_func!(CGPathAddRect(_, _)),
+    export_c_func!(CGPathCloseSubpath(_, _)),
+    export_c_func!(CGPathCreateCopy(_, _)),
+    export_c_func!(CGPathCreateMutable(_, _)),
+    export_c_func!(CGPathRelease(_, _)),
+    export_c_func!(CGRectIntersection(_, _)),
+    export_c_func!(CGRectGetHeight(_, _)),
+    export_c_func!(CGRectIsNull(_, _)),
+    export_c_func!(CGRectInset(_, _)),
+    export_c_func!(CGRectIntersectsRect(_, _)),
+    export_c_func!(CGRectGetMidX(_, _)),
+    export_c_func!(ExtAudioFileWrapAudioFileID(_, _)),
+    export_c_func!(ExtAudioFileOpenURL(_, _)),
+    export_c_func!(ExtAudioFileGetProperty(_, _)),
+    export_c_func!(ExtAudioFileSetProperty(_, _)),
+    export_c_func!(ExtAudioFileDispose(_, _)),
+    export_c_func!(NSDefaultMallocZone(_, _)),
+    export_c_func!(NSZoneMalloc(_, _)),
+    export_c_func!(UIApplicationDidReceiveMemoryWarningNotification(_, _)),
+    export_c_func!(UIGraphicsEndImageContext(_, _)),
+    export_c_func!(UIGraphicsGetImageFromCurrentImageContext(_, _)),
+    export_c_func!(UIImageWriteToSavedPhotosAlbum(_, _)),
+    export_c_func!(UIRectFill(_, _)),
+    export_c_func!(UIRectFrame(_, _)),
+    export_c_func!(pthread_attr_setinheritsched(_, _)),
+    export_c_func!(pthread_attr_setschedpolicy(_, _)),
+    export_c_func!(pthread_get_stacksize_np(_, _)),
+    export_c_func!(pthread_get_stackaddr_np(_, _)),
+    export_c_func!(sqlite3_open(_, _)),
+    export_c_func!(sqlite3_errcode(_, _)),
+    export_c_func!(sqlite3_errmsg(_, _)),
+    export_c_func!(sqlite3_prepare_v2(_, _)),
+    export_c_func!(sqlite3_step(_, _)),
+    export_c_func!(sqlite3_finalize(_, _)),
+    export_c_func!(sqlite3_mprintf(_, _)),
+    export_c_func!(sqlite3_close(_, _)),
+    export_c_func!(sqlite3_reset(_, _)),
+    export_c_func!(sqlite3_bind_int(_, _)),
+    export_c_func!(sqlite3_bind_double(_, _)),
+    export_c_func!(sqlite3_bind_parameter_count(_, _)),
+    export_c_func!(sqlite3_get_table(_, _)),
+    export_c_func!(sqlite3_free_table(_, _)),
+    export_c_func!(sqlite3_exec(_, _)),
+    export_c_func!(sqlite3_column_int(_, _)),
+    export_c_func!(sqlite3_bind_text(_, _)),
+    export_c_func!(sqlite3_column_text(_, _)),
+    export_c_func!(sqlite3_last_insert_rowid(_, _)),
+    export_c_func!(sqlite3_prepare(_, _)),
+    export_c_func!(sqlite3_column_count(_, _)),
+    export_c_func!(sqlite3_column_name(_, _)),
+    export_c_func!(sqlite3_bind_parameter_index(_, _)),
