@@ -982,6 +982,9 @@ fn CFStringCreateMutableCopy(_env: &mut Environment, arg1: f32, arg2: f32) -> f3
 fn CFStringNormalize(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
     arg1.min(arg2)
 }
+fn lstat(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1234,4 +1237,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CFStringHasSuffix(_, _)),
     export_c_func!(CFStringCreateMutableCopy(_, _)),
     export_c_func!(CFStringNormalize(_, _)),
+    export_c_func!(lstat(_, _)),
 ];
