@@ -5,6 +5,7 @@
  */
 //! `NSURLConnection`.
 
+use crate::frameworks::foundation::NSInteger;
 use crate::objc::{autorelease, id, msg, nil, objc_classes, release, ClassExports};
 
 pub const CLASSES: ClassExports = objc_classes! {
@@ -37,6 +38,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     );
     release(env, this);
     nil
+}
+
+- (())sendSynchronousRequest:(NSInteger)request returningResponse:(bool)_response error:(bool)_error {
+    // TODO
 }
 
 @end
