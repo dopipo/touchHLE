@@ -642,6 +642,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
++ (id)retainArguments {
+    nil
+}
+
 + (())setTarget:(bool)target {
     log!("TODO: setTarget:{}", target);
 }
