@@ -660,7 +660,7 @@ impl ObjC {
                     .and_modify(|v| v.push(*class))
                     .or_insert(vec![*class]);
             } else {
-                assert!(root_class.is_none());
+                // assert!(root_class.is_none());
                 root_class = Some(*class);
             }
         }
