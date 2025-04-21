@@ -25,6 +25,10 @@ pub const CLASSES: ClassExports = objc_classes! {
   nil
 }
 
++ (id)bytes {
+  nil
+}
+
 + (())sendSynchronousRequest:(NSInteger)request returningResponse:(bool)_response error:(bool)_error {
     // TODO
 }
