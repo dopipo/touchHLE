@@ -1271,7 +1271,7 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CFRunLoopSourceCreate(_, _)),
     export_c_func!(CFRunLoopStop(_, _)),
     export_c_func!(CFRunLoopContainsTimer(_, _)),
-    export_c_func!(CFRunLoopRemoveTimer
+    export_c_func!(CFRunLoopRemoveTimer(_, _)),
     export_c_func!(CGColorGetAlpha(_, _)),
     export_c_func!(lstat(_, _)),
 ];
