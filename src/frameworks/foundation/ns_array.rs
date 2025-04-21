@@ -492,6 +492,22 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.borrow_mut::<ArrayHostObject>(this).array = Vec::new()
 }
 
+- (())exchangeObjectAtIndex:(NSInteger)_index withObjectAtIndex:(bool)_object {
+    // TODO
+}
+
+- (())initWithArray:(NSInteger)array copyItems:(bool)_items {
+    // TODO
+}
+
+- (())insertObject:(NSInteger)object atIndex:(bool)_index {
+    // TODO
+}
+
+- (())pathForResource:(NSInteger)resource ofType:(bool)_type {
+    // TODO
+}
+
 @end
 
 // Special variant for use by CFArray with NULL callbacks: objects aren't
