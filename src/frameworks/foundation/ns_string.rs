@@ -1266,7 +1266,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (id)initWithCString:(ConstPtr<u8>)c_string
              encoding:(NSStringEncoding)encoding {
-    assert!(C_STRING_FRIENDLY_ENCODINGS.contains(&encoding), "encoding {}", encoding);
+    // assert!(C_STRING_FRIENDLY_ENCODINGS.contains(&encoding), "encoding {}", encoding);
     let len: NSUInteger = env.mem.cstr_at(c_string).len().try_into().unwrap();
     msg![env; this initWithBytes:c_string length:len encoding:encoding]
 }
