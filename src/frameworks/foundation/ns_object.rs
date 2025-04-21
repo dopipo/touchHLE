@@ -54,10 +54,6 @@ pub const CLASSES: ClassExports = objc_classes! {
      env.objc.class_has_method(this, selector)
 }
 
-+ (bool)methodForSelector:(SEL)selector {
-     env.objc.class_has_method(this, selector)
-}
-
 // See the instance method section for the normal versions of these.
 + (id)retain {
     this // classes are not refcounted
@@ -116,6 +112,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (bool)isKindOfClass:(Class)class {
     let this_class: Class = msg![env; this class];
     env.objc.class_is_subclass_of(this_class, class)
+}
+
+- (bool)methodForSelector:(SEL)selector {
+     env.objc.class_has_method(this, selector)
 }
 
 - (NSUInteger)hash {
