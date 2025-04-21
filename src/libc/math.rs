@@ -958,6 +958,30 @@ fn CFAbsoluteTimeGetDifferenceAsGregorianUnits(_env: &mut Environment, arg1: f32
 fn CFAllocatorGetDefault(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
     arg1.min(arg2)
 }
+fn CFStringCreateWithBytes(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFStringCreateWithFileSystemRepresentation(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFStringGetBytes(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFStringGetCharacterAtIndex(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFStringGetSystemEncoding(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFStringHasSuffix(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFStringCreateMutableCopy(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFStringNormalize(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1202,4 +1226,12 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CC_SHA1_Update(_, _)),
     export_c_func!(CFAbsoluteTimeGetDifferenceAsGregorianUnits(_, _)),
     export_c_func!(CFAllocatorGetDefault(_, _)),
+    export_c_func!(CFStringCreateWithBytes(_, _)),
+    export_c_func!(CFStringCreateWithFileSystemRepresentation(_, _)),
+    export_c_func!(CFStringGetBytes(_, _)),
+    export_c_func!(CFStringGetCharacterAtIndex(_, _)),
+    export_c_func!(CFStringGetSystemEncoding(_, _)),
+    export_c_func!(CFStringHasSuffix(_, _)),
+    export_c_func!(CFStringCreateMutableCopy(_, _)),
+    export_c_func!(CFStringNormalize(_, _)),
 ];
