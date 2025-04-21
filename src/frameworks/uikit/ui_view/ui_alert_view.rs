@@ -29,6 +29,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg_super![env; this init]
 }
 
+- (id)isVisible {
+  nil
+}
+
 - (id)addButtonWithTitle:(NSUInteger)title {
     msg![env; this init]
 }
