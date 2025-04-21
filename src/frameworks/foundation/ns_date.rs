@@ -10,7 +10,7 @@ use super::{NSComparisonResult, NSTimeInterval};
 use crate::frameworks::core_foundation::time::{apple_epoch, SECS_FROM_UNIX_TO_APPLE_EPOCHS};
 use crate::frameworks::foundation::NSInteger;
 use crate::objc::{
-    autorelease, id, msg, msg_class, objc_classes, release, ClassExports, HostObject, NSZonePtr,
+    autorelease, id, msg, msg_class, nil, objc_classes, release, ClassExports, HostObject, NSZonePtr,
 };
 
 use crate::frameworks::foundation::ns_keyed_unarchiver::decode_current_date;
@@ -142,6 +142,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     release(env, this);
     // Note: Assuming NSKeyedUnarchiver as coder here
     decode_current_date(env, coder)
+}
+
+- (id)UTF8String {
+    nil
 }
 
 - (NSTimeInterval)timeIntervalSinceDate:(id)anotherDate {
