@@ -883,6 +883,81 @@ fn sqlite3_column_name(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn sqlite3_bind_parameter_index(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn lroundf(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn lround(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn lrand48(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn rand_r(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn mbsrtowcs(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn mprotect(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn regcomp(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn setvbuf(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn strftime(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn strerror(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn uncompress(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn wcstok(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn wcstod(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn writev(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn CACurrentMediaTime(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CATransform3DMakeRotation(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CCCrypt(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CC_MD5_Final(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CC_MD5_Init(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CC_MD5_Update(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CC_SHA1(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CC_SHA1_Init(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CC_SHA1_Update(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFAbsoluteTimeGetDifferenceAsGregorianUnits(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFAllocatorGetDefault(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1102,4 +1177,29 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(sqlite3_column_count(_, _)),
     export_c_func!(sqlite3_column_name(_, _)),
     export_c_func!(sqlite3_bind_parameter_index(_, _)),
+    export_c_func!(lroundf(_, _)),
+    export_c_func!(lround(_, _)),
+    export_c_func!(lrand48(_, _)),
+    export_c_func!(rand_r(_, _)),
+    export_c_func!(mbsrtowcs(_, _)),
+    export_c_func!(mprotect(_, _)),
+    export_c_func!(regcomp(_, _)),
+    export_c_func!(setvbuf(_, _)),
+    export_c_func!(strftime(_, _)),
+    export_c_func!(strerror(_, _)),
+    export_c_func!(uncompress(_, _)),
+    export_c_func!(wcstok(_, _)),
+    export_c_func!(wcstod(_, _)),
+    export_c_func!(writev(_, _)),
+    export_c_func!(CACurrentMediaTime(_, _)),
+    export_c_func!(CATransform3DMakeRotation(_, _)),
+    export_c_func!(CCCrypt(_, _)),
+    export_c_func!(CC_MD5_Final(_, _)),
+    export_c_func!(CC_MD5_Init(_, _)),
+    export_c_func!(CC_MD5_Update(_, _)),
+    export_c_func!(CC_SHA1(_, _)),
+    export_c_func!(CC_SHA1_Init(_, _)),
+    export_c_func!(CC_SHA1_Update(_, _)),
+    export_c_func!(CFAbsoluteTimeGetDifferenceAsGregorianUnits(_, _)),
+    export_c_func!(CFAllocatorGetDefault(_, _)),
 ];
