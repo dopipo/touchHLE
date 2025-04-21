@@ -43,7 +43,7 @@ pub(super) struct ClassHostObject {
     pub(super) methods: HashMap<SEL, Method>,
     /// Maps ivar name to a tuple of an offset (as pointer) and an alignment.
     /// (Alignment is used during ivar reconciliation.)
-    pub(super) ivars: HashMap<String, (IVar>, u32)>,
+pub(super) ivars: HashMap<String, { (IVar>, u32) }>,
     /// Offset into the allocated memory for the object where the ivars of
     /// instances of this class or metaclass (respectively: normal objects or
     /// classes) should live. This is always >= the value in the superclass.
