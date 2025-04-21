@@ -43,6 +43,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.borrow_mut::<NSLockHostObject>(this).locked_by = Some(env.current_thread);
 }
 
+- (id)tryLock {
+    nil
+}
+
 - (())unlock {
     log_dbg!("[(NSLock*){:?} unlock]", this);
     let host_object = env.objc.borrow::<NSLockHostObject>(this);
@@ -68,6 +72,17 @@ pub const CLASSES: ClassExports = objc_classes! {
     let pthread_mutex_ptr = env.objc.borrow::<NSLockHostObject>(this).pthread_mutex_ptr;
     assert!(pthread_mutex_destroy(env, pthread_mutex_ptr) == 0);
     env.objc.dealloc_object(this, &mut env.mem)
+}
+
+@end
+
+@implementation NSRecursiveLock: NSObject
+- (id)lock {
+    nil
+}
+
+- (id)unlock {
+    nil
 }
 
 @end
