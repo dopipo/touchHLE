@@ -757,7 +757,7 @@ fn CGRectIsNull(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
 fn CGRectInset(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
     arg1.min(arg2)
 }
-fn CGRectIntersectsRect(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+fn CGRectIsEmpty(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
     arg1.min(arg2)
 }
 fn CGRectGetMidX(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
@@ -1162,7 +1162,7 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CGRectGetHeight(_, _)),
     export_c_func!(CGRectIsNull(_, _)),
     export_c_func!(CGRectInset(_, _)),
-    export_c_func!(CGRectIntersectsRect(_, _)),
+    export_c_func!(CGRectIsEmpty(_, _)),
     export_c_func!(CGRectGetMidX(_, _)),
     export_c_func!(ExtAudioFileWrapAudioFileID(_, _)),
     export_c_func!(ExtAudioFileOpenURL(_, _)),
