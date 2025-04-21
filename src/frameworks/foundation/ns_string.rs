@@ -295,6 +295,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
++ (id)length {
+    nil
+}
+
 + (id)dataUsingEncoding:(NSUInteger)_encoding {
     msg![env; this init]
 }
