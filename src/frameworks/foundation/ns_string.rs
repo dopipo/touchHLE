@@ -126,6 +126,10 @@ impl StringHostObject {
                 let string = CP1252.decode(&bytes).to_string();
                 StringHostObject::Utf8(Cow::Owned(string))
             }
+            NSUTF32StringEncoding => {
+                let string = String::from_utf8(bytes.into_owned()).unwrap();
+                StringHostObject::Utf8(Cow::Owned(string))
+            }
             NSShiftJISStringEncoding => {
                 let (cow, encoding_used, had_errors) = SHIFT_JIS.decode(&bytes);
                 assert_eq!(encoding_used, SHIFT_JIS);
