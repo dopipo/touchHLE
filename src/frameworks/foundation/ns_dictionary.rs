@@ -811,6 +811,25 @@ pub const CLASSES: ClassExports = objc_classes! {
     *env.objc.borrow_mut(other) = host_obj;
 }
 
+- (())countByEnumeratingWithState:(NSInteger)state objects:(bool)_objects count:(bool)_count {
+    // TODO
+}
+
+- (())getObjects:(NSInteger)_objects andKeys:(bool)_keys {
+    // TODO
+}
+
+- (())initWithObjects:(NSInteger)_objects forKeys:(bool)_keys {
+    // TODO
+}
+
+- (())searchForServicesOfType:(NSInteger)_type inDomain:(bool)_domain {
+    // TODO
+}
+
+- (())synchronize {
+}
+
 - (id)description {
     build_description(env, this)
 }
