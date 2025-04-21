@@ -428,6 +428,22 @@ pub const CLASSES: ClassExports = objc_classes! {
     reverse_object_enumerator_inner(env, this)
 }
 
+- (id)ascender {
+    nil
+}
+
+- (id)drain {
+    nil
+}
+
+- (id)sortUsingSelector {
+    nil
+}
+
+- (id)sortUsingSelector:(NSUInteger)_using {
+    msg![env; this init]
+}
+
 - (())sortUsingFunction:(GuestFunction)comparator
                 context:(MutVoidPtr)context {
     let host_object: &mut ArrayHostObject = env.objc.borrow_mut(this);
