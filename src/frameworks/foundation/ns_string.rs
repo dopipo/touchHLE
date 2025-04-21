@@ -13,7 +13,7 @@ mod path_algorithms;
 use super::{ns_array, unichar};
 use super::{
     NSComparisonResult, NSNotFound, NSOrderedAscending, NSOrderedDescending, NSOrderedSame,
-    NSRange, NSUInteger,
+    NSRange, NSUInteger, NSUInteger,
 };
 use crate::abi::VaList;
 use crate::frameworks::core_graphics::{CGFloat, CGPoint, CGRect, CGSize};
@@ -1421,8 +1421,43 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.alloc_object(this, host_object, &mut env.mem)
 }
 
+- (id)bytes {
+    nil
+}
+
+- (id)dataUsingEncoding:(NSUInteger)_using {
+    msg![env; this init]
+}
+
 - (id)initWithCapacity:(NSUInteger)_capacity {
-    // TODO: capacity
+    msg![env; this init]
+}
+
+- (id)initWithString:(id)string { // NSString *
+    // TODO: optimize for more common cases (or maybe just call copy?)
+    let mut code_units = Vec::new();
+    for_each_code_unit(env, string, |_, c| code_units.push(c));
+    *env.objc.borrow_mut(this) = StringHostObject::Utf16(code_units);
+    this
+}
+
+- (id)initWithUTF8String:(NSUInteger)_string {
+    msg![env; this init]
+}
+
+- (())initWithContentsOfFile:(NSInteger)file encoding:(bool)_encoding error:(bool)_error {
+    // TODO
+}
+
+- (())initWithFormat:(NSInteger)format arguments:(bool)_arguments {
+    // TODO
+}
+
+- (())insertString:(NSInteger)string atIndex:(bool)_index {
+    // TODO
+}
+
+- (id)lengthOfBytesUsingEncoding:(NSUInteger)_bytes {
     msg![env; this init]
 }
 
