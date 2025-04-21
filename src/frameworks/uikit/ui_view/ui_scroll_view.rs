@@ -73,6 +73,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: setShowsHorizontalScrollIndicator:{}", scroll);
 }
 
+- (())setAlwaysBounceVertical:(bool)bounce {
+    log!("TODO: setAlwaysBounceVertical:{}", bounce);
+}
+
 - (())setShowsVerticalScrollIndicator:(bool)scroll {
     log!("TODO: setShowsVerticalScrollIndicator:{}", scroll);
 }
