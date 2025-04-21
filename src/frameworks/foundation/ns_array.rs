@@ -285,6 +285,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (())writeToFile:(NSInteger)file atomically:(bool)_atomically {
+    // TODO
+}
+
 - (())dealloc {
     let host_object: &mut ArrayHostObject = env.objc.borrow_mut(this);
     let array = std::mem::take(&mut host_object.array);
