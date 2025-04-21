@@ -7,7 +7,7 @@
 
 use super::{ns_string, unichar};
 use crate::objc::{
-    autorelease, id, msg, msg_class, objc_classes, retain, ClassExports, HostObject, NSZonePtr,
+    autorelease, id, msg, msg_class, nil, objc_classes, retain, ClassExports, HostObject, NSZonePtr,
 };
 use std::collections::HashSet;
 
@@ -45,6 +45,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.borrow_mut::<CharacterSetHostObject>(new).set = set;
 
     autorelease(env, new)
+}
+
++ (id)newlineCharacterSet {
+    nil
 }
 
 + (id)whitespaceCharacterSet {
