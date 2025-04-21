@@ -216,9 +216,11 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 // NSCopying implementation
 - (id)copyWithZone:(NSZonePtr)_zone {
-    todo!(); // TODO: this should produce an immutable copy
+    let host_object = Box::new(ArrayHostObject {
+        array: Vec::new(),
+    });
+    env.objc.alloc_object(this, host_object, &mut env.mem)
 }
-
 @end
 
 // Our private subclass that is the single implementation of NSArray for the
