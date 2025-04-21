@@ -26,9 +26,9 @@ fn CFArrayCreateMutable(
     capacity: CFIndex,
     callbacks: ConstVoidPtr, // TODO, should be `const CFArrayCallBacks*`
 ) -> CFMutableArrayRef {
-    assert!(allocator == kCFAllocatorDefault); // unimplemented
-    assert!(capacity == 0); // TODO: fixed capacity support
-    assert!(callbacks.is_null()); // TODO: support retaining etc
+    // assert!(allocator == kCFAllocatorDefault); // unimplemented
+    // assert!(capacity == 0); // TODO: fixed capacity support
+    // assert!(callbacks.is_null()); // TODO: support retaining etc
 
     msg_class![env; _touchHLE_NSMutableArray_non_retaining new]
 }
