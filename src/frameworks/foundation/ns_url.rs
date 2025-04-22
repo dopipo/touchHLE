@@ -152,6 +152,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (id)isFileURL {
+    nil
+}
+
 - (bool)getFileSystemRepresentation:(MutPtr<u8>)buffer
                           maxLength:(NSUInteger)buffer_size {
     let &NSURLHostObject::FileURL { ns_string, .. } = env.objc.borrow(this) else {
