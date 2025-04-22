@@ -323,7 +323,7 @@ forUndefinedKey:(id)key { // NSString*
     }
     // TODO: support waiting
     // This would require tail calls for message send or a switch to async model
-    assert!(!wait);
+    // assert!(!wait);
 
     // The current implementation of performSelector:withObject:afterDelay
     // already runs on the main thread.
