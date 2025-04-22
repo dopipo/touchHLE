@@ -12,7 +12,7 @@
 use std::io::Cursor;
 use symphonia::core::audio::{RawSampleBuffer, SignalSpec};
 use symphonia::core::codecs::{
-    CODEC_TYPE_AAC, CODEC_TYPE_ADPCM_IMA_WAV, CODEC_TYPE_ALAC, CODEC_TYPE_MP3, CODEC_TYPE_AIFF,
+    CODEC_TYPE_AAC, CODEC_TYPE_ADPCM_IMA_WAV, CODEC_TYPE_ALAC, CODEC_TYPE_MP3,
 };
 use symphonia::core::io::MediaSourceStream;
 
@@ -50,7 +50,6 @@ pub fn decode_symphonia_to_pcm(file: Cursor<Vec<u8>>) -> Result<SymphoniaDecoded
                 || t.codec_params.codec == CODEC_TYPE_ADPCM_IMA_WAV
                 || t.codec_params.codec == CODEC_TYPE_ALAC
                 || t.codec_params.codec == CODEC_TYPE_MP3
-                || t.codec_params.codec == CODEC_TYPE_AIFF
         })
         .ok_or(())?;
     let track_id = track.id;
