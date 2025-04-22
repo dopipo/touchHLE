@@ -1009,6 +1009,18 @@ fn CFRunLoopRemoveTimer(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
 fn CGColorGetAlpha(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
     arg1.min(arg2)
 }
+fn CFBundleCopyLocalizedString(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFBundleCopyResourceURLForLocalization(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFBundleGetInfoDictionary(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFBundleCopyExecutableURL(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
 fn lstat(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
     arg1.min(arg2)
 }
@@ -1273,5 +1285,9 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CFRunLoopContainsTimer(_, _)),
     export_c_func!(CFRunLoopRemoveTimer(_, _)),
     export_c_func!(CGColorGetAlpha(_, _)),
+    export_c_func!(CFBundleCopyLocalizedString(_, _)),
+    export_c_func!(CFBundleCopyResourceURLForLocalization(_, _)),
+    export_c_func!(CFBundleGetInfoDictionary(_, _)),
+    export_c_func!(CFBundleCopyExecutableURL(_, _)),
     export_c_func!(lstat(_, _)),
 ];
