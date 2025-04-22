@@ -43,6 +43,20 @@ pub const MPMoviePlayerScalingModeDidChangeNotification: &str =
     "MPMoviePlayerScalingModeDidChangeNotification";
 pub const MPMovieNaturalSizeAvailableNotification: &str =
     "MPMovieNaturalSizeAvailableNotification";
+pub const MPMediaItemPropertyArtist: &str =
+    "MPMediaItemPropertyArtist";
+pub const MPMediaItemPropertyTitle: &str =
+    "MPMediaItemPropertyTitle";
+pub const MPMediaItemPropertyArtwork: &str =
+    "MPMediaItemPropertyArtwork";
+pub const NSHTTPCookieName: &str =
+    "NSHTTPCookieName";
+pub const NSHTTPCookiePath: &str =
+    "NSHTTPCookiePath";
+pub const NSHTTPCookieValue: &str =
+    "NSHTTPCookieValue";
+pub const NSHTTPCookieDomain: &str =
+    "NSHTTPCookieDomain";
 // TODO: More notifications?
 
 /// `NSNotificationName` values.
@@ -62,6 +76,34 @@ pub const CONSTANTS: ConstantExports = &[
     (
         "_MPMovieNaturalSizeAvailableNotification",
         HostConstant::NSString(MPMovieNaturalSizeAvailableNotification),
+    ),
+    (
+        "_MPMediaItemPropertyArtist",
+        HostConstant::NSString(MPMediaItemPropertyArtist),
+    ),
+    (
+        "_MPMediaItemPropertyTitle",
+        HostConstant::NSString(MPMediaItemPropertyTitle),
+    ),
+    (
+        "_MPMediaItemPropertyArtwork",
+        HostConstant::NSString(MPMediaItemPropertyArtwork),
+    ),
+    (
+        "_NSHTTPCookieName",
+        HostConstant::NSString(NSHTTPCookieName),
+    ),
+    (
+        "_NSHTTPCookiePath",
+        HostConstant::NSString(NSHTTPCookiePath),
+    ),
+    (
+        "_NSHTTPCookieValue",
+        HostConstant::NSString(NSHTTPCookieValue),
+    ),
+    (
+        "_NSHTTPCookieDomain",
+        HostConstant::NSString(NSHTTPCookieDomain),
     ),
 ];
 
