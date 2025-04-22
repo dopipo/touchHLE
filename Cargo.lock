@@ -607,6 +607,7 @@ dependencies = [
  "symphonia-codec-adpcm",
  "symphonia-codec-alac",
  "symphonia-core",
+ "symphonia-format-riff",
  "symphonia-format-isomp4",
  "symphonia-format-wav",
  "symphonia-metadata",
@@ -667,6 +668,17 @@ dependencies = [
  "bytemuck",
  "lazy_static",
  "log",
+]
+
+[[package]]
+name = "symphonia-format-riff"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ffdf14bae5cf352032416bc64151e5d6242d29d33cbf3238513b44d4427a1efb"
+dependencies = [
+ "log",
+ "symphonia-core",
+ "symphonia-metadata",
 ]
 
 [[package]]
