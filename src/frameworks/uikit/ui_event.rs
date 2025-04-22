@@ -6,6 +6,7 @@
 //! `UIEvent`.
 
 use super::ui_touch::UITouchHostObject;
+use crate::frameworks::core_graphics::{CGFloat, CGPoint};
 use crate::frameworks::foundation::NSUInteger;
 use crate::mem::MutVoidPtr;
 use crate::objc::{
@@ -61,6 +62,17 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (id)allTouches {
     let &UIEventHostObject { touches } = env.objc.borrow(this);
     touches
+}
+
+- (())drawAtPoint:(CGPoint)point {
+    msg![env; this drawAtPoint:point blendMode:0 alpha:1.0f32]
+}
+
+- (())drawAtPoint:(CGPoint)point
+        blendMode:(i32)blend_mode // CGBlendMode
+            alpha:(CGFloat)alpha {
+    log!("drawAtPoint p {} bm {} al {}", point, blend_mode, alpha);
+    // assert_eq!(alpha, 0.0);
 }
 
 // TODO: more accessors
