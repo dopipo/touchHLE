@@ -11,7 +11,7 @@ use crate::frameworks::core_graphics::cg_bitmap_context::CGBitmapContextDrawer;
 use crate::frameworks::core_graphics::{CGFloat, CGPoint, CGRect, CGSize};
 use crate::frameworks::foundation::ns_string::to_rust_string;
 use crate::frameworks::foundation::NSInteger;
-use crate::objc::{autorelease, id, objc_classes, ClassExports, HostObject};
+use crate::objc::{autorelease, id, msg, nil, objc_classes, ClassExports, HostObject};
 use crate::Environment;
 use std::collections::HashMap;
 use std::ops::Range;
@@ -119,6 +119,23 @@ pub const CLASSES: ClassExports = objc_classes! {
     let new = env.objc.alloc_object(this, Box::new(host_object), &mut env.mem);
     autorelease(env, new)
 }
+
++ (id)buttonFontSize {
+    nil
+}
+
++ (id)labelFontSize {
+    nil
+}
+
++ (id)systemFontSize {
+    nil
+}
+
++ (id)smallSystemFontSize {
+    nil
+}
+
 + (id)fontWithName:(id)fontName // NSString*
             size:(CGFloat)fontSize {
     let font_name = to_rust_string(env, fontName).to_string();
@@ -133,6 +150,22 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, new)
 }
 
++ (id)familyNames {
+    nil
+}
+
+- (id)fontName {
+    nil
+}
+
+- (id)size {
+    nil
+}
+
+- (id)pointSize {
+    nil
+}
+
 - (CGFloat)ascender {
     let host_object = env.objc.borrow::<UIFontHostObject>(this);
     let font = env.framework_state.uikit.ui_font.get_font_by_kind(host_object.kind);
@@ -143,12 +176,27 @@ pub const CLASSES: ClassExports = objc_classes! {
     let font = env.framework_state.uikit.ui_font.get_font_by_kind(host_object.kind);
     font.descent(host_object.size)
 }
+
 - (CGFloat)leading {
-    let host_object = env.objc.borrow::<UIFontHostObject>(this);
-    let font = env.framework_state.uikit.ui_font.get_font_by_kind(host_object.kind);
-    font.line_gap(host_object.size)
+     let host_object = env.objc.borrow::<UIFontHostObject>(this);
+     let font = env.framework_state.uikit.ui_font.get_font_by_kind(host_object.kind);
+     font.line_gap(host_object.size)
+ }
+
+- (CGFloat)xHeight {
+    env.objc.borrow::<UIFontHostObject>(this).size
 }
 
+- (())drawAtPoint:(CGPoint)point {
+    msg![env; this drawAtPoint:point blendMode:0 alpha:1.0f32]
+}
+
+- (())drawAtPoint:(CGPoint)point
+        blendMode:(i32)blend_mode // CGBlendMode
+            alpha:(CGFloat)alpha {
+    log!("drawAtPoint p {} bm {} al {}", point, blend_mode, alpha);
+    // assert_eq!(alpha, 0.0);
+}
 @end
 
 };
