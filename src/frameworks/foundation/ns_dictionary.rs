@@ -764,6 +764,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     dict_from_keys_and_objects(env, &entries)
 }
 
+- (id)lock {
+    nil
+}
+
 // NSMutableCopying implementation
 - (id)mutableCopyWithZone:(NSZonePtr)_zone {
     let mut_dict: id = msg_class![env; NSMutableDictionary alloc];
