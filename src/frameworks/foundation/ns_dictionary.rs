@@ -768,6 +768,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (id)wait {
+    nil
+}
+
 // NSMutableCopying implementation
 - (id)mutableCopyWithZone:(NSZonePtr)_zone {
     let mut_dict: id = msg_class![env; NSMutableDictionary alloc];
