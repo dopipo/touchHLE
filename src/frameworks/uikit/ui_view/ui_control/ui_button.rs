@@ -270,6 +270,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: setContentVerticalAlignment:{}", vertical);
 }
 
+- (())setReversesTitleShadowWhenHighlighted:(bool)shadow {
+    log!("TODO: setReversesTitleShadowWhenHighlighted:{}", shadow);
+}
+
 - (())setContentHorizontalAlignment:(bool)horizontal {
     log!("TODO: setContentHorizontalAlignment:{}", horizontal);
 }
