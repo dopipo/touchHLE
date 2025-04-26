@@ -260,6 +260,7 @@ fn serialize_plist(env: &mut Environment, plist: id) -> Value {
         let num = env.objc.borrow::<NSNumberHostObject>(plist);
         match num {
             NSNumberHostObject::Bool(b) => Value::Boolean(*b),
+            NSNumberHostObject::UnsignedInt(ui) => Value::from(*ui),
             NSNumberHostObject::Int(i) => Value::from(*i),
             NSNumberHostObject::Float(f) => Value::from(*f),
             NSNumberHostObject::LongLong(ll) => Value::from(*ll),
