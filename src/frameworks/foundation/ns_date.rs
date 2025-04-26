@@ -137,6 +137,12 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+// NSCopying implementation
+- (id)copyWithZone:(NSZonePtr)_zone {
+    let host_object = Box::<NSDateHostObject>::default();
+    env.objc.alloc_object(this, host_object, &mut env.mem)
+}
+
 // NSCoding implementation
 - (id)initWithCoder:(id)coder {
     release(env, this);
