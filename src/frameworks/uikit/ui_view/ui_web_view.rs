@@ -35,6 +35,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this init]
 }
 
+- (id)stopLoading {
+    nil
+}
+
 - (id)request {
     nil
 }
