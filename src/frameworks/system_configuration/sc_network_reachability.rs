@@ -44,7 +44,7 @@ fn SCNetworkReachabilityCreateWithName(
     allocator: CFAllocatorRef,
     name: ConstPtr<u8>,
 ) -> SCNetworkReachabilityRef {
-    assert_eq!(allocator, kCFAllocatorDefault); // unimplemented
+    // assert_eq!(allocator, kCFAllocatorDefault); // unimplemented
     if env
         .bundle
         .bundle_identifier()
@@ -77,7 +77,7 @@ fn SCNetworkReachabilityCreateWithAddress(
     allocator: CFAllocatorRef,
     address: ConstPtr<sockaddr>,
 ) -> SCNetworkReachabilityRef {
-    assert_eq!(allocator, kCFAllocatorDefault); // unimplemented
+    // assert_eq!(allocator, kCFAllocatorDefault); // unimplemented
     let isa = env
         .objc
         .get_known_class("_touchHLE_SCNetworkReachability", &mut env.mem);
