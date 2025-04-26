@@ -95,6 +95,38 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, new)
 }
 
++ (id)valueWithCATransform3D:(u64)value {
+    // TODO: for greater efficiency we could return a static-lifetime value
+
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithUnsignedLongLong:value];
+    autorelease(env, new)
+}
+
++ (id)valueWithCGPoint:(u64)value {
+    // TODO: for greater efficiency we could return a static-lifetime value
+
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithUnsignedLongLong:value];
+    autorelease(env, new)
+}
+
++ (id)valueWithNonretainedObject:(u64)value {
+    // TODO: for greater efficiency we could return a static-lifetime value
+
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithUnsignedLongLong:value];
+    autorelease(env, new)
+}
+
++ (())value:(NSInteger)value withObjCType:(bool)_type {
+    // TODO
+}
+
++ (())valueWithBytes:(NSInteger)bytes objCType:(bool)_type {
+    // TODO
+}
+
 - (CGRect)CGRectValue {
     let host_object = env.objc.borrow::<NSValueHostObject>(this);
     match host_object {
@@ -114,6 +146,11 @@ pub const CLASSES: ClassExports = objc_classes! {
     // a pointer-sized data item, the result is undefined.`
     let val = msg![env; this unsignedIntValue];
     MutVoidPtr::from_bits(val)
+}
+
+- (id)initWithUnsignedLongLong:(u64)value {
+    *env.objc.borrow_mut(this) = NSNumberHostObject::UnsignedLongLong(value);
+    this
 }
 
 @end
