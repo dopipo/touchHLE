@@ -220,6 +220,54 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
+@implementation NSKeyedArchiver: NSCoder
++ (id)bytes {
+    nil
+}
+
++ (id)length {
+    nil
+}
+
++ (id)archivedDataWithRootObject:(NSUInteger)_object {
+    msg![env; this init]
+}
+
++ (bool)archiveRootObject:(id)object toFile:(id)path {
+    false
+}
+
++ (())writeToFile:(NSInteger)file atomically:(bool)_atomically {
+    // TODO
+}
+
+// NSCopying implementation
++ (id)copyWithZone:(NSZonePtr)_zone {
+    retain(env, this)
+}
+
+- (id)finishEncoding {
+    nil
+}
+
+- (id)initForWritingWithMutableData:(NSUInteger)_data {
+    msg![env; this init]
+}
+
+- (())encodeObject:(NSInteger)object forKey:(bool)_key {
+    // TODO
+}
+
+- (())encodeInt:(NSInteger)int forKey:(bool)_key {
+    // TODO
+}
+
+- (())encodeBytes:(NSInteger)bytes length:(bool)_length forKey:(bool)_key {
+    // TODO
+}
+
+@end
+
 };
 
 fn borrow_host_obj(env: &mut Environment, unarchiver: id) -> &mut NSKeyedUnarchiverHostObject {
@@ -400,4 +448,4 @@ fn keys_for_key(env: &mut Environment, unarchiver: id, key: &str) -> Vec<Uid> {
     keys.iter()
         .map(|value| value.as_uid().copied().unwrap())
         .collect()
-}
+    }
