@@ -1317,6 +1317,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (id)integerValue {
+    nil
+}
+
 - (bool)isAbsolutePath {
     // TODO: avoid copy?
     let path = to_rust_string(env, this);
@@ -1424,6 +1428,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 // Specialised subclasses for static-lifetime strings from the guest app binary.
 @implementation _touchHLE_NSString_CFConstantString_UTF8: _touchHLE_NSString_Static
 
+- (id)integerValue {
+    nil
+}
+
 - (ConstPtr<u8>)UTF8String {
     let cfstringStruct { bytes, .. } = env.mem.read(this.cast());
 
@@ -1433,6 +1441,11 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 @implementation _touchHLE_NSString_CFConstantString_UTF16: _touchHLE_NSString_Static
+
+- (id)integerValue {
+    nil
+}
+
 @end
 
 @implementation _touchHLE_NSMutableString: NSMutableString
