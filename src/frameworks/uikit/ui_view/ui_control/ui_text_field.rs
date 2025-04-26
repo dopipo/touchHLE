@@ -186,6 +186,14 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: setClearButtonMode:{}", mode);
 }
 
+- (())setAdjustsFontSizeToFitWidth:(bool)width {
+    log!("TODO: setAdjustsFontSizeToFitWidth:{}", width);
+}
+
+- (())setTextAlignment:(bool)text {
+    log!("TODO: setTextAlignment:{}", text);
+}
+
 - (())setSecureTextEntry:(bool)secure {
     log!("TODO: setSecureTextEntry:{}", secure);
 }
