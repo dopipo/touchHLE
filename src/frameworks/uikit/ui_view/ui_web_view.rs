@@ -59,6 +59,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: setDelegate:{}", delegate);
 }
 
+- (())setDataDetectorTypes:(bool)detector {
+    log!("TODO: setDataDetectorTypes:{}", detector);
+}
+
 - (())setDetectsPhoneNumbers:(bool)numbers {
     log!("TODO: setDetectsPhoneNumbers:{}", numbers);
 }
