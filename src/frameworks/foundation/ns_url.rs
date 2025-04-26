@@ -208,6 +208,18 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
+@implementation NSHTTPCookieStorage: NSObject
++ (id)sharedHTTPCookieStorage {
+    // TODO
+    nil
+}
+
++ (())setSharedHTTPCookieStorage:(bool)storage {
+    log!("TODO: setSharedHTTPCookieStorage:{}", storage);
+}
+
+@end
+
 @implementation NSURLProtocol: NSObject
 @end
 
