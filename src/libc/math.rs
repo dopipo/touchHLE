@@ -1045,6 +1045,9 @@ fn difftime(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn div(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn SCNetworkReachabilityScheduleWithRunLoop(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1318,4 +1321,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(connect(_, _)),
     export_c_func!(difftime(_, _)),
     export_c_func!(div(_, _)),
+    export_c_func!(SCNetworkReachabilityScheduleWithRunLoop(_, _)),
 ];
