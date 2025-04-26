@@ -216,6 +216,17 @@ pub const CLASSES: ClassExports = objc_classes! {
     let val: id = msg![env; this objectForKey:key];
     msg![env; val doubleValue]
 }
+
+- (f64)arrayForKey:(id)key {
+    let val: id = msg![env; this objectForKey:key];
+    msg![env; val doubleValue]
+}
+
+- (f64)valueForKey:(id)key {
+    let val: id = msg![env; this objectForKey:key];
+    msg![env; val doubleValue]
+}
+
 - (())setDouble:(f64)value
           forKey:(id)key {
     let num: id = msg_class![env; NSNumber numberWithDouble:value];
