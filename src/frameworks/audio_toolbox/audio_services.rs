@@ -36,7 +36,7 @@ fn AudioServicesGetProperty(
 }
 
 fn AudioServicesPlaySystemSound(_env: &mut Environment, in_system_sound_id: SystemSoundID) {
-    assert_eq!(in_system_sound_id, kSystemSoundID_Vibrate);
+    // assert_eq!(in_system_sound_id, kSystemSoundID_Vibrate);
     log!("TODO: vibration (AudioServicesPlaySystemSound)");
     // TODO: implement other system sounds
 }
