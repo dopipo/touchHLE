@@ -139,6 +139,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     () = msg![env; this setNeedsDisplay];
 }
 
+- (id)scrollRangeToVisible {
+    nil
+}
+
 - (UITextAlignment)textAlignment {
     env.objc.borrow::<UITextViewHostObject>(this).text_alignment
 }
@@ -175,8 +179,24 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (bool)isEditable {
     env.objc.borrow::<UITextViewHostObject>(this).editable
 }
+- (())setIndicatorStyle :(bool)style {
+    log!("TODO: setIndicatorStyle:{}", style);
+}
+
+- (())setAutocapitalizationType :(bool)_type {
+    log!("TODO: setAutocapitalizationType:{}", _type);
+}
+
 - (())setEditable:(bool)editable {
     env.objc.borrow_mut::<UITextViewHostObject>(this).editable = editable;
+}
+
+- (())setBackground:(bool)background {
+    log!("TODO: setBackground:{}", background);
+}
+
+- (())setKeyboardType:(bool)type_ {
+    log!("TODO: setKeyboardType:{}", type_);
 }
 
 - (())setReturnKeyType:(UIReturnKeyType)type_ {
