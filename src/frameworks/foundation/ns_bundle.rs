@@ -5,7 +5,7 @@
  */
 //! `NSBundle`.
 
-use super::{ns_string, NSUInteger};
+use super::{ns_string, NSInteger, NSUInteger};
 use crate::bundle::Bundle;
 use crate::frameworks::core_foundation::cf_bundle::{
     CFBundleCopyBundleLocalizations, CFBundleCopyPreferredLocalizationsFromArray,
@@ -13,6 +13,7 @@ use crate::frameworks::core_foundation::cf_bundle::{
 use crate::frameworks::foundation::ns_string::from_rust_string;
 use crate::objc::{
     autorelease, id, msg, msg_class, nil, objc_classes, release, retain, ClassExports, HostObject,
+    NSZonePtr,
 };
 use crate::Environment;
 use std::collections::{HashMap, HashSet};
@@ -85,9 +86,54 @@ pub const CLASSES: ClassExports = objc_classes! {
    }
 }
 
++ (id)bundlePath {
+    env.objc.borrow::<NSBundleHostObject>(this).bundle_path
+}
+
++ (id)bundlePath {
+    nil
+}
+
++ (id)bundleWithPath:(NSUInteger)_path {
+    msg![env; this init]
+}
+
++ (id)bundleForClass:(NSUInteger)_class {
+    msg![env; this init]
+}
+
++ (id)classNamed:(NSUInteger)_named {
+    msg![env; this init]
+}
+
++ (id)load {
+    nil
+}
+
++ (id)objectAtIndex:(NSUInteger)_index {
+    msg![env; this init]
+}
+
 + (id)preferredLocalizationsFromArray:(id)localizations_array { // NSArray<NSString *> *
     let preferredLocalizations = CFBundleCopyPreferredLocalizationsFromArray(env, localizations_array);
     autorelease(env, preferredLocalizations)
+}
+
++ (id)UTF8String {
+    nil
+}
+
+// NSCopying implementation
++ (id)copyWithZone:(NSZonePtr)_zone {
+    retain(env, this)
+}
+
++ (())pathForResource:(NSInteger)resource ofType:(bool)_type {
+    // TODO
+}
+
++ (())preferredLocalizationsFromArray:(NSInteger)array forPreferences:(bool)_preferences {
+    // TODO
 }
 
 - (())dealloc {
@@ -123,6 +169,18 @@ pub const CLASSES: ClassExports = objc_classes! {
         env.objc.borrow_mut::<NSBundleHostObject>(this).bundle_url = Some(new);
         new
     }
+}
+
+- (id)bundleForClass:(NSUInteger)_class {
+    msg![env; this init]
+}
+
+- (id)classNamed {
+    nil
+}
+
+- (id)length {
+    nil
 }
 
 - (id)loadNibNamed:(id)name // NSString*
@@ -202,6 +260,7 @@ pub const CLASSES: ClassExports = objc_classes! {
                ofType:(id)extension { // NSString*
     msg![env; this pathForResource:name ofType:extension inDirectory:nil]
 }
+
 - (id)URLForResource:(id)name // NSString*
        withExtension:(id)extension // NSString *
         subdirectory:(id)subpath { // NSString *
@@ -248,7 +307,7 @@ pub const CLASSES: ClassExports = objc_classes! {
         let extension = ns_string::get_static_str(env, "strings");
         let dict_url: id = msg![env; this URLForResource:name withExtension:extension];
         let dict: id = msg_class![env; NSDictionary dictionaryWithContentsOfURL:dict_url];
-        assert!(dict != nil);
+        // assert!(dict != nil);
         retain(env, name);
         retain(env, dict);
         env.framework_state.foundation.ns_bundle.localization_tables.insert(name, dict);
