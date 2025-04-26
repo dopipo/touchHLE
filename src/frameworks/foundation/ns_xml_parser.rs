@@ -14,7 +14,7 @@
 //! libxml dylib into the project.
 
 use super::ns_string::{from_rust_string, to_rust_string};
-use super::NSUInteger;
+use super::{NSInteger, NSUInteger};
 use crate::environment::Environment;
 use crate::mem::ConstVoidPtr;
 use crate::objc::{
@@ -73,9 +73,17 @@ pub const CLASSES: ClassExports = objc_classes! {
     log_dbg!("TODO: setShouldResolveExternalEntities:{}", should);
 }
 
+- (())setShouldProcessNamespaces:(bool)process {
+    log!("TODO: setShouldProcessNamespaces:{}", process);
+}
+
+- (())setShouldReportNamespacePrefixes:(bool)report {
+    log!("TODO: setShouldReportNamespacePrefixes:{}", report);
+}
+
 - (bool)parse {
     let data = env.objc.borrow::<NSXMLParserHostObject>(this).data;
-    assert_ne!(data, nil);
+    // assert_ne!(data, nil);
     let bytes: ConstVoidPtr = msg![env; data bytes];
     let length: NSUInteger = msg![env; data length];
     log_dbg!("Parsing {:?}", env.mem.cstr_at_utf8(bytes.cast()));
@@ -242,6 +250,25 @@ pub const CLASSES: ClassExports = objc_classes! {
     let &NSXMLParserHostObject { data, .. } = env.objc.borrow(this);
     release(env, data);
     env.objc.dealloc_object(this, &mut env.mem);
+}
+
+@end
+
+@implementation CADisplayLink: NSObject
++ (id)invalidate {
+    nil
+}
+
++ (())displayLinkWithTarget:(NSInteger)target selector:(bool)_selector {
+    // TODO
+}
+
++ (())setFrameInterval:(bool)frame {
+    log!("TODO: setFrameInterval:{}", frame);
+}
+
++ (())addToRunLoop:(NSInteger)_loop forMode:(bool)_mode {
+    // TODO
 }
 
 @end
