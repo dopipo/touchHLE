@@ -203,6 +203,14 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, new)
 }
 
++ (id)numberWithShort:(i32)value {
+    // TODO: for greater efficiency we could return a static-lifetime value
+
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithInt:value];
+    autorelease(env, new)
+}
+
 + (id)numberWithInteger:(NSInteger)value {
     // TODO: for greater efficiency we could return a static-lifetime value
 
@@ -255,6 +263,11 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (id)initWithInt:(i32)value {
+    *env.objc.borrow_mut(this) = NSNumberHostObject::Int(value);
+    this
+}
+
+- (id)initWithShort:(i32)value {
     *env.objc.borrow_mut(this) = NSNumberHostObject::Int(value);
     this
 }
