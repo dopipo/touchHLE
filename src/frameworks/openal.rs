@@ -665,8 +665,8 @@ fn alcGetIntegerv(
     _param: ALenum,
     _size: ALCsizei,
     _values: MutPtr<ALCint>,
-) {
-    todo!();
+) -> ALCboolean {
+    0
 }
 fn alcIsExtensionPresent(
     _env: &mut Environment,
