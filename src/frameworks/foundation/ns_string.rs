@@ -1238,6 +1238,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (())compare:(NSInteger)_compare options:(bool)_options range:(bool)_range {
+    // TODO
+}
+
 - (id)initWithCharacters:(ConstPtr<unichar>)characters length:(NSUInteger)len {
     assert!(!characters.is_null());
     let num_bytes = len * 2;
