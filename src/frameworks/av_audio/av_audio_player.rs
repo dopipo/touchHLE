@@ -263,6 +263,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.borrow_mut::<AVAudioPlayerHostObject>(this).num_of_loops = numberOfLoops;
 }
 
+- (())setMeteringEnabled:(bool)enabled {
+     log!("TODO: setMeteringEnabled:{}", enabled);
+}
+
 - (())dealloc {
     () = msg![env; this stop];
     let &AVAudioPlayerHostObject {audio_file_url, audio_file_id, ..} = env.objc.borrow(this);
