@@ -186,7 +186,7 @@ pub const CLASSES: ClassExports = objc_classes! {
         Ok(()) => true,
         Err(()) => {
             if !error.is_null() {
-                0
+                todo!(); // TODO: create an NSError if requested
             }
             false
         }
