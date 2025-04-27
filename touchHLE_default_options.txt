@@ -151,3 +151,6 @@ com.konami-europe.mgst: --preferred-languages=ja --landscape-left
 
 # Edge
 net.mobigame.Edge: --force-composition
+
+# 4 elements
+com.mrgoodliving.FourElements: --force-composition
