@@ -37,7 +37,7 @@ com.ooi.supermonkeyball: --landscape-left --y-tilt-offset=24 --button-to-touch=B
 smblite: --landscape-left --y-tilt-offset=24 --button-to-touch=B,470,160 --button-to-touch=Start,240,10
 
 # Crash Bandicoot Nitro Kart 3D
-# A = jump/drift, B = brake, Start = pause, X/Y = use item
+# A = jump/drift, B = brake, Start = pause, X/Y = uuse item
 com.vgmobile.cnk2: --landscape-left --button-to-touch=A,240,160 --button-to-touch=B,240,310 --button-to-touch=Start,10,310 --button-to-touch=Y,470,310 --button-to-touch=X,446,30
 
 # Mystery Mania
