@@ -157,3 +157,6 @@ com.mrgoodliving.FourElements: --force-composition
 
 # AlienBlobs
 com.iplay.AlienBlobs: --force-composition
+
+# Armado
+coom.trickysoftware.armado: --force-composition
