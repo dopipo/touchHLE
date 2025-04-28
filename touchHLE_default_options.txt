@@ -154,3 +154,6 @@ net.mobigame.Edge: --force-composition
 
 # 4 elements
 com.mrgoodliving.FourElements: --force-composition
+
+# AlienBlobs
+com.iplay.AlienBlobs: --force-composition
