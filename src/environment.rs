@@ -17,6 +17,7 @@ use crate::{
     abi, bundle, cpu, dyld, frameworks, fs, gdb, image, libc, mach_o, mem, objc, options, stack,
     window,
 };
+use crate::objc::{id, SEL};
 use std::collections::{HashMap, VecDeque};
 use std::net::TcpListener;
 use std::time::{Duration, Instant};
@@ -127,6 +128,8 @@ pub enum ThreadBlock {
     Condition(pthread_cond_t),
     // Thread is waiting for another thread to finish (joining).
     Joining(ThreadId, MutPtr<MutVoidPtr>),
+    // Thread is waiting for another thread to perform a selector.
+    WaitingForSelector(ThreadId, SEL, id),
     // Deferred guest-to-host return
     DeferredReturn,
 }
@@ -736,6 +739,48 @@ impl Environment {
         self.threads[self.current_thread].blocked_by = ThreadBlock::Mutex(mutex_id);
     }
 
+    /// Blocks the current thread until the thread given performs the specified
+    /// selector with the given object.
+    ///
+    /// Like with [Self::sleep], this only takes effect after the host
+    /// function returns to the main run loop ([Environment::run])
+    pub fn wait_for_selector(&mut self, thread_to_wait_for: ThreadId, sel: SEL, arg: id) {
+        assert!(matches!(
+            self.threads[self.current_thread].blocked_by,
+            ThreadBlock::NotBlocked
+        ));
+        assert_ne!(self.current_thread, thread_to_wait_for);
+        log_dbg!(
+            "Thread {} waiting for thread {} to perform selector {:?} with object {:?}.",
+            self.current_thread,
+            thread_to_wait_for,
+            sel,
+            arg,
+        );
+        self.threads[self.current_thread].blocked_by =
+            ThreadBlock::WaitingForSelector(thread_to_wait_for, sel, arg);
+    }
+
+    /// Marks the provided thread as not blocked, acknowledges that the current
+    /// thread is the thread it was waiting for and that it has already
+    /// performed the selector.
+    pub fn unblock_wait_for_selector(&mut self, waiting_thread: ThreadId) {
+        let ThreadBlock::WaitingForSelector(blocking_thread, sel, arg) =
+            self.threads[waiting_thread].blocked_by
+        else {
+            panic!()
+        };
+        assert_eq!(self.current_thread, blocking_thread);
+        log_dbg!(
+            "Thread {} finished waiting for thread {} to perform selector {:?} with object {:?}.",
+            waiting_thread,
+            self.current_thread,
+            sel,
+            arg,
+        );
+        self.threads[waiting_thread].blocked_by = ThreadBlock::NotBlocked;
+    }
+    
     /// Locks a semaphore (decrements value of a semaphore and blocks
     /// if necessary).
     ///
@@ -856,7 +901,7 @@ impl Environment {
         self.threads[self.current_thread].in_host_function = was_in_host_function;
     }
 
-    fn switch_thread(&mut self, new_thread: ThreadId) {
+    pub fn switch_thread(&mut self, new_thread: ThreadId) {
         assert!(new_thread != self.current_thread);
 
         log_dbg!(
@@ -1178,6 +1223,15 @@ impl Environment {
                                 suitable_thread = Some(i);
                                 break;
                             }
+                        }
+                        ThreadBlock::WaitingForSelector(thread, sel, with_object) => {
+                            log_dbg!(
+                                "Thread {} is waiting for thread {} to perform selector {:?} with object {:?}",
+                                i,
+                                thread,
+                                sel,
+                                with_object
+                            );
                         }
                         ThreadBlock::DeferredReturn => {
                             if i == initial_thread {
