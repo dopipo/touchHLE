@@ -145,7 +145,6 @@ com.gameloft.Asphalt5: --landscape-left --button-to-touch=A,415,295 --button-to-
 com.gameloft.SkateNation: --landscape-left --button-to-touch=DPadLeft,45,237 --button-to-touch=DPadRight,132,237 --button-to-touch=DPadUp,90,190 --button-to-touch=DPadDown,90,280 --button-to-touch=A,435,275 --button-to-touch=B,350,240 --button-to-touch=Start,450,25 --button-to-touch=LeftShoulder,25,300
 
 # Metal Gear Solid Touch
-# (we need to force Japanese language)
 com.konami.mgst: --preferred-languages=ja --landscape-left
 com.konami-europe.mgst: --preferred-languages=ja --landscape-left
 
