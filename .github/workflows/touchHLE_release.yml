@@ -20,8 +20,6 @@ jobs:
           fetch-depth: 0 # touchHLE's git-describe versioning needs tag history
       - name: Install clang-format
         run: brew install clang-format
-      - name: Check formatting
-        run: dev-scripts/format.sh --check
       - name: Get Submodules
         run: git submodule update --init
       - name: Install Boost
