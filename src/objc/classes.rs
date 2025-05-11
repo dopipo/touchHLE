@@ -641,10 +641,16 @@ impl ObjC {
             self.classes.insert(name.to_string(), class);
         }
 
+        let mut queue = VecDeque::<Class>::new();
+        let mut found_ns_object = false;
         // Second pass to build an inverted inheritance graph
-        let mut root_class: Option<Class> = None;
         let mut inverted_inheritance = HashMap::<Class, Vec<Class>>::new();
-        for (_name, class) in self.classes.iter() {
+        for (name, class) in self.classes.iter() {
+            log_dbg!("class name {}", name);
+            if name == "NSObject" {
+                assert!(!found_ns_object);
+                found_ns_object = true;
+            }
             let class_host_object = self
                 .get_host_object(*class)
                 .unwrap()
@@ -661,70 +667,71 @@ impl ObjC {
                     .and_modify(|v| v.push(*class))
                     .or_insert(vec![*class]);
             } else {
-                // assert!(root_class.is_none());
-                root_class = Some(*class);
+                // assert!(!queue.contains(class));
+                queue.push_back(*class);
             }
         }
-
+        // At least NSObject should be found as a root object
+        assert!(found_ns_object);
+    
         // Third pass to ensure no superclass has "grown into" any of its
         // subclasses.
         // (https://alwaysprocessing.blog/2023/03/12/objc-ivar-abi)
-        if let Some(root_class) = root_class {
-            // BFS starting from root for ivar reconciliation
-            //
-            // It is required to be traversed in this order,
-            // as one overgrown class potentially implies
-            // reconciliation for _all of subclasses_
-            let mut queue = VecDeque::<Class>::new();
-            queue.push_back(root_class);
-            while !queue.is_empty() {
-                let next = queue.pop_front().unwrap();
-                let (need, mut diff) = self.need_ivar_reconciliation(next);
-                if need {
-                    let ClassHostObject {
-                        name, superclass, ..
-                    } = self.borrow(next);
-                    log_dbg!(
-                        "Class {} need ivar reconciliation with superclass {}!",
-                        name,
-                        &self.borrow::<ClassHostObject>(*superclass).name
-                    );
 
-                    let ClassHostObject {
-                        ref mut instance_start,
-                        ref mut instance_size,
-                        ref mut ivars,
-                        ..
-                    } = self.borrow_mut(next);
-
-                    if !ivars.is_empty() {
-                        let mut max_alignment: u32 = 1;
-                        for (offset, align) in ivars.values() {
-                            if offset.is_null() {
-                                // anonymous bitfield
-                                continue;
-                            }
-                            max_alignment = max_alignment.max(*align);
-                        }
-
-                        let align_mask = max_alignment - 1;
-                        diff = (diff + align_mask) & !align_mask;
-
-                        for (offset, _) in ivars.values_mut() {
-                            if offset.is_null() {
-                                // anonymous bitfield
-                                continue;
+        // BFS starting from root(s) for ivar reconciliation
+        //
+        // It is required to be traversed in this order,
+        // as one overgrown class potentially implies
+        // reconciliation for _all of subclasses_
+        while !queue.is_empty() {
+            let next = queue.pop_front().unwrap();
+            let (need, mut diff) = self.need_ivar_reconciliation(next);
+            if need {
+                let ClassHostObject {
+                    name, superclass, ..
+                } = self.borrow(next);
+                log_dbg!(
+                    "Class {} need ivar reconciliation with superclass {}!",
+                    name,
+                    &self.borrow::<ClassHostObject>(*superclass).name
+                );
+                
                             }
 
-                            *offset = Ptr::from_bits((*offset).to_bits() + diff);
+                let ClassHostObject {
+                    ref mut instance_start,
+                    ref mut instance_size,
+                    ref mut ivars,
+                    ..
+                } = self.borrow_mut(next);
+
+                if !ivars.is_empty() {
+                    let mut max_alignment: u32 = 1;
+                    for (offset, align) in ivars.values() {
+                        if offset.is_null() {
+                            // anonymous bitfield
+                            continue;
                         }
+                     max_alignment = max_alignment.max(*align);
                     }
 
-                    *instance_start += diff;
-                    *instance_size += diff;
-                }
-                if let Some(subclasses) = inverted_inheritance.get(&next) {
-                    queue.extend(subclasses);
+                    let align_mask = max_alignment - 1;
+                    diff = (diff + align_mask) & !align_mask;
+
+                    for (offset, _) in ivars.values_mut() {
+                        if offset.is_null() {
+                            // anonymous bitfield
+                            continue;
+                        }
+
+                        *offset = Ptr::from_bits((*offset).to_bits() + diff);
+                    }
+                    
+                        *instance_start += diff;
+                        *instance_size += diff;
+            }
+            if let Some(subclasses) = inverted_inheritance.get(&next) {
+                queue.extend(subclasses);
                 }
             }
         }
