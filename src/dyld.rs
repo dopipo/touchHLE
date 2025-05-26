@@ -879,3 +879,4 @@ impl Dyld {
 
         GuestFunction::from_addr_with_thumb_bit(function_ptr.to_bits())
     }
+}
