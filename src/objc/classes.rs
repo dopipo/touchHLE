@@ -482,6 +482,7 @@ impl ObjC {
             class
         })
     }
+}
 
     fn find_template(name: &str) -> Option<&'static ClassTemplate> {
         crate::dyld::search_lists(CLASS_LISTS, name).map(|&(_name, ref template)| template)
