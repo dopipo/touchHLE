@@ -17,7 +17,7 @@ use crate::mem::{MutPtr, MutVoidPtr};
 use crate::frameworks::core_foundation::time::CFTimeInterval;
 use crate::frameworks::foundation::ns_run_loop::run_run_loop_single_iteration;
 use crate::frameworks::foundation::ns_string;
-use crate::objc::{id,msg, msg_class, nil, Class};
+use crate::objc::{id, msg, msg_class, nil, Class};
 use crate::Environment;
 
 pub type CFRunLoopRef = super::CFTypeRef;
