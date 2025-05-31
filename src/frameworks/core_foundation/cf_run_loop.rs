@@ -14,7 +14,10 @@ use crate::frameworks::core_foundation::cf_allocator::CFAllocatorRef;
 use crate::frameworks::core_foundation::time::{CFAbsoluteTime, CFTimeInterval};
 use crate::frameworks::core_foundation::CFIndex;
 use crate::mem::{MutPtr, MutVoidPtr};
-use crate::objc::{id, msg, msg_class, nil, Class};
+use crate::frameworks::core_foundation::time::CFTimeInterval;
+use crate::frameworks::foundation::ns_run_loop::run_run_loop_single_iteration;
+use crate::frameworks::foundation::ns_string;
+use crate::objc::{id,msg, msg_class, nil, Class};
 use crate::Environment;
 
 pub type CFRunLoopRef = super::CFTypeRef;
@@ -29,6 +32,30 @@ fn CFRunLoopGetCurrent(env: &mut Environment) -> CFRunLoopRef {
 
 pub fn CFRunLoopGetMain(env: &mut Environment) -> CFRunLoopRef {
     msg_class![env; NSRunLoop mainRunLoop]
+}
+
+fn CFRunLoopRunInMode(
+    env: &mut Environment,
+    mode: CFRunLoopMode,
+    seconds: CFTimeInterval,
+    _return_something: bool,
+) -> i32 {
+    let default_mode = ns_string::get_static_str(env, kCFRunLoopDefaultMode);
+    let common_modes = ns_string::get_static_str(env, kCFRunLoopCommonModes);
+    // TODO: handle other modes
+    assert!(
+        msg![env; mode isEqualToString:default_mode]
+            || msg![env; mode isEqualToString:common_modes]
+    );
+    assert!(seconds <= 0.001);
+    // TODO: we're currently supporting only the main run loop
+    log_dbg!(
+        "TODO: properly implement CFRunLoopRunInMode [current thread {}], running a single iteration of the main run loop",
+        env.current_thread
+    );
+    let main_run_loop = CFRunLoopGetMain(env);
+    run_run_loop_single_iteration(env, main_run_loop);
+    1 // kCFRunLoopRunFinished
 }
 
 // CFRunLoopTimerRef CFRunLoopTimerCreate(
@@ -118,6 +145,7 @@ pub const CONSTANTS: ConstantExports = &[
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CFRunLoopGetCurrent()),
     export_c_func!(CFRunLoopGetMain()),
+    export_c_func!(CFRunLoopRunInMode(_, _, _)),
     export_c_func!(CFRunLoopTimerCreate(_, _, _, _, _, _, _)),
     export_c_func!(CFRunLoopAddTimer(_, _, _)),
     export_c_func!(CFRunLoopTimerInvalidate(_)),
