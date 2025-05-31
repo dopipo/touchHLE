@@ -139,6 +139,9 @@ fn glGetTexEnviv(env: &mut Environment, target: GLenum, pname: GLenum, params: M
 fn glHint(env: &mut Environment, target: GLenum, mode: GLenum) {
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.Hint(target, mode) })
 }
+fn glFinish(env: &mut Environment) {
+    with_ctx_and_mem(env, |gles, _mem| unsafe { gles.Finish() })
+}
 fn glFlush(env: &mut Environment) {
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.Flush() })
 }
@@ -1039,6 +1042,7 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(glGetFloatv(_, _)),
     export_c_func!(glGetIntegerv(_, _)),
     export_c_func!(glHint(_, _)),
+    export_c_func!(glFinish()),
     export_c_func!(glFlush()),
     export_c_func!(glGetString(_)),
     // Other state manipulation
