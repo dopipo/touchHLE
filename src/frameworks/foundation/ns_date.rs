@@ -11,7 +11,8 @@ use crate::msg_class;
 use crate::objc::{autorelease, id, objc_classes, ClassExports, HostObject};
 use crate::objc::nil;
 
-use std::time::SystemTime;
+use std::ops::Add;
+use std::time::{Duration, SystemTime};
 use crate::frameworks::foundation::ns_string;
 
 struct NSDateHostObject {
