@@ -14,7 +14,6 @@ use crate::frameworks::core_foundation::cf_allocator::CFAllocatorRef;
 use crate::frameworks::core_foundation::time::{CFAbsoluteTime, CFTimeInterval};
 use crate::frameworks::core_foundation::CFIndex;
 use crate::mem::{MutPtr, MutVoidPtr};
-use crate::frameworks::core_foundation::time::CFTimeInterval;
 use crate::frameworks::foundation::ns_run_loop::run_run_loop_single_iteration;
 use crate::frameworks::foundation::ns_string;
 use crate::objc::{id, msg, msg_class, nil, Class};
