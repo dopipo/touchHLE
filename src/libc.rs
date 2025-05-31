@@ -25,6 +25,7 @@ pub mod mmap;
 pub mod net;
 pub mod posix_io;
 pub mod pthread;
+pub mod sched;
 pub mod semaphore;
 pub mod setjmp;
 pub mod stdio;
