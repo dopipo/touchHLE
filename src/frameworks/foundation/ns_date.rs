@@ -65,6 +65,14 @@ pub const CLASSES: ClassExports = objc_classes! {
     time_interval - host_object.time_interval
 }
 
+- (NSTimeInterval)timeIntervalSince1970 {
+    let time_interval = env.objc.borrow::<NSDateHostObject>(this).time_interval;
+    apple_epoch()
+        .add(Duration::from_secs_f64(time_interval))
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_secs_f64()
+}
 - (id)addTimeInterval:(NSTimeInterval)seconds {
     let interval = env.objc.borrow::<NSDateHostObject>(this).time_interval + seconds;
     let date = msg_class![env; NSDate date];
