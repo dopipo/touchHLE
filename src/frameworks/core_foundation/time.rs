@@ -16,9 +16,12 @@ use std::ops::Add;
 use std::time::{Duration, SystemTime};
 use crate::libc::mach_time::mach_absolute_time;
 
+/// Seconds between Unix and Apple's epochs
+pub const SECS_FROM_UNIX_TO_APPLE_EPOCHS: u64 = 978_307_200;
+
 /// The absolute reference date is 1 Jan 2001 00:00:00 GMT
 pub fn apple_epoch() -> SystemTime {
-    SystemTime::UNIX_EPOCH.add(Duration::from_secs(978_307_200))
+    SystemTime::UNIX_EPOCH.add(Duration::from_secs(SECS_FROM_UNIX_TO_APPLE_EPOCHS))
 }
 
 pub type CFTimeInterval = NSTimeInterval;
