@@ -36,6 +36,7 @@ pub const FUNCTION_LISTS: &[super::FunctionExports] = &[
     libc::sched::FUNCTIONS,
     libc::semaphore::FUNCTIONS,
     libc::setjmp::FUNCTIONS,
+    libc::signal::FUNCTIONS,
     libc::stdio::FUNCTIONS,
     libc::stdio::printf::FUNCTIONS,
     libc::stdlib::FUNCTIONS,
