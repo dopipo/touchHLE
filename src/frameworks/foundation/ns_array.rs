@@ -319,6 +319,16 @@ pub const CLASSES: ClassExports = objc_classes! {
     release(env, object)
 }
 
+- (())removeAllObjects {
+    let host_object: &mut ArrayHostObject = env.objc.borrow_mut(this);
+    let array = std::mem::take(&mut host_object.array);
+    for object in array {
+        release(env, object);
+    }
+
+    env.objc.borrow_mut::<ArrayHostObject>(this).array = Vec::new()
+}
+    
 - (id)componentsJoinedByString:(id)sep { // NSString *
     let array_host_object: &mut ArrayHostObject = env.objc.borrow_mut(this);
     let arr = array_host_object.array.to_vec();
