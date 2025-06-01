@@ -27,7 +27,11 @@ impl<T: Copy + Default + Eq + Ord + SafeRead + Debug> GenericChar<T> {
         dest: MutPtr<T>,
         ch: T,
         count: GuestUSize,
+        dest_count: GuestUSize,
     ) -> MutPtr<T> {
+        if count > dest_count {
+            panic!("buffer overflow!");
+        }
         for i in 0..count {
             env.mem.write(dest + i, ch);
         }
