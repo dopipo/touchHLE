@@ -143,6 +143,13 @@ fn fputc(env: &mut Environment, c: i32, stream: MutPtr<FILE>) -> i32 {
     res
 }
 
+// From man page,
+// `The putc() macro acts essentially identically to fputc(),
+// but is a macro that expands in-line.`
+fn putc(env: &mut Environment, c: i32, stream: MutPtr<FILE>) -> i32 {
+    fputc(env, c, stream)
+}
+
 fn fwrite(
     env: &mut Environment,
     buffer: ConstVoidPtr,
@@ -332,8 +339,9 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(fread(_, _, _, _)),
     export_c_func!(fgetc(_)),
     export_c_func!(fgets(_, _, _)),
-    export_c_func!(fputs(_, _)),
+    export_c_func!(fputs(_, _)),   
     export_c_func!(fputc(_, _)),
+    export_c_func!(putc(_, _)),
     export_c_func!(fflush(_)),
     export_c_func!(fwrite(_, _, _, _)),
     export_c_func!(fseek(_, _, _)),
