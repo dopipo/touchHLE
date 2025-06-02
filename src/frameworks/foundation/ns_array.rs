@@ -226,6 +226,11 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.alloc_object(this, host_object, &mut env.mem)
 }
 
+- (id)initWithCapacity:(NSUInteger)capacity {
+    env.objc.borrow_mut::<ArrayHostObject>(this).array.reserve(capacity as usize);
+    this
+}
+    
 // NSCoding implementation
 - (id)initWithCoder:(id)coder {
     let objects = ns_keyed_unarchiver::decode_current_array(env, coder);
@@ -255,18 +260,6 @@ pub const CLASSES: ClassExports = objc_classes! {
     let class = env.objc.get_known_class("_touchHLE_NSArray_ObjectEnumerator", &mut env.mem);
     let enumerator = env.objc.alloc_object(class, host_object, &mut env.mem);
     autorelease(env, enumerator)
-}
-
-// TODO: init methods etc
-
-- (id)initWithCapacity:(NSUInteger)numItems {
-    env.objc.borrow_mut::<ArrayHostObject>(this).array.reserve(numItems as usize);
-    this
-}
-    
-- (id)initWithCapacity:(NSUInteger)numItems {
-    env.objc.borrow_mut::<ArrayHostObject>(this).array.reserve(numItems as usize);
-    this
 }
 
 - (NSUInteger)count {
