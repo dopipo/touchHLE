@@ -109,6 +109,16 @@ fn AudioSessionAddPropertyListener(
     result
 }
 
+fn AudioSessionGetPropertySize(
+    env: &mut Environment,
+    in_ID: AudioSessionPropertyID,
+    out_data_size: MutPtr<u32>,
+) -> OSStatus {
+    let size = get_audio_session_property_size(in_ID);
+    env.mem.write(out_data_size, size);
+    0 // Success
+}
+
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(AudioSessionInitialize(_, _, _, _)),
     export_c_func!(AudioSessionGetProperty(_, _, _)),
