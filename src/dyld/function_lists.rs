@@ -9,7 +9,8 @@
 use crate::frameworks::av_audio::av_audio_player;
 use crate::frameworks::foundation::ns_thread;
 use crate::frameworks::{
-    audio_toolbox, core_foundation, core_graphics, dnssd, foundation, openal, opengles, uikit,
+    audio_toolbox, core_foundation, core_graphics, dnssd, foundation, openal, opengles,
+    system_configuration, uikit,
 };
 use crate::libc;
 
@@ -74,6 +75,7 @@ pub const FUNCTION_LISTS: &[super::FunctionExports] = &[
     foundation::ns_objc_runtime::FUNCTIONS,
     openal::FUNCTIONS,
     opengles::FUNCTIONS,
+    system_configuration::sc_network_reachability::FUNCTIONS,
     uikit::ui_application::FUNCTIONS,
     uikit::ui_geometry::FUNCTIONS,
     uikit::ui_graphics::FUNCTIONS,
