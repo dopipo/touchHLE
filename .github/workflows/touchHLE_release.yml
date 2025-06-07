@@ -116,7 +116,7 @@ jobs:
       run: rustup target add aarch64-linux-android
     - name: Install cargo-ndk
       run: cargo install cargo-ndk
-    # Gradle version compatibility is a nightmare and we refuse to use gradlew.
+    # Gradle version compatibility is a nightmare and we refuse to use gradle.
     - name: Try to get a cached copy of Gradle
       id: cache-gradle
       uses: actions/cache@v3
