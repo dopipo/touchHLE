@@ -402,6 +402,21 @@ pub const CLASSES: ClassExports = objc_classes! {
     to_rust_string(env, this) == to_rust_string(env, other)
 }
 
+- (bool)hasPrefix:(id)str { // NSString*
+    // TODO: avoid copying
+    let str = to_rust_string(env, str).to_string();
+    to_rust_string(env, this).starts_with(&str)
+}
+
+- (NSComparisonResult)localizedCompare:(id)other { // NSString*
+    // TODO: use current locale
+    // TODO: support `compatibility equivalence` in the Unicode standard
+    // More info: https://www.objc.io/issues/9-strings/unicode/
+    assert!(to_rust_string(env, this).is_ascii());
+    assert!(to_rust_string(env, other).is_ascii());
+    msg![env; this compare:other]
+}
+    
 - (NSComparisonResult)caseInsensitiveCompare:(id)other { //NSString*
     msg![env; this compare:other options:NSCaseInsensitiveSearch]
 }
@@ -421,6 +436,8 @@ pub const CLASSES: ClassExports = objc_classes! {
         num
     }
 
+    assert_ne!(other, nil);
+    
     // TODO: support foreign subclasses (perhaps via a helper function that
     // copies the string first)
     let mut a_iter = env.objc.borrow::<StringHostObject>(this).iter_code_units().peekable();
