@@ -5,9 +5,15 @@
  */
 //! `UIDevice`.
 
+use crate::dyld::ConstantExports;
+use crate::dyld::HostConstant;
 use crate::frameworks::foundation::ns_string;
 use crate::frameworks::foundation::NSInteger;
 use crate::objc::{id, objc_classes, ClassExports, TrivialHostObject};
+use crate::window::DeviceOrientation;
+
+pub const UIDeviceOrientationDidChangeNotification: &str =
+    "UIDeviceOrientationDidChangeNotification";
 
 pub type UIDeviceOrientation = NSInteger;
 #[allow(dead_code)]
@@ -26,6 +32,11 @@ pub const UIDeviceOrientationFaceDown: UIDeviceOrientation = 6;
 pub struct State {
     current_device: Option<id>,
 }
+
+pub const CONSTANTS: ConstantExports = &[(
+    "_UIDeviceOrientationDidChangeNotification",
+    HostConstant::NSString(UIDeviceOrientationDidChangeNotification),
+)];
 
 pub const CLASSES: ClassExports = objc_classes! {
 
@@ -79,6 +90,14 @@ pub const CLASSES: ClassExports = objc_classes! {
     false
 }
 
+- (UIDeviceOrientation)orientation {Add commentMore actions
+    match env.window().current_rotation() {
+        DeviceOrientation::Portrait => UIDeviceOrientationPortrait,
+        DeviceOrientation::LandscapeLeft => UIDeviceOrientationLandscapeLeft,
+        DeviceOrientation::LandscapeRight => UIDeviceOrientationLandscapeRight
+    }
+}
+    
 @end
 
 };
