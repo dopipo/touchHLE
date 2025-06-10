@@ -97,6 +97,14 @@ pub const CLASSES: ClassExports = objc_classes! {
         DeviceOrientation::LandscapeRight => UIDeviceOrientationLandscapeRight
     }
 }
+- (())setOrientation:(UIDeviceOrientation)orientation {
+    env.window_mut().rotate_device(match orientation {
+        UIDeviceOrientationPortrait => DeviceOrientation::Portrait,
+        UIDeviceOrientationLandscapeLeft => DeviceOrientation::LandscapeLeft,
+        UIDeviceOrientationLandscapeRight => DeviceOrientation::LandscapeRight,
+        _ => unimplemented!("Orientation {} not handled yet", orientation),
+    });
+}
     
 @end
 
