@@ -12,10 +12,6 @@
 //! window system interaction in general, because it is assumed only one window
 //! will be needed for the runtime of the app.
 
-use crate::frameworks::uikit::ui_device::{
-    UIDeviceBatteryState, UIDeviceBatteryStateCharging, UIDeviceBatteryStateFull,
-    UIDeviceBatteryStateUnknown, UIDeviceBatteryStateUnplugged,
-};
 use crate::gles::present::present_frame;
 use crate::gles::{create_gles1_ctx, GLES};
 use crate::image::Image;
@@ -24,12 +20,10 @@ use crate::options::Options;
 use sdl2::mouse::MouseButton;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::surface::Surface;
-use sdl2_sys::SDL_PowerState;
 use std::collections::{HashMap, VecDeque};
 use std::env;
 use std::f32::consts::FRAC_PI_2;
 use std::num::NonZeroU32;
-use std::ptr::null_mut;
 use std::time::{Duration, Instant};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -1037,22 +1031,6 @@ impl Window {
                 gles11::LINEAR as _,
             );
 
-            // iOS and PowerVR only support NPOT texture with CLAMP_TO_EDGE
-            // It doesn't matter for texture data from an image like the
-            // splash screen, we don't want to deal with striping from
-            // NPOT to POT conversion.
-            gl_ctx.TexParameteri(
-                gles11::TEXTURE_2D,
-                gles11::TEXTURE_WRAP_S,
-                gles11::CLAMP_TO_EDGE as _,
-            );
-
-            gl_ctx.TexParameteri(
-                gles11::TEXTURE_2D,
-                gles11::TEXTURE_WRAP_T,
-                gles11::CLAMP_TO_EDGE as _,
-            );
-            
             present_frame(
                 gl_ctx, viewport, matrix, /* virtual_cursor_visible_at: */ None,
             );
@@ -1223,85 +1201,4 @@ impl Window {
 
 pub fn open_url(url: &str) -> Result<(), String> {
     sdl2::url::open_url(url).map_err(|e| e.to_string())
-}
-
-/// Show an SDL messagebox for an error (typically after a panic).
-///
-/// The window argument allows for passing in the parent window for the
-/// messagebox, which is not required but should be done if possible.
-pub fn show_error_messagebox(window: Option<&Window>, error_message: &str) {
-    use sdl2::messagebox;
-    let mbox = [
-        messagebox::ButtonData {
-            flags: messagebox::MessageBoxButtonFlag::NOTHING,
-            button_id: 0,
-            text: "Open touchHLE directory",
-        },
-        messagebox::ButtonData {
-            flags: messagebox::MessageBoxButtonFlag::NOTHING,
-            button_id: 1,
-            text: "Close",
-        },
-    ];
-
-    let Ok(clicked_button) = messagebox::show_message_box(
-        messagebox::MessageBoxFlag::ERROR,
-        &mbox,
-        "touchHLE crashed!",
-        &format!(
-            "touchHLE crashed with the following error: {}",
-            error_message
-        ),
-        window.map(|win| &win.window),
-        None,
-    ) else {
-        panic!("Failed to show message box!");
-    };
-
-    match clicked_button {
-        messagebox::ClickedButton::CloseButton => {}
-        messagebox::ClickedButton::CustomButton(button) => {
-            match button.button_id {
-                // Open data directory (contains log file on android)
-                0 => match crate::paths::url_for_opening_user_data_dir() {
-                    Ok(url) => {
-                        if let Err(e) = crate::window::open_url(&url) {
-                            echo!("Couldn't open file manager at {:?}: {}", url, e);
-                        } else {
-                            echo!("Opened file manager at {:?}, exiting.", url);
-                        }
-                    }
-                    Err(e) => echo!("Couldn't open file manager: {}", e),
-                },
-                // Close
-                1 => {}
-                _ => unreachable!(),
-            }
-        }
-    }
-}
-
-/// Get current battery state from SDL2.
-///
-/// Returns:
-/// - pct: i32 - percentage of battery remaining.
-/// - status: [UIDeviceBatteryState] - the current status of the battery
-///   (unplugged, charging, full, etc.)
-pub fn get_battery_status() -> (i32, UIDeviceBatteryState) {
-    let mut pct = 0;
-    // Unfortunately, Rust-SDL2 does not expose this function yet.
-    // iPhoneOS does not measure the battery in seconds remaining,
-    // so we discard this argument.
-    let status = unsafe { sdl2_sys::SDL_GetPowerInfo(null_mut(), &mut pct) };
-    (
-        pct,
-        match status {
-            SDL_PowerState::SDL_POWERSTATE_UNKNOWN => UIDeviceBatteryStateUnknown,
-            SDL_PowerState::SDL_POWERSTATE_ON_BATTERY => UIDeviceBatteryStateUnplugged,
-            SDL_PowerState::SDL_POWERSTATE_NO_BATTERY | SDL_PowerState::SDL_POWERSTATE_CHARGING => {
-                UIDeviceBatteryStateCharging
-            }
-            SDL_PowerState::SDL_POWERSTATE_CHARGED => UIDeviceBatteryStateFull,
-        },
-    )
 }
