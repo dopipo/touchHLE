@@ -22,6 +22,7 @@
 
 pub mod audio_toolbox;
 pub mod av_audio;
+pub mod avf_audio;
 pub mod carbon_core;
 pub mod core_animation;
 pub mod core_audio_types;
@@ -32,6 +33,7 @@ pub mod dnssd;
 pub mod foundation;
 pub mod game_kit;
 pub mod media_player;
+pub mod misc;
 pub mod openal;
 pub mod opengles;
 pub mod store_kit;
@@ -42,6 +44,7 @@ pub mod uikit;
 #[derive(Default)]
 pub struct State {
     audio_toolbox: audio_toolbox::State,
+    avf_audio: avf_audio::State,
     core_animation: core_animation::State,
     foundation: foundation::State,
     media_player: media_player::State,
