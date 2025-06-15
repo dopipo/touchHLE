@@ -149,6 +149,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     }
 }
 
+- (())setWantsFullScreenLayout:(bool)layout {
+    log!("TODO: setWantsFullScreenLayout:{}", layout);
+}
+
 // Usually overridden by the application
 - (())viewDidLoad {
     log_dbg!("[(UIViewController*){:?} viewDidLoad]", this);
