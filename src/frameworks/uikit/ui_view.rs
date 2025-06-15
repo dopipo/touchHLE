@@ -962,4 +962,16 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
+@implementation UITabBarController: UIView
+
+- (id)view {
+    nil
+}
+
+- (())setViewControllers:(bool)controllers {
+    log!("TODO: setViewControllers:{}", controllers);
+}
+
+@end
+
 };
