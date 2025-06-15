@@ -51,6 +51,36 @@ impl GuestArg for CGAffineTransform {
 }
 impl_GuestRet_for_large_struct!(CGAffineTransform);
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[repr(C, packed)]
+pub struct CATransform3D {
+    m11: CGFloat,
+    m12: CGFloat,
+    m13: CGFloat,
+    m14: CGFloat,
+}
+unsafe impl SafeRead for CATransform3D {}
+impl GuestArg for CATransform3D {
+    const REG_COUNT: usize = 4;
+
+    fn from_regs(regs: &[u32]) -> Self {
+        CATransform3D {
+            m11: GuestArg::from_regs(&regs[0..1]),
+            m12: GuestArg::from_regs(&regs[1..2]),
+            m13: GuestArg::from_regs(&regs[2..3]),
+            m14: GuestArg::from_regs(&regs[3..4]),
+        }
+    }
+
+    fn to_regs(self, regs: &mut [u32]) {
+        self.m11.to_regs(&mut regs[0..1]);
+        self.m12.to_regs(&mut regs[1..2]);
+        self.m13.to_regs(&mut regs[2..3]);
+        self.m14.to_regs(&mut regs[3..4]);
+    }
+}
+impl_GuestRet_for_large_struct!(CATransform3D);
+
 // These conversions allow sharing code with the touchHLE Matrix type.
 // Note that they transpose the matrix relative to what Apple documents (see
 // the doc comment on the struct above), because our Matrix type is built on
@@ -267,6 +297,18 @@ pub fn CGAffineTransformInvert(
     existing.invert()
 }
 
+fn CATransform3DRotate(
+    _env: &mut Environment, t: CATransform3D, angle: CGFloat, x: CGFloat, y: CGFloat, z: CGFloat
+) -> CATransform3D {
+    return t
+}
+
+fn CATransform3DScale(
+    _env: &mut Environment, t: CATransform3D, sx: CGFloat, sy: CGFloat, sz: CGFloat
+) -> CATransform3D {
+    return t
+}
+
 fn CGPointApplyAffineTransform(
     _env: &mut Environment,
     point: CGPoint,
@@ -301,6 +343,8 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CGAffineTransformScale(_, _, _)),
     export_c_func!(CGAffineTransformTranslate(_, _, _)),
     export_c_func!(CGAffineTransformInvert(_)),
+    export_c_func!(CATransform3DRotate(_, _, _, _, _)),
+    export_c_func!(CATransform3DScale(_, _, _, _)),
     export_c_func!(CGPointApplyAffineTransform(_, _)),
     export_c_func!(CGSizeApplyAffineTransform(_, _)),
     export_c_func!(CGRectApplyAffineTransform(_, _)),
