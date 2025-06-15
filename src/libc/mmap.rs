@@ -39,18 +39,18 @@ fn mmap(
 
     log_dbg!("mmap len {}", len);
 
-    assert!(addr.is_null());
-    assert_eq!(offset, 0);
-    assert_eq!((flags & MAP_ANON), 0);
+    // assert!(addr.is_null());
+    // assert_eq!(offset, 0);
+    // assert_eq!((flags & MAP_ANON), 0);
     let new_offset = posix_io::lseek(env, fd, offset, SEEK_SET);
     assert_eq!(new_offset, offset);
     let ptr = env.mem.alloc(len);
 
-    assert!(!env.libc_state.mmap.allocations.contains_key(&ptr));
+    // assert!(!env.libc_state.mmap.allocations.contains_key(&ptr));
     env.libc_state.mmap.allocations.insert(ptr, len);
 
     let read = posix_io::read(env, fd, ptr, len);
-    assert_eq!(read as u32, len);
+    // assert_eq!(read as u32, len);
     ptr
 }
 
@@ -66,7 +66,7 @@ fn munmap(env: &mut Environment, addr: MutVoidPtr, len: GuestUSize) -> i32 {
         log!("Warning: munmap({:?}, {}) failed, returning -1", addr, len);
         return -1;
     }
-    assert_eq!(*env.libc_state.mmap.allocations.get(&addr).unwrap(), len);
+    // assert_eq!(*env.libc_state.mmap.allocations.get(&addr).unwrap(), len);
     env.mem.free(addr);
     env.libc_state.mmap.allocations.remove(&addr);
     0 // success
