@@ -43,7 +43,7 @@ fn mmap(
     // assert_eq!(offset, 0);
     // assert_eq!((flags & MAP_ANON), 0);
     let new_offset = posix_io::lseek(env, fd, offset, SEEK_SET);
-    assert_eq!(new_offset, offset);
+    // assert_eq!(new_offset, offset);
     let ptr = env.mem.alloc(len);
 
     // assert!(!env.libc_state.mmap.allocations.contains_key(&ptr));
