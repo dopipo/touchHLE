@@ -100,4 +100,10 @@ pub fn main() {
         )
         .unwrap();
     }
+
+if std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "windows" {
+        // Rust removed link to advapi32 here https://github.com/rust-lang/rust/pull/138233
+        // but sdl2 still depends on it
+        println!("cargo::rustc-link-lib=advapi32")
+    }
 }
