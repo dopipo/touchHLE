@@ -116,6 +116,10 @@ fn AudioSessionGetProperty(
             let value: f32 = state.current_hardware_output_volume;
             env.mem.write(out_data.cast(), value);
         }
+        kAudioSessionProperty_PreferredHardwareIOBufferDuration => {
+            let value: f32 = state.current_hardware_output_volume;
+            env.mem.write(out_data.cast(), value);
+        }
         _ => unreachable!(),
     }
 
