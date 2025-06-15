@@ -174,6 +174,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     sublayers.insert(idx, layer);
 }
 
+- (id)transform {
+    nil
+}
+
 - (())removeFromSuperlayer {
     let CALayerHostObject { ref mut superlayer, .. } = env.objc.borrow_mut(this);
     let superlayer = std::mem::take(superlayer);
