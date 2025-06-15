@@ -1027,6 +1027,9 @@ fn CFURLCreateDataAndPropertiesFromResource(_env: &mut Environment, arg1: f32, a
 fn CFURLCreateWithString(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
     arg1.min(arg2)
 }
+fn CFURLCreateStringByAddingPercentEscapes(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
 fn MFMailComposeErrorDomain(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
     arg1.min(arg2)
 }
@@ -1052,6 +1055,12 @@ fn OSAtomicCompareAndSwapInt(_env: &mut Environment, arg1: f64, arg2: f64) -> f6
     arg1.min(arg2)
 }
 fn UIGraphicsBeginImageContext(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn mach_thread_self(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn dladdr(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
 
@@ -1321,6 +1330,7 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CFBundleCopyExecutableURL(_, _)),
     export_c_func!(CFURLCreateDataAndPropertiesFromResource(_, _)),
     export_c_func!(CFURLCreateWithString(_, _)),
+    export_c_func!(CFURLCreateStringByAddingPercentEscapes(_, _)),
     export_c_func!(MFMailComposeErrorDomain(_, _)),
     export_c_func!(lstat(_, _)),
     export_c_func!(clock_get_time(_, _)),
@@ -1330,4 +1340,6 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(SCNetworkReachabilityScheduleWithRunLoop(_, _)),
     export_c_func!(OSAtomicCompareAndSwapInt(_, _)),
     export_c_func!(UIGraphicsBeginImageContext(_, _)),
+    export_c_func!(mach_thread_self(_, _)),
+    export_c_func!(dladdr(_, _)),
 ];

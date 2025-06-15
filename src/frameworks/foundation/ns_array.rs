@@ -440,6 +440,14 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (id)removeObjectsInArray {
+    nil
+}
+
+- (id)removeObjectsInArray:(NSUInteger)_array {
+    msg![env; this init]
+}
+
 - (id)sortUsingSelector:(NSUInteger)_using {
     msg![env; this init]
 }

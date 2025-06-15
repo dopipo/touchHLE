@@ -116,6 +116,10 @@ fn AudioSessionGetProperty(
             let value: f32 = state.current_hardware_output_volume;
             env.mem.write(out_data.cast(), value);
         }
+        kAudioSessionProperty_PreferredHardwareIOBufferDuration => {
+            let value: f32 = state.current_hardware_output_volume;
+            env.mem.write(out_data.cast(), value);
+        }
         _ => unreachable!(),
     }
 
@@ -204,6 +208,7 @@ fn get_audio_session_property_size(in_ID: AudioSessionPropertyID) -> GuestUSize 
         kAudioSessionProperty_AudioCategory => guest_size_of::<u32>(),
         kAudioSessionProperty_CurrentHardwareSampleRate => guest_size_of::<f64>(),
         kAudioSessionProperty_CurrentHardwareOutputNumberChannels => guest_size_of::<u32>(),
+        kAudioSessionProperty_PreferredHardwareIOBufferDuration => guest_size_of::<f32>(),
         kAudioSessionProperty_CurrentHardwareOutputVolume => guest_size_of::<f32>(),
         _ => unimplemented!("Unimplemented property ID: {}", debug_fourcc(in_ID)),
     }

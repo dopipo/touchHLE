@@ -7,17 +7,19 @@
 //! very long and frequently-updated list.
 
 use crate::frameworks::{
-    av_audio, core_animation, core_foundation, core_graphics, core_location, foundation, game_kit,
+    av_audio, avf_audio, core_animation, core_foundation, core_graphics, core_location, foundation, game_kit,
     media_player, opengles, store_kit, system_configuration, uikit,
 };
 
 /// All the lists of classes that the runtime should search through.
 pub const CLASS_LISTS: &[super::ClassExports] = &[
     crate::app_picker::CLASSES, // Not a framework! Special internal classes.
+    avf_audio::av_audio_session::CLASSES,
     core_animation::ca_animation::CLASSES,
     core_animation::ca_eagl_layer::CLASSES,
     core_animation::ca_layer::CLASSES,
     core_animation::ca_media_timing_function::CLASSES,
+    core_animation::ca_transaction::CLASSES,
     core_graphics::cg_data_provider::CLASSES,
     core_graphics::cg_color::CLASSES,
     core_graphics::cg_color_space::CLASSES,

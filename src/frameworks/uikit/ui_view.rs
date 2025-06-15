@@ -588,6 +588,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: [{:?} setClipsToBounds:{}]", this, clips);
 }
 
+- (())setNeedsLayout:(bool)layout {
+    log!("TODO: setNeedsLayout:{}", layout);
+}
+
 - (bool)isOpaque {
     let layer = env.objc.borrow::<UIViewHostObject>(this).layer;
     msg![env; layer isOpaque]
@@ -958,6 +962,18 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (())addTarget:(NSInteger)target action:(bool)_action forControlEvents:(bool)_events {
     // TODO
+}
+
+@end
+
+@implementation UITabBarController: UIView
+
+- (id)view {
+    nil
+}
+
+- (())setViewControllers:(bool)controllers {
+    log!("TODO: setViewControllers:{}", controllers);
 }
 
 @end
