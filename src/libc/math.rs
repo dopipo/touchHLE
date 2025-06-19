@@ -1063,6 +1063,9 @@ fn mach_thread_self(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn dladdr(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn sched_get_priority_max(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1342,4 +1345,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(UIGraphicsBeginImageContext(_, _)),
     export_c_func!(mach_thread_self(_, _)),
     export_c_func!(dladdr(_, _)),
+    export_c_func!(sched_get_priority_max(_, _)),
 ];
