@@ -11,7 +11,7 @@ use crate::frameworks::foundation::ns_string::from_rust_string;
 use crate::frameworks::foundation::NSInteger;
 use crate::mem::{ConstVoidPtr, MutVoidPtr};
 use crate::objc::{
-    autorelease, id, msg, msg_class, objc_classes, retain, Class, ClassExports, HostObject,
+    autorelease, id, msg, msg_class, nil, objc_classes, retain, Class, ClassExports, HostObject,
     NSZonePtr,
 };
 use crate::Environment;
@@ -282,6 +282,9 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (id)compare {
+    nil
+}
 
 - (bool)boolValue {
     env.objc.borrow::<NSNumberHostObject>(this).as_bool()
