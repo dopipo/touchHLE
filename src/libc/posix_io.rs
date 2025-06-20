@@ -297,6 +297,17 @@ pub fn write(
     size: GuestUSize,
 ) -> GuestISize {
     // TODO: handle errno properly
+    if fd == STDERR_FILENO {
+        let buffer_slice = env.mem.bytes_at(buffer.cast(), size);
+        return match std::io::stderr().write(buffer_slice) {
+            Ok(bytes_written) => bytes_written as GuestUSize,
+            Err(_err) => 0,
+        } as GuestISize
+    }
+    // TODO: error handling for unknown fd?
+    // if env.libc_state.posix_io.file_for_fd(fd).is_none() {
+    //     return -1;
+    // }
     set_errno(env, 0);
 
     // TODO: error handling for unknown fd?

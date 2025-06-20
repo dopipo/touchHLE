@@ -289,6 +289,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (id)pal {
+    nil
+}
+
 - (())writeToFile:(NSInteger)file atomically:(bool)_atomically {
     // TODO
 }
@@ -389,6 +393,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     assert!(host_object.array.is_empty());
     host_object.array = objects; // objects are already retained
     this
+}
+
+- (id)initWithObjects:(NSUInteger)_objects {
+    msg![env; this init]
 }
 
 // NSMutableCopying implementation

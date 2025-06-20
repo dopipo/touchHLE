@@ -39,6 +39,7 @@ use yore::code_pages::CP1252;
 pub type NSStringEncoding = NSUInteger;
 pub const NSASCIIStringEncoding: NSUInteger = 1;
 pub const NSUTF8StringEncoding: NSUInteger = 4;
+pub const NSNonLossyASCIIStringEncoding: NSUInteger = 0x30009240;
 pub const NSISOLatin1StringEncoding: NSUInteger = 5;
 pub const NSShiftJISStringEncoding: NSUInteger = 8;
 pub const NSUnicodeStringEncoding: NSUInteger = 10;
@@ -115,6 +116,10 @@ impl StringHostObject {
                 assert!(bytes.iter().all(|byte| byte.is_ascii()));
                 // Safety: guaranteed by above assertion
                 let string = unsafe { String::from_utf8_unchecked(bytes.into_owned()) };
+                StringHostObject::Utf8(Cow::Owned(string))
+            }
+            NSNonLossyASCIIStringEncoding => {
+                let string = String::from_utf8(bytes.into_owned()).unwrap();
                 StringHostObject::Utf8(Cow::Owned(string))
             }
             NSUTF8StringEncoding => {
@@ -349,6 +354,12 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this init]
 }
 
++ (id)stringWithString:(id)string {
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithString:string];
+    autorelease(env, new)
+}
+
 + (id)stringWithContentsOfFile:(id)path // NSString*
                       encoding:(NSStringEncoding)encoding
                          error:(MutPtr<id>)error { // NSError**
@@ -358,6 +369,14 @@ pub const CLASSES: ClassExports = objc_classes! {
                                                  error:error];
     autorelease(env, new)
 }
+
++ (id)stringWithContentsOfURL:(id)url // NSURL*Add commentMore actions
+                  encoding:(NSStringEncoding)encoding
+                     error:(MutPtr<id>)error { // NSError**
+    let path: id = msg![env; url path];
+    msg_class![env; NSString stringWithContentsOfFile:path encoding:encoding error:error]
+}
+
 
 + (id)stringWithFormat:(id)format, // NSString*
                        ...args {
@@ -734,10 +753,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     let string = to_rust_string(env, this);
     // TODO: other encodings
     let bytes: Vec<u8> = match encoding {
-        NSASCIIStringEncoding | NSMacOSRomanStringEncoding | NSISOLatin1StringEncoding | NSWindowsCP1252StringEncoding => {
+        NSNonLossyASCIIStringEncoding | NSASCIIStringEncoding | NSMacOSRomanStringEncoding | NSISOLatin1StringEncoding | NSWindowsCP1252StringEncoding => {
             // TODO: properly support Mac OS Roman and ISO Latin 1 encodings.
             // The first 128 characters are identical to the ASCII
-            assert!(string.as_bytes().iter().all(|byte| byte.is_ascii()));
+            // assert!(string.as_bytes().iter().all(|byte| byte.is_ascii()));
             string.as_bytes().to_vec()
         },
         NSUTF8StringEncoding => {

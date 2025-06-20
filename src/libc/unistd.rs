@@ -127,6 +127,14 @@ fn gethostname(env: &mut Environment, name: MutPtr<u8>, namelen: GuestUSize) -> 
     0 // Success
 }
 
+fn get_etext(env: &mut Environment) -> u32 {
+    4096
+}
+
+fn get_end(env: &mut Environment) -> u32 {
+    927506432
+}
+
 fn getpagesize(_env: &mut Environment) -> i32 {
     PAGE_SIZE.try_into().unwrap()
 }
@@ -140,6 +148,8 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(access(_, _)),
     export_c_func!(unlink(_)),
     export_c_func!(gethostname(_, _)),
+    export_c_func!(get_etext()),
+    export_c_func!(get_end()),
     export_c_func!(getpagesize()),
     export_c_func!(getgid()),
 ];

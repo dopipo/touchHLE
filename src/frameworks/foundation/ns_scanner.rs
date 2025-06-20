@@ -122,6 +122,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     false
 }
 
+- (id)scanFloat {
+    nil
+}
+
 @end
 
 };

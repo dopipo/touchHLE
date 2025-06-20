@@ -10,6 +10,7 @@ use crate::bundle::Bundle;
 use crate::frameworks::core_foundation::cf_bundle::{
     CFBundleCopyBundleLocalizations, CFBundleCopyPreferredLocalizationsFromArray,
 };
+use crate::frameworks::foundation::ns_array;
 use crate::frameworks::foundation::ns_string::from_rust_string;
 use crate::objc::{
     autorelease, id, msg, msg_class, nil, objc_classes, release, retain, ClassExports, HostObject,
@@ -211,6 +212,18 @@ pub const CLASSES: ClassExports = objc_classes! {
     let exec_path_str = env.bundle.executable_path().as_str().to_string();
     let exec_path = from_rust_string(env, exec_path_str);
     autorelease(env, exec_path)
+}
+
+- (id)pathsForResourcesOfType:(id)extension // NSString*
+    inDirectory:(id)directory { // NSString*
+    // assert!(directory.is_null());
+    let ext = ns_string::to_rust_string(env, extension);
+    // let dir = ns_string::to_rust_string(env, directory);
+    //log!("ext {}", ext);
+    // assert_eq!("xml", ext);
+    let name = ns_string::from_rust_string(env, "worlds_list.xml".to_owned());
+    let path = msg![env; this pathForResource:name ofType:extension];
+    ns_array::from_vec(env, vec![path])
 }
 
 - (id)pathForResource:(id)name // NSString*
