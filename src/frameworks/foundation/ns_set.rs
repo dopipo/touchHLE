@@ -216,6 +216,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; array objectEnumerator]
 }
 
+- (id)pal {
+    nil
+}
+
 // NSFastEnumeration implementation
 - (NSUInteger)countByEnumeratingWithState:(MutPtr<NSFastEnumerationState>)state
                                   objects:(MutPtr<id>)stackbuf
