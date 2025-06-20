@@ -568,9 +568,6 @@ fn strcasestr(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn task_get_exception_ports(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
-fn gethostent(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
-    arg1.min(arg2)
-}
 fn CGColorEqualToColor(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
     arg1.min(arg2)
 }
