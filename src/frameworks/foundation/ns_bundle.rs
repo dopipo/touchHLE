@@ -10,6 +10,7 @@ use crate::bundle::Bundle;
 use crate::frameworks::core_foundation::cf_bundle::{
     CFBundleCopyBundleLocalizations, CFBundleCopyPreferredLocalizationsFromArray,
 };
+use crate::frameworks::foundation::ns_array;
 use crate::frameworks::foundation::ns_string::from_rust_string;
 use crate::objc::{
     autorelease, id, msg, msg_class, nil, objc_classes, release, retain, ClassExports, HostObject,
