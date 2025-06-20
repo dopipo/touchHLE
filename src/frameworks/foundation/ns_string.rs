@@ -354,6 +354,12 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this init]
 }
 
++ (id)stringWithString:(id)string {
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithString:string];
+    autorelease(env, new)
+}
+
 + (id)stringWithContentsOfFile:(id)path // NSString*
                       encoding:(NSStringEncoding)encoding
                          error:(MutPtr<id>)error { // NSError**
@@ -363,6 +369,14 @@ pub const CLASSES: ClassExports = objc_classes! {
                                                  error:error];
     autorelease(env, new)
 }
+
++ (id)stringWithContentsOfURL:(id)url // NSURL*Add commentMore actions
+                  encoding:(NSStringEncoding)encoding
+                     error:(MutPtr<id>)error { // NSError**
+    let path: id = msg![env; url path];
+    msg_class![env; NSString stringWithContentsOfFile:path encoding:encoding error:error]
+}
+
 
 + (id)stringWithFormat:(id)format, // NSString*
                        ...args {
