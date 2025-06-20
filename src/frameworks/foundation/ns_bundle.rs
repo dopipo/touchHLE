@@ -213,6 +213,18 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, exec_path)
 }
 
+- (id)pathsForResourcesOfType:(id)extension // NSString*
+    inDirectory:(id)directory { // NSString*
+    // assert!(directory.is_null());
+    let ext = ns_string::to_rust_string(env, extension);
+    // let dir = ns_string::to_rust_string(env, directory);
+    //log!("ext {}", ext);
+    // assert_eq!("xml", ext);
+    let name = ns_string::from_rust_string(env, "worlds_list.xml".to_owned());
+    let path = msg![env; this pathForResource:name ofType:extension];
+    ns_array::from_vec(env, vec![path])
+}
+
 - (id)pathForResource:(id)name // NSString*
                ofType:(id)extension // NSString*
           inDirectory:(id)directory { // NSString*
