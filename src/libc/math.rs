@@ -1081,6 +1081,12 @@ fn xmlDocGetRootElement(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn xmlClearParserCtxt(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn xmlFreeParserCtxt(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn gethostent(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1366,4 +1372,6 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(xmlCtxtReadMemory(_, _)),
     export_c_func!(xmlDocGetRootElement(_, _)),
     export_c_func!(xmlClearParserCtxt(_, _)),
+    export_c_func!(xmlFreeParserCtxt(_, _)),
+    export_c_func!(gethostent(_, _)),
 ];
