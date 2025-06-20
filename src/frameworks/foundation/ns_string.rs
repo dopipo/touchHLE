@@ -39,6 +39,7 @@ use yore::code_pages::CP1252;
 pub type NSStringEncoding = NSUInteger;
 pub const NSASCIIStringEncoding: NSUInteger = 1;
 pub const NSUTF8StringEncoding: NSUInteger = 4;
+pub const NSNonLossyASCIIStringEncoding: NSUInteger = 0x30009240;
 pub const NSISOLatin1StringEncoding: NSUInteger = 5;
 pub const NSShiftJISStringEncoding: NSUInteger = 8;
 pub const NSUnicodeStringEncoding: NSUInteger = 10;
@@ -115,6 +116,10 @@ impl StringHostObject {
                 assert!(bytes.iter().all(|byte| byte.is_ascii()));
                 // Safety: guaranteed by above assertion
                 let string = unsafe { String::from_utf8_unchecked(bytes.into_owned()) };
+                StringHostObject::Utf8(Cow::Owned(string))
+            }
+            NSNonLossyASCIIStringEncoding => {
+                let string = String::from_utf8(bytes.into_owned()).unwrap();
                 StringHostObject::Utf8(Cow::Owned(string))
             }
             NSUTF8StringEncoding => {
