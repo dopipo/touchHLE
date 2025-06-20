@@ -19,6 +19,7 @@ type useconds_t = u32;
 
 const F_OK: i32 = 0;
 const R_OK: i32 = 4;
+const W_OK: i32 = 6;
 
 fn sleep(env: &mut Environment, seconds: u32) -> u32 {
     env.sleep(Duration::from_secs(seconds.into()), true);
@@ -83,6 +84,13 @@ fn access(env: &mut Environment, path: ConstPtr<u8>, mode: i32) -> i32 {
             }
         }
         R_OK => {
+            if r {
+                0
+            } else {
+                -1
+            }
+        }
+        W_OK => {
             if r {
                 0
             } else {
