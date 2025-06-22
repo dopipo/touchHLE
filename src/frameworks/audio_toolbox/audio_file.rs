@@ -86,7 +86,8 @@ pub fn AudioFileOpenURL(
     }
 
     let path = to_rust_path(env, in_file_ref);
-    let audio_file = match audio::AudioFile::open_for_reading(path, &env.fs) {
+    let bytes = env.fs.read(path.as_ref());
+    if bytes.is_err() {{
         Ok(audio_file) => audio_file,
         Err(error) => {
             log!(
@@ -99,6 +100,7 @@ pub fn AudioFileOpenURL(
             };
         }
     };
+    let audio_file = audio::AudioFile::open_for_reading(bytes.unwrap()).unwrap();
 
     let host_object = AudioFileHostObject { audio_file };
 
@@ -117,6 +119,12 @@ pub fn AudioFileOpenURL(
 
     0 // success
 }
+
+/// typedef SInt64 (*AudioFile_GetSizeProc)(void *inClientData)
+type AudioFile_GetSizeProc = GuestFunction;
+
+/// typedef OSStatus (*AudioFile_ReadProc)(void *inClientData, SInt64 inPosition, UInt32 requestCount, void *buffer, UInt32 *actualCount);
+type AudioFile_ReadProc = GuestFunction;
 
 pub fn AudioFileOpenWithCallbacks(
     env: &mut Environment,
