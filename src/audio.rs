@@ -34,7 +34,6 @@ pub enum AudioFormat {
         is_little_endian: bool,
     },
     AppleIma4,
-    Mpeg4Aac,
 }
 /// Fields have the same meanings as in the Core Audio Format's
 /// Audio Description chunk, which is in turn similar to Core Audio Types'
@@ -157,9 +156,6 @@ impl AudioFile {
                         caf::FormatType::AppleIma4 => {
                             assert!(format_flags == 0);
                             AudioFormat::AppleIma4
-                        }
-                        caf::FormatType::Mpeg4Aac => {
-                            AudioFormat::Mpeg4Aac
                         }
                         //
                         // We should expose all of the formats eventually, but
@@ -327,7 +323,6 @@ impl AudioFile {
                 buffer[..bytes_to_read].copy_from_slice(bytes);
                 Ok(bytes_to_read)
             }
-            AudioFormat::Mpeg4Aac => todo!()
         }
     }
-}
+    }
