@@ -327,6 +327,7 @@ impl AudioFile {
                 buffer[..bytes_to_read].copy_from_slice(bytes);
                 Ok(bytes_to_read)
             }
+            AudioFormat::Mpeg4Aac => todo!()
         }
     }
 }
