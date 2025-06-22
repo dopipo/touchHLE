@@ -248,13 +248,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (())removeObject {
-    let mut old_host_obj = std::mem::replace(
-        env.objc.borrow_mut(this),
-        SetHostObject {
-            dict: Default::default(),
-        },
-    );
-    old_host_obj.dict.release(env);
+    nil
 }
 
 - (())removeAllObjects {
