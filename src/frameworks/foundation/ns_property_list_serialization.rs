@@ -40,7 +40,7 @@ pub const CLASSES: ClassExports = objc_classes! {
                     format:(NSPropertyListFormat)format
                 errorDescription:(MutPtr<id>)error_string { // NSString **
     assert_eq!(format, NSPropertyListBinaryFormat_v1_0); // TODO
-    assert!(error_string.is_null()); // TODO
+    // assert!(error_string.is_null()); // TODO
 
     let value = serialize_plist(env, plist);
     log_dbg!("dataFromPropertyList value {:?}", value);
@@ -57,11 +57,11 @@ pub const CLASSES: ClassExports = objc_classes! {
           mutabilityOption:(NSPropertyListMutabilityOptions)opt
                     format:(MutPtr<NSPropertyListFormat>)format
           errorDescription:(MutPtr<id>)error_string { // NSString **
-    assert_eq!(opt, NSPropertyListImmutable); // TODO
+    // assert_eq!(opt, NSPropertyListImmutable); // TODO
     let slice = ns_data::to_rust_slice(env, data);
 
     if let Ok(root) = Value::from_reader_xml(Cursor::new(slice)) {
-        assert!(root.as_array().is_some() || root.as_dictionary().is_some());
+        // assert!(root.as_array().is_some() || root.as_dictionary().is_some());
         if !format.is_null() {
             env.mem.write(format, NSPropertyListXMLFormat_v1_0);
         }
@@ -70,7 +70,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     }
 
     if let Ok(root) = Value::from_reader(Cursor::new(slice)) {
-        assert!(root.as_array().is_some() || root.as_dictionary().is_some());
+        // assert!(root.as_array().is_some() || root.as_dictionary().is_some());
         if !format.is_null() {
             env.mem.write(format, NSPropertyListBinaryFormat_v1_0);
         }
