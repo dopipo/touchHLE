@@ -34,6 +34,7 @@ pub enum AudioFormat {
         is_little_endian: bool,
     },
     AppleIma4,
+    Mpeg4Aac,
 }
 /// Fields have the same meanings as in the Core Audio Format's
 /// Audio Description chunk, which is in turn similar to Core Audio Types'
@@ -157,10 +158,13 @@ impl AudioFile {
                             assert!(format_flags == 0);
                             AudioFormat::AppleIma4
                         }
+                        caf::FormatType::Mpeg4Aac => {
+                            AudioFormat::Mpeg4Aac
+                        }
                         //
                         // We should expose all of the formats eventually, but
                         // the others haven't been tested yet.
-                        _ => 0 // panic!("{:?} not supported yet", format_id),
+                        _ => panic!("{:?} not supported yet", format_id),
                     },
                     bytes_per_packet,
                     frames_per_packet,
