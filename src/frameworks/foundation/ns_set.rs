@@ -247,7 +247,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     *env.objc.borrow_mut(this) = host_obj;
 }
 
-- (())removeObject {
+- (id)removeObject {
     nil
 }
 
