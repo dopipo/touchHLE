@@ -63,15 +63,6 @@ pub const CLASSES: ClassExports = objc_classes! {
     instant2 - env.objc.borrow::<NSDateHostObject>(this).instant
 }
 
-- (NSTimeInterval)timeIntervalSince1970 {Add commentMore actions
-    let time_interval = env.objc.borrow::<NSDateHostObject>(this).time_interval;
-    apple_epoch()
-        .add(Duration::from_secs_f64(time_interval))
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_secs_f64()
-}
-    
 - (id)addTimeInterval:(NSTimeInterval)seconds {
     let host_object = env.objc.borrow::<NSDateHostObject>(this);
     let new_host_object = Box::new(NSDateHostObject {
