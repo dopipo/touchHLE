@@ -19,7 +19,7 @@ use crate::{abi, Environment};
 // frames, but we do not have a good way to detect that right now.
 // Thus, those are exempted from the check.
 // You need to have a good reason to extend this list!
-const ALLOWED_FOR_LONGJMP_BYPASS: [&str; 3] = [
+const ALLOWED_FOR_LONGJMP_BYPASS: [&str; 4] = [
     "com.activision.CBNK2",
     "com.ea.fifa10.bv",
     "com.ea.fifa10wc.inc",
