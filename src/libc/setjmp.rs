@@ -14,6 +14,12 @@ use crate::dyld::{export_c_func, FunctionExports};
 use crate::mem::{MutPtr, SafeRead};
 use crate::{abi, Environment};
 
+const ALLOWED_FOR_LONGJMP_BYPASS: [&str; 3] = [
+    "com.activision.CBNK2",
+    "com.ea.fifa10.bv",
+    "com.ea.fifa10wc.inc",
+];
+
 #[repr(C, packed)]
 #[derive(Debug)]
 struct JmpBuf {
@@ -56,7 +62,9 @@ fn longjmp(env: &mut Environment, jmp_buf: MutPtr<JmpBuf>, status: u32) {
     let buf = env.mem.read(jmp_buf);
     let cur_stack = env.stack_for_longjmp(lr, fp);
     let other_stack = env.stack_for_longjmp(buf.lr, buf.fp);
-    if cur_stack.last() != other_stack.last() {
+    if cur_stack.last() != other_stack.last()
+        && !ALLOWED_FOR_LONGJMP_BYPASS.contains(&env.bundle.bundle_identifier())
+    {
         panic!(
             "longjmp across host stack frames, current {:?}, other {:?}",
             cur_stack, other_stack
