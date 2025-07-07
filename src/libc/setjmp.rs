@@ -23,6 +23,7 @@ const ALLOWED_FOR_LONGJMP_BYPASS: [&str; 3] = [
     "com.activision.CBNK2",
     "com.ea.fifa10.bv",
     "com.ea.fifa10wc.inc",
+    "com.ea.sporecreatures.na"
 ];
 
 #[repr(C, packed)]
