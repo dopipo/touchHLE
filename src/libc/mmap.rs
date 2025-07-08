@@ -54,6 +54,7 @@ fn mmap(
         assert_eq!(new_offset, offset);
         let read = posix_io::read(env, fd, ptr, len);
         assert_eq!(read as u32, len);
+    }
     ptr
 }
 
