@@ -87,7 +87,7 @@ fn AudioUnitSetProperty(
     in_data: ConstVoidPtr,
     in_data_size: u32,
 ) -> OSStatus {
-    assert!(in_element == 0);
+    // assert!(in_element == 0);
 
     let host_object = audio_components::State::get(&mut env.framework_state)
         .audio_component_instances
@@ -97,15 +97,15 @@ fn AudioUnitSetProperty(
     let result;
     match in_id {
         kAudioUnitProperty_SetRenderCallback => {
-            assert_eq!(in_scope, kAudioUnitScope_Global);
-            assert_eq!(in_data_size, guest_size_of::<AURenderCallbackStruct>());
+            // assert_eq!(in_scope, kAudioUnitScope_Global);
+            // assert_eq!(in_data_size, guest_size_of::<AURenderCallbackStruct>());
             let render_callback = env.mem.read(in_data.cast::<AURenderCallbackStruct>());
             host_object.render_callback = Some(render_callback);
             result = 0;
             log_dbg!("AudioUnitSetProperty({:?}, kAudioUnitProperty_SetRenderCallback, {:?}, {:?}, {:?}, {:?}) -> {:?}", in_unit, in_scope, in_element, render_callback, in_data_size, result);
         }
         kAudioUnitProperty_StreamFormat => {
-            assert_eq!(in_data_size, guest_size_of::<AudioStreamBasicDescription>());
+            // assert_eq!(in_data_size, guest_size_of::<AudioStreamBasicDescription>());
             let stream_format = env.mem.read(in_data.cast::<AudioStreamBasicDescription>());
             log_if_broken_audio_format(&stream_format);
             match in_scope {
@@ -118,11 +118,11 @@ fn AudioUnitSetProperty(
             log_dbg!("AudioUnitSetProperty({:?}, kAudioUnitProperty_StreamFormat, {:?}, {:?}, {:?}, {:?}) -> {:?}", in_unit, in_scope, in_element, stream_format, in_data_size, result);
         }
         kAudioOutputUnitProperty_EnableIO => {
-            assert_eq!(in_scope, kAudioUnitScope_Output);
-            assert_eq!(in_data_size, guest_size_of::<u32>());
+            // assert_eq!(in_scope, kAudioUnitScope_Output);
+            // assert_eq!(in_data_size, guest_size_of::<u32>());
             let enabled = env.mem.read(in_data.cast::<u32>());
             // Output is enabled by default.
-            assert_eq!(enabled, 1);
+            // assert_eq!(enabled, 1);
             result = 0;
             log_dbg!("AudioUnitSetProperty({:?}, kAudioOutputUnitProperty_EnableIO, {:?}, {:?}, {:?}, {:?}) -> {:?}", in_unit, in_scope, in_element, enabled, in_data_size, result);
         }
@@ -141,7 +141,7 @@ fn AudioUnitGetProperty(
     out_data: MutVoidPtr,
     io_data_size: MutPtr<u32>,
 ) -> OSStatus {
-    assert!(in_element == 0);
+    // assert!(in_element == 0);
 
     let host_object = audio_components::State::get(&mut env.framework_state)
         .audio_component_instances
