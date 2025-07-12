@@ -906,3 +906,13 @@ pub fn objc_getClass(env: &mut Environment, name: ConstPtr<u8>) -> id {
     let name = env.mem.cstr_at_utf8(name).unwrap();
     env.objc.get_class(name, false, &env.mem).unwrap()
 }
+
+pub fn method_setImplementation(env: &mut Environment, method: ConstPtr<MethodRef>, imp: ConstVoidPtr) -> ConstVoidPtr {
+    let method = env.mem.read(method);
+    let (class, name) = (method.0, method.1);
+    let old = get_implementation_ptr(env, method);
+    let obj: &mut ClassHostObject = env.objc.borrow_mut(class.cast());
+    obj.methods.remove(&name);
+    obj.methods.insert(name, IMP::Guest(GuestFunction::from_addr_with_thumb_bit(imp.to_bits())));
+    old
+}
