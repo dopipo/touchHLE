@@ -35,6 +35,7 @@ use std::fs;
 use std::fs::File;
 use std::io::{Read, Seek, Write};
 use std::path::{Path, PathBuf};
+use std::time::UNIX_EPOCH;
 
 /// The actual location of a file outside the virtual filesystem, e.g. a host
 /// file path.
@@ -762,6 +763,19 @@ impl Fs {
                 FileLocation::IpaFileRef(ipa_file_ref) => {
                     Ok(ipa_file_ref.get_last_modified().into())
                 }
+                FileLocation::Path(path) => {
+                    // TODO: account for the current timezone, here it's in GMT
+                    fs::metadata(path)
+                        .and_then(|m| m.modified())
+                        .map(|t| {
+                            t.duration_since(UNIX_EPOCH)
+                                .unwrap()
+                                .as_secs()
+                                .try_into()
+                                .unwrap()
+                        })
+                        .map_err(|_| ())
+                }
                 _ => unimplemented!(),
             },
             _ => unimplemented!(),
@@ -774,6 +788,9 @@ impl Fs {
         match node {
             FsNode::File { location, .. } => match location {
                 FileLocation::IpaFileRef(ipa_file_ref) => Ok(ipa_file_ref.get_size()),
+                FileLocation::Path(path) => {
+                    fs::metadata(path).map(|meta| meta.len()).map_err(|_| ())
+                }
                 _ => unimplemented!(),
             },
             _ => unimplemented!(),

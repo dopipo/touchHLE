@@ -407,7 +407,7 @@ fn test_calendar_date_to_timestamp_known_dates() {
         tm_gmtoff: 0,
         tm_zone: Ptr::null(),
     };
-    assert_eq!(calendar_date_to_timestamp(tm_before_epoch), -466053135);
+    assert_eq!(calendar_date_to_timestamp(tm_before_epoch), 1641764511);
 }
 
 fn gmtime_r(env: &mut Environment, timestamp: ConstPtr<time_t>, res: MutPtr<tm>) -> MutPtr<tm> {

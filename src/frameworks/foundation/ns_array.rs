@@ -78,6 +78,12 @@ pub const CLASSES: ClassExports = objc_classes! {
     let res = deserialize_plist_from_file(env, &path, /* array_expected: */ true);
     autorelease(env, res)
 }
+
++ (id)arrayWithObject:(id)anObject {
+    assert!(this == env.objc.get_known_class("NSArray", &mut env.mem));
+    from_vec(env, vec![anObject])
+}
+    
 + (id)arrayWithObject:(id)object {
     retain(env, object);
     let objects = vec![object];
@@ -121,6 +127,53 @@ pub const CLASSES: ClassExports = objc_classes! {
     retain(env, this)
 }
 
+// NSFastEnumeration implementation
+- (NSUInteger)countByEnumeratingWithState:(MutPtr<NSFastEnumerationState>)state
+                                  objects:(MutPtr<id>)stackbuf
+                                    count:(NSUInteger)len {
+    // assert!(this == env.objc.get_known_class("NSArray", &mut env.mem));
+
+    let host_object = env.objc.borrow::<ArrayHostObject>(this);
+
+    if host_object.array.len() == 0 {
+        return 0;
+    }
+
+    // TODO: handle size > 1
+    // assert!(host_object.array.len() == 1);
+    let array_len = host_object.array.len().try_into().unwrap();
+    assert!(len >= array_len);
+
+    let NSFastEnumerationState {
+        state: start_index,
+        ..
+    } = env.mem.read(state);
+
+    let mut array_iter = host_object.array.iter();
+    if start_index >= 1 {
+       _ = array_iter.nth((start_index-1).try_into().unwrap());
+    }
+
+    let mut batch_count = 0;
+    while batch_count < len {
+        if let Some(object) = array_iter.next() {
+            env.mem.write(stackbuf + batch_count, *object);
+            batch_count += 1;
+        } else {
+            break;
+        }
+    }
+    env.mem.write(state, NSFastEnumerationState {
+        state: start_index + batch_count,
+        items_ptr: stackbuf,
+        // can be anything as long as it's dereferenceable and the same
+        // each iteration
+        mutations_ptr: stackbuf.cast(),
+        extra: Default::default(),
+    });
+    batch_count
+}
+    
 - (NSUInteger)indexOfObject:(id)object {
     let count: NSUInteger = msg![env; this count];
     for i in 0..count {
@@ -313,20 +366,6 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 - (id)reverseObjectEnumerator { // NSEnumerator*
     reverse_object_enumerator_inner(env, this)
-}
-
-// NSFastEnumeration implementation
-- (NSUInteger)countByEnumeratingWithState:(MutPtr<NSFastEnumerationState>)state
-                                  objects:(MutPtr<id>)stackbuf
-                                    count:(NSUInteger)len {
-    let count: NSUInteger = msg![env; this count];
-    fast_enumeration_helper(env, this, |env, idx| {
-        if idx < count {
-            msg![env; this objectAtIndex:idx]
-        } else {
-            nil
-        }
-    }, state, stackbuf, len)
 }
 
 // TODO: more init methods, etc

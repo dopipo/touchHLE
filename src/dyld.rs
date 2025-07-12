@@ -368,6 +368,38 @@ impl Dyld {
                     self.constants_to_link_later.push((ptr_ptr, template));
                     continue;
                 }
+
+                if let Ok(ptr) = self
+                     .create_proc_address(mem, &mut Cpu::new(None), symbol)
+            {
+                let ptr = Ptr::from_bits(ptr.addr_with_thumb_bit());
+                mem.write(ptr_ptr, ptr);
+                if bin.name == "libxml2.2.dylib" {
+                    if symbol == "_malloc" {
+                        // _xmlMalloc
+                        mem.write(Ptr::from_bits(0x3a409a1c), ptr);
+                        // _xmlMallocAtomic
+                        mem.write(Ptr::from_bits(0x3a409a18), ptr);
+
+                        // TODO: move (but where?)
+                        if let Ok(ptr2) = self
+                            .create_proc_address(mem, &mut Cpu::new(None), "_strdup") {
+                            // _xmlMemStrdup
+                            mem.write(Ptr::from_bits(0x3a409a10), ptr2);
+                        } else { panic!(); }
+                    } else if symbol == "_free" {
+                        // _xmlFree
+                        mem.write(Ptr::from_bits(0x3a409a20), ptr);
+                    } else if symbol == "_realloc" {
+                        // _xmlRealloc
+                        mem.write(Ptr::from_bits(0x3a409a14), ptr);
+                    } else {
+                        panic!("unhandled libxml2 symbol: {}", symbol);
+                    }
+                }
+                continue
+            }
+                
             }
             return;
         }
