@@ -1198,6 +1198,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, new)
 }
 
++ (id)string {
+    nil
+}
+
 // NSCopying implementation
 - (id)copyWithZone:(NSZonePtr)_zone {
     let new: id = msg_class![env; NSString alloc];
