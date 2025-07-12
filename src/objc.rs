@@ -51,6 +51,7 @@ use objects::{objc_object, HostObjectEntry};
 use properties::{ivar_list_t, objc_copyStruct, objc_getProperty, objc_setProperty};
 use selectors::sel_registerName;
 use synchronization::{objc_sync_enter, objc_sync_exit};
+use crate::objc::classes::method_setImplementation;
 
 /// Typedef for `NSZone *`. This is a [fossil type] found in the signature of
 /// `allocWithZone:` and similar methods. Its value is always ignored.
@@ -173,4 +174,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(sel_registerName(_)),
     export_c_func!(_Block_object_dispose(_, _)),
     export_c_func!(objc_getClass(_)),
+    export_c_func!(method_setImplementation(_, _)),
 ];
