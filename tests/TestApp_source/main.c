@@ -121,6 +121,7 @@ typedef __pthread_condattr_t pthread_condattr_t;
 
 int pthread_create(pthread_t *, const pthread_attr_t *, void *(*)(void *),
                    void *);
+int pthread_join(pthread_t thread, void **value_ptr);
 
 int pthread_cond_init(pthread_cond_t *, const pthread_condattr_t *);
 int pthread_cond_signal(pthread_cond_t *);
@@ -150,6 +151,18 @@ int sem_wait(sem_t *);
 #define LC_MESSAGES 6
 char *setlocale(int category, const char *locale);
 
+#ifdef DEFINE_ME_WHEN_BUILDING_ON_MACOS
+typedef long _register_t; // 64-bit definition
+#else
+typedef int _register_t;
+#endif
+
+// <setjmp.h>
+#define _JBLEN (10 + 16 + 2)
+typedef _register_t jmp_buf[_JBLEN];
+int setjmp(jmp_buf env);
+void longjmp(jmp_buf env, int val);
+
 // <ctype.h>
 int __maskrune(wchar_t, unsigned long);
 
@@ -176,6 +189,18 @@ long int lrintf(float);
 double ldexp(double, int);
 float ldexpf(float, int);
 float frexpf(float, int *);
+double frexp(double, int *);
+double fabs(double);
+
+// <inet.h>
+typedef unsigned int socklen_t;
+typedef unsigned int in_addr_t;
+struct in_addr {
+  in_addr_t s_addr;
+};
+in_addr_t inet_addr(const char *);
+const char *inet_ntop(int, const void *, char *, socklen_t);
+int inet_pton(int, const char *, void *);
 
 // `CFBase.h`
 
@@ -193,6 +218,7 @@ typedef unsigned long CFOptionFlags;
 typedef const struct _CFDictionary *CFDictionaryRef;
 typedef const struct _CFString *CFStringRef;
 typedef const struct _CFString *CFMutableStringRef;
+typedef const struct _CFURL *CFURLRef;
 
 CFTypeRef CFRetain(CFTypeRef cf);
 void CFRelease(CFTypeRef cf);
@@ -200,6 +226,8 @@ Boolean CFEqual(CFTypeRef cf1, CFTypeRef cf2);
 CFHashCode CFHash(CFTypeRef cf);
 
 // `CFString.h`
+
+enum { kCFStringEncodingASCII = 0x600 };
 
 typedef int CFComparisonResult;
 typedef unsigned int CFStringCompareFlags;
@@ -258,6 +286,21 @@ const void *CFDictionaryGetValue(CFDictionaryRef dict, const void *key);
 CFIndex CFDictionaryGetCount(CFDictionaryRef dict);
 void CFDictionaryGetKeysAndValues(CFDictionaryRef dict, const void **keys,
                                   const void **values);
+
+// `CFURL.h`
+
+CFURLRef CFURLCreateFromFileSystemRepresentation(CFAllocatorRef allocator,
+                                                 const char *buffer,
+                                                 CFIndex bufLen,
+                                                 Boolean isDirectory);
+CFStringRef CFURLCopyFileSystemPath(CFURLRef anURL, CFIndex pathStyle);
+
+CFURLRef CFURLCreateCopyAppendingPathComponent(CFAllocatorRef allocator,
+                                               CFURLRef url,
+                                               CFStringRef pathComponent,
+                                               Boolean isDirectory);
+CFURLRef CFURLCreateCopyDeletingLastPathComponent(CFAllocatorRef allocator,
+                                                  CFURLRef url);
 
 // === Main code ===
 
@@ -331,6 +374,10 @@ int test_vsnprintf() {
       str,
       "5|       5|00000005|5|       5|005|     005|     005|       5|00000005");
   free(str);
+  // Test %d with alternative form
+  str = str_format("%#.2d", 5);
+  res += !!strcmp(str, "05");
+  free(str);
   // Test %f
   str = str_format("%f|%8f|%08f|%.f|%8.f|%.3f|%8.3f|%08.3f|%*f|%0*f", 10.12345,
                    10.12345, 10.12345, 10.12345, 10.12345, 10.12345, 10.12345,
@@ -395,6 +442,13 @@ int test_vsnprintf() {
       "-1.012345e+01|-1.012345e+01|-1.012345e+01|-1e+01|  "
       "-1e+01|-1.012e+01|-1.012e+01|-1.012e+01|-1.012345e+01|-1.012345e+01");
   free(str);
+  str = str_format("%e|%8e|%08e|%.e|%8.e|%.3e|%8.3e|%08.3e|%*e|%0*e", 0.0, 0.0,
+                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 16, 0.0, 16, 0.0);
+  res += !!strcmp(
+      str,
+      "0.000000e+00|0.000000e+00|0.000000e+00|0e+00|   "
+      "0e+00|0.000e+00|0.000e+00|0.000e+00|    0.000000e+00|00000.000000e+00");
+  free(str);
   // Test %g
   str = str_format("%g|%8g|%08g|%.g|%8.g|%.3g|%8.3g|%08.3g|%*g|%0*g", 10.12345,
                    10.12345, 10.12345, 10.12345, 10.12345, 10.12345, 10.12345,
@@ -408,9 +462,19 @@ int test_vsnprintf() {
   res += !!strcmp(str, "-10.1235|-10.1235|-10.1235|-1e+01|  -1e+01|-10.1|   "
                        "-10.1|-00010.1|-10.1235|-10.1235");
   free(str);
+  str = str_format("%g|%8g|%08g|%.g|%8.g|%.3g|%8.3g|%08.3g|%*g|%0*g", 0.0, 0.0,
+                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 16, 0.0, 16, 0.0);
+  res += !!strcmp(
+      str, "0|       0|00000000|0|       0|0|       0|00000000|               "
+           "0|0000000000000000");
+  free(str);
   // Test %g with trailing zeros
   str = str_format("%.14g", 1.0);
   res += !!strcmp(str, "1");
+  free(str);
+  // Test %g with big number
+  str = str_format("%.14g", 10000000000.0);
+  res += !!strcmp(str, "10000000000");
   free(str);
   // Test %g with a precision argument
   str = str_format("%.*g", 4, 10.234);
@@ -422,6 +486,33 @@ int test_vsnprintf() {
   res += !!strcmp(str,
                   "10 100 4294967296 4294967296 10 100 4294967296 4294967296");
   free(str);
+  // Test %.50s with a long string
+  str = str_format("%.50s",
+                   "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ");
+  res += !!strcmp(str, "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWX");
+  free(str);
+  // Test precision for %x
+  str = str_format("%.8x-%.8x-%.2x", 10, 9999999, 9999999);
+  res += !!strcmp(str, "0000000a-0098967f-98967f");
+  free(str);
+  // Test unknown specifier skip
+  str = str_format("%I");
+  res += !!strcmp(str, "I");
+  free(str);
+  // Test %s with padding
+  const char *s = "Hello";
+  str = str_format("[%10s]", s);
+  res += !!strcmp(str, "[     Hello]");
+  free(str);
+  str = str_format("[%-10s]", s);
+  res += !!strcmp(str, "[Hello     ]");
+  free(str);
+  str = str_format("[%*s]", 10, s);
+  res += !!strcmp(str, "[     Hello]");
+  free(str);
+  str = str_format("[%-*s]", 10, s);
+  res += !!strcmp(str, "[Hello     ]");
+  free(str);
 
   return res;
 }
@@ -430,6 +521,7 @@ int test_sscanf() {
   int a, b;
   short c, d;
   float f;
+  double lf;
   char str[4];
   int matched = sscanf("1.23", "%d.%d", &a, &b);
   if (!(matched == 2 && a == 1 && b == 23))
@@ -476,6 +568,33 @@ int test_sscanf() {
   matched = sscanf("09", "%i", &a);
   if (!(matched == 1 && a == 0))
     return -16;
+  matched = sscanf("FF00", "%2x%2x", &a, &b);
+  if (!(matched == 2 && a == 255 && b == 0))
+    return -17;
+  matched = sscanf("aa", "%10x", &a);
+  if (!(matched == 1 && a == 170))
+    return -18;
+  matched = sscanf("3.14159265359", "%lf", &lf);
+  if (!(matched == 1 && lf == 3.14159265359))
+    return -19;
+  matched = sscanf("hello123", "%[a-z]", str);
+  if (!(matched == 1 && strcmp(str, "hello") == 0))
+    return -20;
+  matched = sscanf("abc123", "%[^0-9]", str);
+  if (!(matched == 1 && strcmp(str, "abc") == 0))
+    return -21;
+  matched = sscanf("-123", "%[-0-9]", str);
+  if (!(matched == 1 && strcmp(str, "-123") == 0))
+    return -22;
+  matched = sscanf("a-b", "%[a-z-]", str);
+  if (!(matched == 1 && strcmp(str, "a-b") == 0))
+    return -23;
+  matched = sscanf("123", "%[^0-9]", str);
+  if (matched != 0)
+    return -24;
+  matched = sscanf("Var_123 =", "%[A-Za-z0-9_]", str);
+  if (!(matched == 1 && strcmp(str, "Var_123") == 0))
+    return -25;
   return 0;
 }
 
@@ -649,6 +768,30 @@ int test_strtoul() {
   if (strtoul(text, &endptr, 16) != 3435973836 || endptr != text + 10) {
     return -1;
   }
+  text = "12345";
+  if (strtoul(text, &endptr, 10) != 12345UL || endptr != text + 5) {
+    return -2;
+  }
+  text = "123abc";
+  if (strtoul(text, &endptr, 10) != 123UL || endptr != text + 3) {
+    return -3;
+  }
+  text = "abc";
+  if (strtoul(text, &endptr, 10) != 0UL || endptr != text) {
+    return -4;
+  }
+  text = "-1";
+  if (strtoul(text, &endptr, 10) != (unsigned long)-1 || endptr != text + 2) {
+    return -5;
+  }
+  text = "Ff";
+  if (strtoul(text, &endptr, 16) != 255UL || endptr != text + 2) {
+    return -6;
+  }
+  text = "   +42abc";
+  if (strtoul(text, &endptr, 10) != 42UL || endptr != text + 6) {
+    return -6;
+  }
   return 0;
 }
 
@@ -800,17 +943,17 @@ int test_sem() {
     return -1;
   }
 
-  // Sem @ -1
+  // Sem @ 0
   if (sem_trywait(semaphore) == -1) {
     return -1;
   }
 
-  // Sem still @ -1, should not lock
+  // Sem still @ 0, should not lock
   if (sem_trywait(semaphore) == 0) {
     return -1;
   }
 
-  // Sem @ 0, should be able to relock
+  // Sem @ 1, should be able to relock
   sem_post(semaphore);
   if (sem_trywait(semaphore) == -1) {
     return -1;
@@ -818,6 +961,35 @@ int test_sem() {
 
   sem_close(semaphore);
   sem_unlink("sem_test");
+  return 0;
+}
+
+sem_t *mt_semaphore;
+
+void mtsem_thread() {
+  sem_wait(mt_semaphore);
+  sem_post(mt_semaphore);
+}
+
+int test_mtsem() {
+  mt_semaphore = sem_open("mtsem_test", O_CREAT, 0644, 0);
+  if (mt_semaphore == SEM_FAILED) {
+    printf("Error opening semaphore\n");
+    return -1;
+  }
+
+  pthread_t *my_thread = (pthread_t *)malloc(sizeof(pthread_t));
+  pthread_create(my_thread, NULL, (void *)mtsem_thread, NULL);
+
+  pthread_t *my_thread2 = (pthread_t *)malloc(sizeof(pthread_t));
+  pthread_create(my_thread2, NULL, (void *)mtsem_thread, NULL);
+
+  usleep(1);
+  usleep(1);
+
+  sem_post(mt_semaphore);
+  pthread_join(*my_thread, NULL);
+  pthread_join(*my_thread2, NULL);
   return 0;
 }
 
@@ -1091,9 +1263,10 @@ int test_realpath() {
 }
 
 int test_CFStringFind() {
-  CFStringRef a = CFStringCreateWithCString(NULL, "/a/b/c/b", 0x600);
-  CFStringRef b = CFStringCreateWithCString(NULL, "/b", 0x600);
-  CFStringRef d = CFStringCreateWithCString(NULL, "/d", 0x600);
+  CFStringRef a =
+      CFStringCreateWithCString(NULL, "/a/b/c/b", kCFStringEncodingASCII);
+  CFStringRef b = CFStringCreateWithCString(NULL, "/b", kCFStringEncodingASCII);
+  CFStringRef d = CFStringCreateWithCString(NULL, "/d", kCFStringEncodingASCII);
   // 0 for default options
   CFRange r = CFStringFind(a, b, 0);
   if (!(r.location == 2 && r.length == 2)) {
@@ -1209,6 +1382,16 @@ int test_open() {
     return -3;
   }
 
+  return 0;
+}
+
+int test_close() {
+  if (close(0) != 0)
+    return -1;
+  if (close(-1) == 0)
+    return -2;
+  if (close(1000) == 0)
+    return -3;
   return 0;
 }
 
@@ -1622,8 +1805,10 @@ int test_CFMutableDictionary_CustomCallbacks_CFTypes() {
     return -1;
   }
 
-  CFStringRef key = CFStringCreateWithCString(NULL, "Key", 0x600);
-  CFStringRef value = CFStringCreateWithCString(NULL, "Value", 0x600);
+  CFStringRef key =
+      CFStringCreateWithCString(NULL, "Key", kCFStringEncodingASCII);
+  CFStringRef value =
+      CFStringCreateWithCString(NULL, "Value", kCFStringEncodingASCII);
   if (key == NULL || value == NULL) {
     CFRelease(key);
     CFRelease(value);
@@ -1632,8 +1817,10 @@ int test_CFMutableDictionary_CustomCallbacks_CFTypes() {
   }
 
   // Create copies to be stored in the dictionary
-  CFStringRef key1 = CFStringCreateWithCString(NULL, "Key", 0x600);
-  CFStringRef value1 = CFStringCreateWithCString(NULL, "Value", 0x600);
+  CFStringRef key1 =
+      CFStringCreateWithCString(NULL, "Key", kCFStringEncodingASCII);
+  CFStringRef value1 =
+      CFStringCreateWithCString(NULL, "Value", kCFStringEncodingASCII);
 
   int retainCountBefore = retainCount;
   int releaseCountBefore = releaseCount;
@@ -1675,7 +1862,8 @@ int test_CFMutableDictionary_CustomCallbacks_CFTypes() {
     return -5;
   }
 
-  CFStringRef valueNew = CFStringCreateWithCString(NULL, "NewValue", 0x600);
+  CFStringRef valueNew =
+      CFStringCreateWithCString(NULL, "NewValue", kCFStringEncodingASCII);
   if (valueNew == NULL) {
     CFRelease(key);
     CFRelease(value);
@@ -2104,6 +2292,213 @@ int test_frexpf(void) {
   return 0;
 }
 
+int test_frexp() {
+  double value, frac;
+  int exp;
+
+  // Test 1: 0.0 -> should return 0.0 and exponent 0.
+  value = 0.0;
+  frac = frexp(value, &exp);
+  if (frac != 0.0 || exp != 0) {
+    return -1;
+  }
+
+  // Test 2: 8.0 -> 8.0 = 0.5 * 2^4, so fraction 0.5 and exponent 4.
+  value = 8.0;
+  frac = frexp(value, &exp);
+  if (frac != 0.5 || exp != 4) {
+    return -2;
+  }
+
+  // Test 3: 0.75 -> already normalized, should return 0.75 and exponent 0.
+  value = 0.75;
+  frac = frexp(value, &exp);
+  if (frac != 0.75 || exp != 0) {
+    return -3;
+  }
+
+  // Test 4: -4.0 -> -4.0 = -0.5 * 2^3, so fraction -0.5 and exponent 3.
+  value = -4.0;
+  frac = frexp(value, &exp);
+  if (frac != -0.5 || exp != 3) {
+    return -4;
+  }
+
+  // Test 5: 1.0 -> 1.0 = 0.5 * 2^1, so fraction 0.5 and exponent 1.
+  value = 1.0;
+  frac = frexp(value, &exp);
+  if (frac != 0.5 || exp != 1) {
+    return -5;
+  }
+
+  // Test 6: pi -> 3.141592653589793 = (pi/4) * 2^2, expect fraction
+  // ~0.7853981633974483 and exponent 2.
+  value = 3.141592653589793;
+  frac = frexp(value, &exp);
+  if (exp != 2 || fabs(frac - (3.141592653589793 / 4.0)) > 1e-15) {
+    return -6;
+  }
+
+  return 0;
+}
+
+void jmpfunction(jmp_buf env_buf) { longjmp(env_buf, 432); }
+
+int test_setjmp() {
+  int val;
+  jmp_buf env_buffer;
+
+  /* save calling environment for longjmp */
+  val = setjmp(env_buffer);
+
+  if (val != 0) {
+    return val == 432 ? 0 : -2;
+  }
+
+  jmpfunction(env_buffer);
+
+  return -1;
+}
+
+int test_inet_addr() {
+  unsigned int res = inet_addr("127.0.0.1");
+  if (res != 16777343) {
+    return -1;
+  }
+  return 0;
+}
+
+int test_inet_ntop() {
+  struct in_addr addr;
+  char buffer[16]; // INET_ADDRSTRLEN
+
+  unsigned int res = inet_addr("127.0.0.1");
+  if (res != 16777343) {
+    return -1;
+  }
+
+  addr.s_addr = res;
+  if (inet_ntop(2, &addr, buffer, sizeof(buffer)) == NULL) {
+    return -2;
+  }
+
+  if (strcmp(buffer, "127.0.0.1") != 0) {
+    return -3;
+  }
+
+  return 0;
+}
+
+int test_inet_pton() {
+  const char *ip_str = "127.0.0.1";
+  struct in_addr addr;
+
+  int res = inet_pton(2, ip_str, &addr);
+  if (res <= 0) {
+    return -1;
+  }
+  if (addr.s_addr != 16777343) {
+    return -2;
+  }
+  return 0;
+}
+
+int test_case_CFURL(const char *basePathCStr, const char *urlPathCStr,
+                    const char *fileNameCStr,
+                    const char *expectedAppendedCStr) {
+  CFURLRef url = CFURLCreateFromFileSystemRepresentation(NULL, urlPathCStr,
+                                                         strlen(urlPathCStr),
+                                                         1 // isDirectory
+  );
+  if (url == NULL) {
+    return -1;
+  }
+
+  CFStringRef fileName =
+      CFStringCreateWithCString(NULL, fileNameCStr, kCFStringEncodingASCII);
+  CFURLRef appendedURL =
+      CFURLCreateCopyAppendingPathComponent(NULL, url, fileName,
+                                            0 // isDirectory
+      );
+  CFRelease(fileName);
+  if (appendedURL == NULL) {
+    CFRelease(url);
+    return -2;
+  }
+
+  CFStringRef gotPath =
+      CFURLCopyFileSystemPath(appendedURL, 0); // kCFURLPOSIXPathStyle
+  if (gotPath == NULL) {
+    CFRelease(appendedURL);
+    CFRelease(url);
+    return -3;
+  }
+
+  CFStringRef expectedAppended = CFStringCreateWithCString(
+      NULL, expectedAppendedCStr, kCFStringEncodingASCII);
+  if (!CFEqual(gotPath, expectedAppended)) {
+    CFRelease(expectedAppended);
+    CFRelease(gotPath);
+    CFRelease(appendedURL);
+    CFRelease(url);
+    return -4;
+  }
+  CFRelease(expectedAppended);
+  CFRelease(gotPath);
+
+  CFURLRef deletedURL =
+      CFURLCreateCopyDeletingLastPathComponent(NULL, appendedURL);
+  if (deletedURL == NULL) {
+    CFRelease(appendedURL);
+    CFRelease(url);
+    return -5;
+  }
+
+  gotPath = CFURLCopyFileSystemPath(deletedURL, 0); // kCFURLPOSIXPathStyle
+  if (gotPath == NULL) {
+    CFRelease(deletedURL);
+    CFRelease(appendedURL);
+    CFRelease(url);
+    return -6;
+  }
+
+  CFStringRef expectedBase =
+      CFStringCreateWithCString(NULL, basePathCStr, kCFStringEncodingASCII);
+  if (!CFEqual(gotPath, expectedBase)) {
+    CFRelease(expectedBase);
+    CFRelease(gotPath);
+    CFRelease(deletedURL);
+    CFRelease(appendedURL);
+    CFRelease(url);
+    return -7;
+  }
+
+  CFRelease(expectedBase);
+  CFRelease(gotPath);
+  CFRelease(deletedURL);
+  CFRelease(appendedURL);
+  CFRelease(url);
+
+  return 0;
+}
+
+int test_CFURL() {
+  // base path, url path, filename, expected path
+  int res = test_case_CFURL("/a/b/c", "/a/b/c", "test.txt", "/a/b/c/test.txt");
+  if (res != 0) {
+    return res;
+  }
+  res = test_case_CFURL("/a/b/c", "/a/b/c/", "test.txt", "/a/b/c/test.txt");
+  if (res != 0) {
+    return res - 10;
+  }
+  res = test_case_CFURL("/a/b/c", "/a/b/c/", "test.txt", "/a/b/c/test.txt");
+  if (res != 0) {
+    return res - 20;
+  }
+  return 0;
+}
+
 // clang-format off
 #define FUNC_DEF(func)                                                         \
   { &func, #func }
@@ -2121,6 +2516,7 @@ struct {
     FUNC_DEF(test_strtof),
     FUNC_DEF(test_getcwd_chdir),
     FUNC_DEF(test_sem),
+    FUNC_DEF(test_mtsem),
     FUNC_DEF(test_CGAffineTransform),
     FUNC_DEF(test_strncpy),
     FUNC_DEF(test_strncat),
@@ -2139,6 +2535,7 @@ struct {
     FUNC_DEF(test_CFMutableString),
     FUNC_DEF(test_fwrite),
     FUNC_DEF(test_open),
+    FUNC_DEF(test_close),
     FUNC_DEF(test_cond_var),
     FUNC_DEF(test_CFMutableDictionary_NullCallbacks),
     FUNC_DEF(test_CFMutableDictionary_CustomCallbacks_PrimitiveTypes),
@@ -2147,6 +2544,12 @@ struct {
     FUNC_DEF(test_ldexp),
     FUNC_DEF(test_maskrune),
     FUNC_DEF(test_frexpf),
+    FUNC_DEF(test_frexp),
+    FUNC_DEF(test_setjmp),
+    FUNC_DEF(test_inet_addr),
+    FUNC_DEF(test_inet_ntop),
+    FUNC_DEF(test_inet_pton),
+    FUNC_DEF(test_CFURL),
 };
 // clang-format on
 

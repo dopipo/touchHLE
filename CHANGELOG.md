@@ -38,10 +38,22 @@ Compatibility:
   - [Tom Clancy's Splinter Cell: Conviction](https://appdb.touchhle.org/apps/416) (@ciciplusplus)
   - [Assassin's Creed](https://appdb.touchhle.org/apps/413) (@ciciplusplus)
   - [N.O.V.A. Near Orbit Vanguard Alliance](https://appdb.touchhle.org/apps/443) (@ciciplusplus)
+  - [Brothers in Arms 2: Global Front](https://appdb.touchhle.org/apps/464) (@ciciplusplus)
+  - [Ferrari GT: Evolution](https://appdb.touchhle.org/apps/116) (@ciciplusplus)
+  - [Castle Frenzy](https://appdb.touchhle.org/apps/463) (@ciciplusplus)
+  - [Hero of Sparta 2](https://appdb.touchhle.org/apps/453) (@ciciplusplus)
+  - [Hero of Sparta](https://appdb.touchhle.org/apps/452) (@ciciplusplus)
+  - [Bridge Odyssey](https://appdb.touchhle.org/apps/465) (@ciciplusplus)
+  - [Terminator Salvation](https://appdb.touchhle.org/apps/344) (@ciciplusplus)
+  - [Brothers In Arms: Hour Of Heroes](https://appdb.touchhle.org/apps/369) (@ciciplusplus)
+  - [Crusade Of Destiny](https://appdb.touchhle.org/apps/792) (@ciciplusplus)
+  - [Arvale](https://appdb.touchhle.org/apps/671) (@ciciplusplus)
+  - [Battlefield: Bad Company 2](https://appdb.touchhle.org/apps/817) (@ciciplusplus)
 - API support improvements:
-  - Various small contributions. (@hikari-no-yume, @alborrajo, @ciciplusplus, @atasro2, @abnormalmaps, @hujerhoe, @acieslewicz)
+  - Various small contributions. (@hikari-no-yume, @alborrajo, @ciciplusplus, @atasro2, @abnormalmaps, @hujerhoe, @acieslewicz, @WhatAmISupposedToPutHere, @JaGoTu, @apexad)
   - UITextField now supports real text input with a keyboard. On Windows/macOS physical keyboard is used, on Android it's done via a system soft keyboard. (@ciciplusplus)
   - UIScrollView and UITextView partial implementations. (@Skryptonyte, @ciciplusplus)
+  - Compilation of libz dylib (@acieslewicz)
 
 Usability:
 
@@ -52,10 +64,12 @@ Usability:
 - Default options for various games. (@nighto)
 - macOS builds and releases of touchHLE now come as an application bundle (`.app` directory) rather than as a bare “Unix executable” file. This should fix problems some users encountered with running touchHLE outside of a terminal, and allows putting touchHLE in the Applications folder like a normal graphical app. To support this, user data (apps, options, etc) is now stored in “Application Support” rather than the current directory, and the bundled files (fonts, dylibs, etc) are now part of the app bundle. If you prefer the old layout, you can still get it if you move all the files out of the bundle. (@hikari-no-yume)
 - The new `--force-composition=` option which may solve rendering issues in some games. For some games it is applied with default options. (@ciciplusplus)
+- ALAC and Microsoft IMA ADPCM are now supported in Audio Toolbox, with the same caveats as other compressed codecs. (@abnormalmaps)
 
 Quality:
 
 - Fix problem with non-working accelerometer on some Android phones. (@Oscar1640)
+- Fix multi-touch in some games. (@ciciplusplus)
 
 Other:
 

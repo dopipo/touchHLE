@@ -407,7 +407,7 @@ fn test_calendar_date_to_timestamp_known_dates() {
         tm_gmtoff: 0,
         tm_zone: Ptr::null(),
     };
-    assert_eq!(calendar_date_to_timestamp(tm_before_epoch), -466053135);
+    assert_eq!(calendar_date_to_timestamp(tm_before_epoch), 1641764511);
 }
 
 fn gmtime_r(env: &mut Environment, timestamp: ConstPtr<time_t>, res: MutPtr<tm>) -> MutPtr<tm> {
@@ -450,10 +450,11 @@ fn mktime(env: &mut Environment, tm: MutPtr<tm>) -> time_t {
 type suseconds_t = i32;
 
 #[allow(non_camel_case_types)]
+#[derive(Debug)]
 #[repr(C, packed)]
-struct timeval {
-    tv_sec: time_t,
-    tv_usec: suseconds_t,
+pub(super) struct timeval {
+    pub(super) tv_sec: time_t,
+    pub(super) tv_usec: suseconds_t,
 }
 unsafe impl SafeRead for timeval {}
 

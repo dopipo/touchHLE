@@ -6,13 +6,21 @@
 //! The `NSValue` class cluster, including `NSNumber`.
 
 use super::NSUInteger;
+use crate::frameworks::core_graphics::CGRect;
 use crate::frameworks::foundation::ns_string::from_rust_string;
 use crate::frameworks::foundation::NSInteger;
+use crate::mem::{ConstVoidPtr, MutVoidPtr};
 use crate::objc::{
-    autorelease, id, msg, msg_class, objc_classes, retain, Class, ClassExports, HostObject,
+    autorelease, id, msg, msg_class, nil, objc_classes, retain, Class, ClassExports, HostObject,
     NSZonePtr,
 };
 use crate::Environment;
+
+#[derive(Debug)]
+pub(super) enum NSValueHostObject {
+    CGRect(CGRect),
+}
+impl HostObject for NSValueHostObject {}
 
 macro_rules! impl_AsValue {
     ($method_name:tt, $typ:tt) => {
@@ -21,6 +29,7 @@ macro_rules! impl_AsValue {
                 // Cast to u8 is needed for float conversions
                 NSNumberHostObject::Bool(x) => *x as u8 as _,
                 NSNumberHostObject::UnsignedLongLong(x) => *x as _,
+                NSNumberHostObject::UnsignedInt(x) => *x as _,
                 NSNumberHostObject::Int(x) => *x as _,
                 NSNumberHostObject::LongLong(x) => *x as _,
                 NSNumberHostObject::Float(x) => *x as _,
@@ -34,6 +43,7 @@ macro_rules! impl_AsValue {
 pub(super) enum NSNumberHostObject {
     Bool(bool),
     UnsignedLongLong(u64),
+    UnsignedInt(u32),
     Int(i32), // Also covers Integer since this is a 32 bit platform.
     LongLong(i64),
     Float(f32),
@@ -46,6 +56,7 @@ impl NSNumberHostObject {
         match self {
             NSNumberHostObject::Bool(x) => *x,
             NSNumberHostObject::UnsignedLongLong(x) => *x != 0,
+            NSNumberHostObject::UnsignedInt(x) => *x != 0,
             NSNumberHostObject::Int(x) => *x != 0,
             NSNumberHostObject::LongLong(x) => *x != 0,
             NSNumberHostObject::Float(x) => *x != 0.0,
@@ -68,9 +79,78 @@ pub const CLASSES: ClassExports = objc_classes! {
 // implemented here yet (TODO).
 @implementation NSValue: NSObject
 
++ (id)valueWithPointer:(ConstVoidPtr)ptr {
+    // TODO: implement with `value:withObjCType:` instead
+    msg_class![env; NSNumber numberWithUnsignedInt:(ptr.to_bits())]
+}
+
++ (id)allocWithZone:(NSZonePtr)_zone {
+    let host_object = Box::new(NSValueHostObject::CGRect(CGRect::default()));
+    env.objc.alloc_object(this, host_object, &mut env.mem)
+}
+
++ (id)valueWithCGRect:(CGRect)value {
+    let new: id = msg![env; this alloc];
+    *env.objc.borrow_mut(new) = NSValueHostObject::CGRect(value);
+    autorelease(env, new)
+}
+
++ (id)valueWithCATransform3D:(u64)value {
+    // TODO: for greater efficiency we could return a static-lifetime value
+
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithUnsignedLongLong:value];
+    autorelease(env, new)
+}
+
++ (id)valueWithCGPoint:(u64)value {
+    // TODO: for greater efficiency we could return a static-lifetime value
+
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithUnsignedLongLong:value];
+    autorelease(env, new)
+}
+
++ (id)valueWithNonretainedObject:(u64)value {
+    // TODO: for greater efficiency we could return a static-lifetime value
+
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithUnsignedLongLong:value];
+    autorelease(env, new)
+}
+
++ (())value:(NSInteger)value withObjCType:(bool)_type {
+    // TODO
+}
+
++ (())valueWithBytes:(NSInteger)bytes objCType:(bool)_type {
+    // TODO
+}
+
+- (CGRect)CGRectValue {
+    let host_object = env.objc.borrow::<NSValueHostObject>(this);
+    match host_object {
+        NSValueHostObject::CGRect(cg_rect) => *cg_rect
+    }
+}
+
 // NSCopying implementation
 - (id)copyWithZone:(NSZonePtr)_zone {
     retain(env, this)
+}
+
+- (MutVoidPtr)pointerValue {
+    let class: Class = msg![env; this class];
+    assert!(class == env.objc.get_known_class("NSNumber", &mut env.mem));
+    // According to the docs, `If the value object was not created to hold
+    // a pointer-sized data item, the result is undefined.`
+    let val = msg![env; this unsignedIntValue];
+    MutVoidPtr::from_bits(val)
+}
+
+- (id)initWithUnsignedLongLong:(u64)value {
+    *env.objc.borrow_mut(this) = NSNumberHostObject::UnsignedLongLong(value);
+    this
 }
 
 @end
@@ -107,7 +187,23 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, new)
 }
 
++ (id)numberWithUnsignedInt:(u32)value {
+    // TODO: for greater efficiency we could return a static-lifetime value
+
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithUnsignedInt:value];
+    autorelease(env, new)
+}
+
 + (id)numberWithInt:(i32)value {
+    // TODO: for greater efficiency we could return a static-lifetime value
+
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithInt:value];
+    autorelease(env, new)
+}
+
++ (id)numberWithShort:(i32)value {
     // TODO: for greater efficiency we could return a static-lifetime value
 
     let new: id = msg![env; this alloc];
@@ -161,7 +257,17 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (id)initWithUnsignedInt:(u32)value {
+    *env.objc.borrow_mut(this) = NSNumberHostObject::UnsignedInt(value);
+    this
+}
+
 - (id)initWithInt:(i32)value {
+    *env.objc.borrow_mut(this) = NSNumberHostObject::Int(value);
+    this
+}
+
+- (id)initWithShort:(i32)value {
     *env.objc.borrow_mut(this) = NSNumberHostObject::Int(value);
     this
 }
@@ -176,6 +282,9 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (id)compare {
+    nil
+}
 
 - (bool)boolValue {
     env.objc.borrow::<NSNumberHostObject>(this).as_bool()
@@ -209,10 +318,15 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.borrow::<NSNumberHostObject>(this).as_unsigned_int()
 }
 
+- (NSUInteger)unsignedIntegerValue {
+    env.objc.borrow::<NSNumberHostObject>(this).as_unsigned_int()
+}
+
 - (id)description {
     let desc = match env.objc.borrow(this) {
         NSNumberHostObject::Bool(value) => from_rust_string(env, (*value as i32).to_string()),
         NSNumberHostObject::UnsignedLongLong(value) => from_rust_string(env, value.to_string()),
+        NSNumberHostObject::UnsignedInt(value) => from_rust_string(env, value.to_string()),
         NSNumberHostObject::Int(value) => from_rust_string(env, value.to_string()),
         NSNumberHostObject::LongLong(value) => from_rust_string(env, value.to_string()),
         NSNumberHostObject::Float(value) => from_rust_string(env, value.to_string()),
@@ -229,6 +343,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     match env.objc.borrow(this) {
         NSNumberHostObject::Bool(value) => *value as u64,
         NSNumberHostObject::UnsignedLongLong(value) => *value,
+        NSNumberHostObject::UnsignedInt(value) => *value as u64,
         NSNumberHostObject::Int(value) => *value as u64,
         NSNumberHostObject::LongLong(value) => *value as u64,
         NSNumberHostObject::Float(value) => value.to_bits() as u64,
@@ -255,15 +370,21 @@ fn equality_helper(env: &mut Environment, this: id, other: id) -> bool {
     if !msg![env; other isKindOfClass:class] {
         return false;
     }
-    match (env.objc.borrow(this), env.objc.borrow(other)) {
+    let (left, right) = (env.objc.borrow(this), env.objc.borrow(other));
+    match (left, right) {
         (&NSNumberHostObject::Bool(a), &NSNumberHostObject::Bool(b)) => a == b,
         (&NSNumberHostObject::UnsignedLongLong(a), &NSNumberHostObject::UnsignedLongLong(b)) => {
             a == b
         }
+        (&NSNumberHostObject::UnsignedInt(a), &NSNumberHostObject::UnsignedInt(b)) => a == b,
         (&NSNumberHostObject::Int(a), &NSNumberHostObject::Int(b)) => a == b,
         (&NSNumberHostObject::LongLong(a), &NSNumberHostObject::LongLong(b)) => a == b,
         (&NSNumberHostObject::Float(a), &NSNumberHostObject::Float(b)) => a == b,
         (&NSNumberHostObject::Double(a), &NSNumberHostObject::Double(b)) => a == b,
-        _ => todo!("Implement NSNumber comparisions of different types"),
+        _ => todo!(
+            "Implement NSNumber comparisons of different types: {:?} vs {:?}",
+            left,
+            right
+        ),
     }
 }

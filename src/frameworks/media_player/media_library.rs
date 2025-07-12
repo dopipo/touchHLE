@@ -20,4 +20,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
+@implementation MPMediaItem: NSObject
+@end 
+
 };

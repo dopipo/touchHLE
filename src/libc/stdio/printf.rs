@@ -13,13 +13,20 @@ use crate::libc::errno::set_errno;
 use crate::libc::posix_io::{STDERR_FILENO, STDIN_FILENO, STDOUT_FILENO};
 use crate::libc::stdio::{fwrite, FILE};
 use crate::libc::stdlib::{atof_inner, strtol_inner, strtoul};
-use crate::libc::string::strlen;
+use crate::libc::string::{strlen, strncpy};
 use crate::libc::wchar::wchar_t;
 use crate::mem::{ConstPtr, GuestUSize, Mem, MutPtr, MutVoidPtr, Ptr};
 use crate::objc::{id, msg, nil};
 use crate::Environment;
 use std::collections::HashSet;
 use std::io::Write;
+
+const ALL_SPECIFIERS: [u8; 25] = [
+    // IEEE printf specification
+    b'd', b'i', b'o', b'u', b'x', b'X', b'f', b'F', b'e', b'E', b'g', b'G', b'a', b'A', b'c', b's',
+    b'p', b'n', b'C', b'S', b'%', // NSString formatting
+    b'@', b'D', b'U', b'O',
+];
 
 const INTEGER_SPECIFIERS: [u8; 6] = [b'd', b'i', b'o', b'u', b'x', b'X'];
 const FLOAT_SPECIFIERS: [u8; 3] = [b'f', b'e', b'g'];
@@ -52,6 +59,15 @@ pub fn printf_inner<const NS_LOG: bool, F: Fn(&Mem, GuestUSize) -> u8>(
             continue;
         }
 
+        if get_format_char(&env.mem, format_char_idx) == b'#' {
+            // Alternative form handling
+            format_char_idx += 1;
+            // TODO: other specifiers
+            // assert!(get_format_char(&env.mem, format_char_idx) == b'.');
+            // TODO: other cases
+            // assert!(get_format_char(&env.mem, format_char_idx + 2) == b'd');
+        }
+
         let pad_char = if get_format_char(&env.mem, format_char_idx) == b'0' {
             format_char_idx += 1;
             '0'
@@ -59,9 +75,14 @@ pub fn printf_inner<const NS_LOG: bool, F: Fn(&Mem, GuestUSize) -> u8>(
             ' '
         };
 
+        let left_justified = if get_format_char(&env.mem, format_char_idx) == b'-' {
+            format_char_idx += 1;
+            true
+        } else {
+            false
+        };
         let pad_width = if get_format_char(&env.mem, format_char_idx) == b'*' {
             let pad_width = args.next::<i32>(env);
-            assert!(pad_width >= 0); // TODO: Implement right-padding
             format_char_idx += 1;
             pad_width
         } else {
@@ -72,6 +93,7 @@ pub fn printf_inner<const NS_LOG: bool, F: Fn(&Mem, GuestUSize) -> u8>(
             }
             pad_width
         };
+        // assert!(pad_width >= 0); // TODO: Implement right-padding
 
         let precision = if get_format_char(&env.mem, format_char_idx) == b'.' {
             format_char_idx += 1;
@@ -115,6 +137,14 @@ pub fn printf_inner<const NS_LOG: bool, F: Fn(&Mem, GuestUSize) -> u8>(
         let specifier = get_format_char(&env.mem, format_char_idx);
         format_char_idx += 1;
 
+        if !ALL_SPECIFIERS.contains(&specifier) {
+            // According to `printf` specs, this behaviour is undefined.
+            // But as seen on both macOS and iOS, the '%' just got skipped.
+            // Also, we need to back-track 1 position
+            format_char_idx -= 1;
+            continue;
+        }
+
         if specifier == b'\0' {
             // Apparently, errno is not set in this case (tested on macOS),
             // thus we treat this situation as a normal
@@ -130,13 +160,16 @@ pub fn printf_inner<const NS_LOG: bool, F: Fn(&Mem, GuestUSize) -> u8>(
 
         if precision.is_some() {
             assert!(
-                INTEGER_SPECIFIERS.contains(&specifier) || FLOAT_SPECIFIERS.contains(&specifier)
+                INTEGER_SPECIFIERS.contains(&specifier)
+                    || FLOAT_SPECIFIERS.contains(&specifier)
+                    || specifier == b's'
             )
         }
 
         match specifier {
             // Integer specifiers
             b'c' => {
+                assert!(!left_justified);
                 // TODO: support length modifier
                 assert!(length_modifier.is_none());
                 let c: u8 = args.next(env);
@@ -145,6 +178,7 @@ pub fn printf_inner<const NS_LOG: bool, F: Fn(&Mem, GuestUSize) -> u8>(
             }
             // Apple extension? Seemingly works in both NSLog and printf.
             b'C' => {
+                assert!(!left_justified);
                 assert!(length_modifier.is_none());
                 let c: unichar = args.next(env);
                 // TODO
@@ -156,23 +190,42 @@ pub fn printf_inner<const NS_LOG: bool, F: Fn(&Mem, GuestUSize) -> u8>(
             }
             b's' => {
                 // TODO: support length modifier
-                assert!(length_modifier.is_none());
+                // assert!(length_modifier.is_none());
                 let c_string: ConstPtr<u8> = args.next(env);
-                assert!(pad_char == ' ' && pad_width == 0); // TODO
+                // assert!(pad_char == ' '); // TODO
                 if !c_string.is_null() {
-                    res.extend_from_slice(env.mem.cstr_at(c_string));
+                    if let Some(precision) = precision {
+                        assert!(!left_justified);
+                        let str_len = strlen(env, c_string);
+                        res.extend_from_slice(
+                            env.mem.bytes_at(c_string, str_len.min(precision as _)),
+                        )
+                    } else if pad_width > 0 {
+                        let pad_width = pad_width as usize;
+                        let str = env.mem.cstr_at_utf8(c_string).unwrap();
+                        if left_justified {
+                            write!(&mut res, "{:<1$}", str, pad_width).unwrap();
+                        } else {
+                            write!(&mut res, "{:>1$}", str, pad_width).unwrap();
+                        }
+                    } else {
+                        res.extend_from_slice(env.mem.cstr_at(c_string));
+                    }
                 } else {
+                    // assert!(!left_justified);
+                    // assert!(precision.is_none());
                     res.extend_from_slice("(null)".as_bytes());
                 }
             }
             b'S' => {
+                // assert!(!left_justified);
                 // TODO: support length modifier
-                assert!(length_modifier.is_none());
+                // assert!(length_modifier.is_none());
                 // TODO: support other locales
                 let ctype_locale = setlocale(env, LC_CTYPE, Ptr::null());
-                assert_eq!(env.mem.read(ctype_locale), b'C');
+                // assert_eq!(env.mem.read(ctype_locale), b'C');
                 let w_string: ConstPtr<wchar_t> = args.next(env);
-                assert!(pad_char == ' ' && pad_width == 0); // TODO
+                // assert!(pad_char == ' ' && pad_width == 0); // TODO
                 if !w_string.is_null() {
                     res.extend_from_slice(env.mem.wcstr_at(w_string).as_bytes());
                 } else {
@@ -180,6 +233,7 @@ pub fn printf_inner<const NS_LOG: bool, F: Fn(&Mem, GuestUSize) -> u8>(
                 }
             }
             b'd' | b'i' | b'u' => {
+                assert!(!left_justified);
                 // Note: on 32-bit system int and long are i32,
                 // so single length_modifier is ignored (but not double one!)
                 let int: i64 = if specifier == b'u' {
@@ -215,6 +269,7 @@ pub fn printf_inner<const NS_LOG: bool, F: Fn(&Mem, GuestUSize) -> u8>(
                 }
             }
             b'@' if NS_LOG => {
+                assert!(!left_justified);
                 assert!(length_modifier.is_none());
                 let object: id = args.next(env);
                 // TODO: use localized description if available?
@@ -229,11 +284,12 @@ pub fn printf_inner<const NS_LOG: bool, F: Fn(&Mem, GuestUSize) -> u8>(
                 }
             }
             b'x' => {
-                assert!(precision.is_none());
+                assert!(!left_justified);
                 // Note: on 32-bit system unsigned int and unsigned long
                 // are u32, so length_modifier is ignored
                 let uint: u32 = args.next(env);
                 if pad_width > 0 {
+                    assert!(precision.is_none()); // TODO
                     let pad_width = pad_width as usize;
                     if pad_char == '0' && precision.is_none() {
                         write!(&mut res, "{:0>1$x}", uint, pad_width).unwrap();
@@ -241,10 +297,19 @@ pub fn printf_inner<const NS_LOG: bool, F: Fn(&Mem, GuestUSize) -> u8>(
                         write!(&mut res, "{:>1$x}", uint, pad_width).unwrap();
                     }
                 } else {
-                    res.extend_from_slice(format!("{:x}", uint).as_bytes());
+                    let tmp = if precision.is_some_and(|value| value > 0) {
+                        format!("{:01$x}", uint, precision.unwrap())
+                    } else {
+                        if let Some(precision) = precision {
+                            assert!(precision == 0 && uint != 0); // TODO
+                        }
+                        format!("{:x}", uint)
+                    };
+                    res.extend_from_slice(tmp.as_bytes());
                 }
             }
             b'X' => {
+                assert!(!left_justified);
                 assert!(precision.is_none());
                 // Note: on 32-bit system unsigned int and unsigned long
                 // are u32, so length_modifier is ignored
@@ -254,6 +319,7 @@ pub fn printf_inner<const NS_LOG: bool, F: Fn(&Mem, GuestUSize) -> u8>(
                     if pad_char == '0' && precision.is_none() {
                         write!(&mut res, "{:0>1$X}", uint, pad_width).unwrap();
                     } else {
+                        assert!(pad_char == ' '); // TODO
                         write!(&mut res, "{:>1$X}", uint, pad_width).unwrap();
                     }
                 } else {
@@ -261,145 +327,87 @@ pub fn printf_inner<const NS_LOG: bool, F: Fn(&Mem, GuestUSize) -> u8>(
                 }
             }
             b'p' => {
+                assert!(!left_justified);
                 assert!(length_modifier.is_none());
                 let ptr: MutVoidPtr = args.next(env);
                 res.extend_from_slice(format!("{:?}", ptr).as_bytes());
             }
             // Float specifiers
             b'f' => {
+                assert!(!left_justified);
                 let float: f64 = args.next(env);
                 let pad_width = pad_width as usize;
                 let precision = precision.unwrap_or(6);
-                if pad_char == '0' {
-                    res.extend_from_slice(
-                        format!("{:01$.2$}", float, pad_width, precision).as_bytes(),
-                    );
-                } else {
-                    res.extend_from_slice(
-                        format!("{:1$.2$}", float, pad_width, precision).as_bytes(),
-                    );
-                }
+
+                let formatted = f_format(float, pad_width, pad_char, precision);
+                res.extend_from_slice(formatted.as_bytes());
             }
             b'e' => {
+                assert!(!left_justified);
                 let float: f64 = args.next(env);
                 let pad_width = pad_width as usize;
                 let precision = precision.unwrap_or(6);
 
-                let exponent = float.abs().log10().floor();
-                let mantissa = float.abs() / 10f64.powf(exponent);
-                let sign = if float.is_sign_negative() { "-" } else { "" };
-                if pad_char == '0' {
-                    let float_exp_notation =
-                        format!("{0:.1$}e{2:+03}", mantissa, precision, exponent);
-                    res.extend_from_slice(
-                        format!(
-                            "{0}{1:0>2$}",
-                            sign,
-                            float_exp_notation,
-                            pad_width.saturating_sub(sign.len())
-                        )
-                        .as_bytes(),
-                    );
-                } else {
-                    let float_exp_notation =
-                        format!("{0}{1:.2$}e{3:+03}", sign, mantissa, precision, exponent);
-                    res.extend_from_slice(
-                        format!("{0:>1$}", float_exp_notation, pad_width).as_bytes(),
-                    );
-                }
+                let formatted = e_format(float, pad_width, pad_char, precision);
+                res.extend_from_slice(formatted.as_bytes());
             }
             b'g' => {
+                assert!(!left_justified);
                 let float: f64 = args.next(env);
                 let pad_width = pad_width as usize;
 
-                let sign = if float.is_sign_negative() { "-" } else { "" };
-
-                let formatted_f_without_padding_or_sign = {
-                    // Precision in %g means max number of decimal digits in
-                    // the mantissa. For that, we first calculate the length
-                    // of the integer part and then we substract it from
-                    // precision and use the result in the format! statement
-                    let float_trunc_len = (float.abs().trunc() as i32).to_string().len();
-                    // Format without padding
-                    if let Some(precision) = precision {
-                        format!(
-                            "{:.1$}",
-                            float.abs(),
-                            precision.saturating_sub(float_trunc_len)
-                        )
+                // Reference https://en.cppreference.com/w/c/io/vfprintf
+                let P: i32 = if let Some(precision) = precision {
+                    if precision == 0 {
+                        1
                     } else {
-                        format!("{:.4}", float.abs())
+                        precision.try_into().unwrap()
                     }
+                } else {
+                    6
                 };
-                let formatted_f = {
-                    if pad_char == '0' {
-                        format!(
-                            "{}{:0>2$}",
-                            sign,
-                            formatted_f_without_padding_or_sign,
-                            pad_width - sign.len()
-                        )
-                    } else {
-                        let formatted_f_with_sign =
-                            format!("{}{}", sign, formatted_f_without_padding_or_sign);
-                        format!("{:>1$}", formatted_f_with_sign, pad_width)
-                    }
+                let X: i32 = if float == 0.0 {
+                    0
+                } else {
+                    float.abs().log10().floor() as i32
                 };
+                log_dbg!(
+                    "float {}, pad_width {}, pad_char '{}', P {}, X {}",
+                    float,
+                    pad_width,
+                    pad_char,
+                    P,
+                    X
+                );
+                if P > X && X >= -4 {
+                    let precision: usize = (P - X - 1).try_into().unwrap();
 
-                let formatted_e_without_padding_or_sign = {
-                    let exponent = float.abs().log10().floor();
-                    let mantissa = float.abs() / 10f64.powf(exponent);
-                    // Precision in %g means max number of decimal digits in
-                    // the mantissa. For that, we first calculate the length
-                    // of the mantissa's int part and then we substract it from
-                    // precision and use the result in the format! statement
-                    let mantissa_trunc_len = (mantissa.trunc() as i32).to_string().len();
-                    // Format without padding
-                    if let Some(precision) = precision {
-                        if precision > mantissa_trunc_len {
-                            format!(
-                                "{0:.1$}e{2:+03}",
-                                mantissa,
-                                precision - mantissa_trunc_len,
-                                exponent
-                            )
+                    let result = f_format(float, pad_width, pad_char, precision);
+
+                    // TODO: skip if alternative representation is requested
+                    let trimmed_result = if result.contains('.') {
+                        result.trim_end_matches('0').trim_end_matches('.')
+                    } else {
+                        &result
+                    };
+
+                    let trimmed_result = if pad_width > 0 && trimmed_result.len() < pad_width {
+                        if pad_char == '0' {
+                            format!("{:0>1$}", trimmed_result, pad_width)
                         } else {
-                            format!("{:.0}e{:+03}", mantissa, exponent)
+                            format!("{:>1$}", trimmed_result, pad_width)
                         }
                     } else {
-                        format!("{}e{:+03}", mantissa, exponent)
-                    }
-                };
-                let formatted_e = if pad_char == '0' {
-                    format!(
-                        "{0}{1:0>2$}",
-                        sign,
-                        formatted_e_without_padding_or_sign,
-                        pad_width.saturating_sub(sign.len())
-                    )
-                } else {
-                    let without_padding_with_sign =
-                        format!("{}{}", sign, formatted_e_without_padding_or_sign);
-                    format!("{0:>1$}", without_padding_with_sign, pad_width)
-                };
+                        trimmed_result.to_string()
+                    };
 
-                // Use shortest formatted string
-                let result = if formatted_e_without_padding_or_sign.len()
-                    < formatted_f_without_padding_or_sign.len()
-                    || precision.is_some_and(|x| x == 0)
-                {
-                    formatted_e
+                    res.extend_from_slice(trimmed_result.as_bytes());
                 } else {
-                    formatted_f
-                };
+                    let precision: usize = (P - 1).try_into().unwrap();
 
-                res.extend_from_slice(
-                    // TODO: skip if alternative representation is requested
-                    result
-                        .trim_end_matches('0')
-                        .trim_end_matches('.')
-                        .as_bytes(),
-                );
+                    let formatted = e_format(float, pad_width, pad_char, precision);
+                    res.extend_from_slice(formatted.as_bytes());
+                }
             }
             // TODO: more specifiers
             _ => unimplemented!(
@@ -413,6 +421,38 @@ pub fn printf_inner<const NS_LOG: bool, F: Fn(&Mem, GuestUSize) -> u8>(
     log_dbg!("=> {:?}", std::str::from_utf8(&res));
 
     res
+}
+
+fn f_format(float: f64, pad_width: usize, pad_char: char, precision: usize) -> String {
+    if pad_char == '0' {
+        format!("{:01$.2$}", float, pad_width, precision)
+    } else {
+        assert!(pad_char == ' '); // TODO
+        format!("{:1$.2$}", float, pad_width, precision)
+    }
+}
+
+fn e_format(float: f64, pad_width: usize, pad_char: char, precision: usize) -> String {
+    let exponent = if float == 0.0 {
+        0.0
+    } else {
+        float.abs().log10().floor()
+    };
+    let mantissa = float.abs() / 10f64.powf(exponent);
+    let sign = if float.is_sign_negative() { "-" } else { "" };
+    if pad_char == '0' {
+        let float_exp_notation = format!("{0:.1$}e{2:+03}", mantissa, precision, exponent);
+        format!(
+            "{0}{1:0>2$}",
+            sign,
+            float_exp_notation,
+            pad_width.saturating_sub(sign.len())
+        )
+    } else {
+        assert!(pad_char == ' '); // TODO
+        let float_exp_notation = format!("{0}{1:.2$}e{3:+03}", sign, mantissa, precision, exponent);
+        format!("{0:>1$}", float_exp_notation, pad_width)
+    }
 }
 
 fn snprintf(
@@ -464,6 +504,9 @@ fn vsnprintf(
     );
 
     let res = printf_inner::<false, _>(env, |mem, idx| mem.read(format + idx), arg);
+    if n == 0 {
+        return res.len().try_into().unwrap();
+    }
     let middle = if ((n - 1) as usize) < res.len() {
         &res[..(n - 1) as usize]
     } else {
@@ -655,17 +698,39 @@ fn sscanf_common(
             continue;
         }
 
-        let mut max_width: i32 = 0;
+        let mut max_width: u32 = 0;
         while let c @ b'0'..=b'9' = env.mem.read(format + format_char_idx) {
-            max_width = max_width * 10 + (c - b'0') as i32;
+            max_width = max_width * 10 + (c - b'0') as u32;
             format_char_idx += 1;
         }
 
-        let length_modifier = if env.mem.read(format + format_char_idx) == b'h' {
-            format_char_idx += 1;
-            Some(b'h')
-        } else {
-            None
+        let length_modifier = match env.mem.read(format + format_char_idx) {
+            b'h' => {
+                format_char_idx += 1;
+                if env.mem.read(format + format_char_idx) == b'h' {
+                    format_char_idx += 1;
+                    Some("hh")
+                } else {
+                    Some("h")
+                }
+            }
+            b'l' => {
+                format_char_idx += 1;
+                if env.mem.read(format + format_char_idx) == b'l' {
+                    format_char_idx += 1;
+                    Some("ll")
+                } else {
+                    Some("l")
+                }
+            }
+            // q seems to be an equivalent of 'll'
+            // https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Strings/Articles/formatSpecifiers.html#//apple_ref/doc/uid/TP40004265-SW1
+            b'q' => {
+                format_char_idx += 1;
+                Some("ll")
+            }
+
+            _ => None,
         };
 
         let specifier = env.mem.read(format + format_char_idx);
@@ -683,12 +748,12 @@ fn sscanf_common(
                 match length_modifier {
                     Some(lm) => {
                         match lm {
-                            b'h' => {
+                            "h" => {
                                 // signed short* or unsigned short*
                                 match strtol_inner(env, src_ptr.cast_const(), base) {
                                     Ok((val, len)) => {
                                         if max_width > 0 {
-                                            assert_eq!(max_width, len as i32);
+                                            assert_eq!(max_width, len);
                                         }
                                         src_ptr += len;
                                         let c_int_ptr: ConstPtr<i16> = args.next(env);
@@ -713,51 +778,84 @@ fn sscanf_common(
             }
             b'f' => {
                 assert_eq!(max_width, 0);
-                assert!(length_modifier.is_none());
-                match atof_inner(env, src_ptr.cast_const()) {
+                let val = match atof_inner(env, src_ptr.cast_const()) {
                     Ok((val, len)) => {
                         src_ptr += len;
+                        val
+                    }
+                    Err(_) => break,
+                };
+                match length_modifier {
+                    None => {
                         let c_int_ptr: ConstPtr<f32> = args.next(env);
                         env.mem.write(c_int_ptr.cast_mut(), val as f32);
                     }
-                    Err(_) => break,
+                    Some("l") => {
+                        let c_int_ptr: ConstPtr<f64> = args.next(env);
+                        env.mem.write(c_int_ptr.cast_mut(), val);
+                    }
+                    Some(modifier) => {
+                        unimplemented!("Length formater '{}' for f", modifier)
+                    }
                 }
             }
             b'x' | b'X' => {
+                assert!(length_modifier.is_none());
+                // TODO: avoid scanning string upfront
                 let c_len: GuestUSize = strlen(env, src_ptr.cast_const());
-                if max_width != 0 {
-                    assert_eq!(c_len, max_width.try_into().unwrap());
-                }
-                let val: u32 = strtoul(env, src_ptr.cast_const(), Ptr::null(), 16);
-                src_ptr += c_len;
+                let (val, len) = if max_width != 0 && max_width < c_len {
+                    assert!(max_width > 0);
+                    // TODO: avoid tmp string allocation
+                    let tmp: MutPtr<u8> = env.mem.alloc(max_width + 1).cast();
+                    _ = strncpy(env, tmp, src_ptr.cast_const(), max_width);
+                    let val: u32 = strtoul(env, tmp.cast_const(), Ptr::null(), 16);
+                    env.mem.free(tmp.cast());
+                    (val, max_width)
+                } else {
+                    (strtoul(env, src_ptr.cast_const(), Ptr::null(), 16), c_len)
+                };
+                src_ptr += len;
                 let c_u32_ptr: ConstPtr<u32> = args.next(env);
                 env.mem.write(c_u32_ptr.cast_mut(), val);
             }
             b'[' => {
                 assert_eq!(max_width, 0);
                 assert!(length_modifier.is_none());
-                // TODO: support ranges like [0-9]
                 // [set] case
-                let mut c = env.mem.read(format + format_char_idx);
-                format_char_idx += 1;
-                // TODO: only `not in the set` for a moment
-                assert_eq!(c, b'^');
+                assert_ne!(env.mem.read(format + format_char_idx), b']');
+                let mut c: u8;
+                let inverted = if env.mem.read(format + format_char_idx) == b'^' {
+                    format_char_idx += 1;
+                    // assert_ne!(env.mem.read(format + format_char_idx), b']');
+                    true
+                } else {
+                    false
+                };
                 // Build set
                 let mut set: HashSet<u8> = HashSet::new();
-                // TODO: set can contain ']' as well
                 c = env.mem.read(format + format_char_idx);
                 format_char_idx += 1;
                 while c != b']' {
-                    set.insert(c);
+                    if env.mem.read(format + format_char_idx) == b'-' {
+                        // assert_ne!(env.mem.read(format + format_char_idx + 1), b']');
+                        let cc = env.mem.read(format + format_char_idx + 1);
+                        for x in c..=cc {
+                            set.insert(x);
+                        }
+                        format_char_idx += 2;
+                    } else {
+                        set.insert(c);
+                    }
                     c = env.mem.read(format + format_char_idx);
                     format_char_idx += 1;
                 }
                 let mut dst_ptr: MutPtr<u8> = args.next(env);
+                let mut matched = false;
                 // Consume `src` while chars are not in the set
                 let mut cc = env.mem.read(src_ptr);
                 src_ptr += 1;
-                // TODO: handle end of src string
-                while !set.contains(&cc) {
+                while set.contains(&cc) ^ inverted && env.mem.read(src_ptr - 1) != b'\0' {
+                    matched = true;
                     env.mem.write(dst_ptr, cc);
                     dst_ptr += 1;
                     cc = env.mem.read(src_ptr);
@@ -765,7 +863,11 @@ fn sscanf_common(
                 }
                 // we need to backtrack one position
                 src_ptr -= 1;
-                env.mem.write(dst_ptr, b'\0');
+                if matched {
+                    env.mem.write(dst_ptr, b'\0');
+                } else {
+                    matched_args -= 1;
+                }
             }
             b's' => {
                 assert_eq!(max_width, 0);

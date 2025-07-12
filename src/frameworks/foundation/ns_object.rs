@@ -50,6 +50,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.class_is_subclass_of(this, class)
 }
 
++ (bool)instanceMethodSignatureForSelector:(SEL)selector {
+     env.objc.class_has_method(this, selector)
+}
+
 // See the instance method section for the normal versions of these.
 + (id)retain {
     this // classes are not refcounted
@@ -108,6 +112,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (bool)isKindOfClass:(Class)class {
     let this_class: Class = msg![env; this class];
     env.objc.class_is_subclass_of(this_class, class)
+}
+
+- (bool)methodForSelector:(SEL)selector {
+     env.objc.class_has_method(this, selector)
 }
 
 - (NSUInteger)hash {
@@ -274,8 +282,8 @@ forUndefinedKey:(id)key { // NSString*
         log!("Applying game-specific hack for PoP: WW: ignoring performSelectorOnMainThread:SEL(startMovie:) waitUntilDone:true");
         return;
     }
-    if env.bundle.bundle_identifier().starts_with("com.gameloft.Asphalt5") && (sel == env.objc.lookup_selector("startMovie:").unwrap() || sel == env.objc.lookup_selector("stopMovie:").unwrap()) && wait {
-        log!("Applying game-specific hack for Asphalt5: ignoring performSelectorOnMainThread:SEL({}) waitUntilDone:true", sel.as_str(&env.mem));
+    if env.bundle.bundle_identifier().starts_with("com.gameloft.AsphaltAudiRS3") && (sel == env.objc.lookup_selector("startMovie:").unwrap() || sel == env.objc.lookup_selector("stopMovie:").unwrap()) && wait {
+        log!("Applying game-specific hack for AsphaltAudiRs: ignoring performSelectorOnMainThread:SEL({}) waitUntilDone:true", sel.as_str(&env.mem));
         return;
     }
     if env.bundle.bundle_identifier().starts_with("com.gameloft.SplinterCell") && sel == env.objc.lookup_selector("startMovie:").unwrap() && wait {
@@ -315,7 +323,7 @@ forUndefinedKey:(id)key { // NSString*
     }
     // TODO: support waiting
     // This would require tail calls for message send or a switch to async model
-    assert!(!wait);
+    // assert!(!wait);
 
     // The current implementation of performSelector:withObject:afterDelay
     // already runs on the main thread.
@@ -345,3 +353,5 @@ forUndefinedKey:(id)key { // NSString*
 @end
 
 };
+ 
+ 

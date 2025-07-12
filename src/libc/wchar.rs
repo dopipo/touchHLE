@@ -50,7 +50,7 @@ fn wmemset(
     ch: wchar_t,
     count: GuestUSize,
 ) -> MutPtr<wchar_t> {
-    GenericChar::<wchar_t>::memset(env, dest, ch, count)
+    GenericChar::<wchar_t>::memset(env, dest, ch, count, GuestUSize::MAX)
 }
 fn wmemcpy(
     env: &mut Environment,

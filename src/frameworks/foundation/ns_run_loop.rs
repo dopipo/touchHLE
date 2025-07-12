@@ -261,7 +261,7 @@ pub fn run_run_loop(
             let next_due = uikit::handle_events(env);
             limit_sleep_time(&mut sleep_until, next_due);
 
-            let next_due = core_animation::recomposite_if_necessary(env);
+            let next_due = core_animation::recomposite_if_necessary(env, /* force: */ false);
             limit_sleep_time(&mut sleep_until, next_due);
         }
 

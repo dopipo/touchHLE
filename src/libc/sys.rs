@@ -6,5 +6,6 @@
 
 pub mod mount;
 pub mod ptrace;
+pub mod socket;
 pub mod timeb;
 pub mod utsname;

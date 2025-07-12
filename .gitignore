@@ -3,6 +3,7 @@
 /touchHLE_sandbox
 /touchHLE_apps/*.ipa
 /touchHLE_apps/*.app
+touchHLE_wallpaper.*
 
 # Xcode (integration testing app)
 
@@ -26,3 +27,4 @@ tests/TestApp_source/build
 local.properties
 android/app/src/main/jniLibs
 android/app/build
+libxml2.2.dylib

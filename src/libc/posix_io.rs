@@ -11,6 +11,7 @@ use crate::abi::DotDotDot;
 use crate::dyld::{export_c_func, FunctionExports};
 use crate::fs::{GuestFile, GuestOpenOptions, GuestPath};
 use crate::libc::errno::{set_errno, EBADF};
+use crate::libc::sys::socket::close_socket;
 use crate::mem::{ConstPtr, ConstVoidPtr, GuestISize, GuestUSize, MutPtr, MutVoidPtr, Ptr};
 use crate::Environment;
 use std::io::{Read, Seek, SeekFrom, Write};
@@ -169,21 +170,7 @@ pub fn open_direct(env: &mut Environment, path: ConstPtr<u8>, flags: i32) -> Fil
                 reached_eof: false,
             };
 
-            let idx = if let Some(free_idx) = env
-                .libc_state
-                .posix_io
-                .files
-                .iter()
-                .position(|f| f.is_none())
-            {
-                env.libc_state.posix_io.files[free_idx] = Some(host_object);
-                free_idx
-            } else {
-                let idx = env.libc_state.posix_io.files.len();
-                env.libc_state.posix_io.files.push(Some(host_object));
-                idx
-            };
-            file_idx_to_fd(idx)
+            find_or_create_fd(env, host_object)
         }
         Err(()) => {
             // TODO: set errno
@@ -310,6 +297,17 @@ pub fn write(
     size: GuestUSize,
 ) -> GuestISize {
     // TODO: handle errno properly
+    if fd == STDERR_FILENO {
+        let buffer_slice = env.mem.bytes_at(buffer.cast(), size);
+        return match std::io::stderr().write(buffer_slice) {
+            Ok(bytes_written) => bytes_written as GuestUSize,
+            Err(_err) => 0,
+        } as GuestISize
+    }
+    // TODO: error handling for unknown fd?
+    // if env.libc_state.posix_io.file_for_fd(fd).is_none() {
+    //     return -1;
+    // }
     set_errno(env, 0);
 
     // TODO: error handling for unknown fd?
@@ -394,9 +392,22 @@ pub fn close(env: &mut Environment, fd: FileDescriptor) -> i32 {
     // TODO: handle errno properly
     set_errno(env, 0);
 
-    // TODO: error handling for unknown fd?
-    if fd < 0 || matches!(fd, STDOUT_FILENO | STDERR_FILENO) {
+    if matches!(fd, STDIN_FILENO | STDOUT_FILENO | STDERR_FILENO) {
+        log_dbg!("close({:?}) => 0", fd);
         return 0;
+    }
+
+    if fd < 0
+        || env
+            .libc_state
+            .posix_io
+            .files
+            .get(fd_to_file_idx(fd))
+            .is_none()
+    {
+        set_errno(env, EBADF);
+        log!("Warning: close({:?}) failed, returning -1", fd);
+        return -1;
     }
 
     let result = match env.libc_state.posix_io.files[fd_to_file_idx(fd)].take() {
@@ -407,6 +418,11 @@ pub fn close(env: &mut Environment, fd: FileDescriptor) -> i32 {
             match file.file {
                 // Closing directories requires no other actions
                 GuestFile::Directory => 0,
+                // Socket is a special case
+                GuestFile::Socket => {
+                    close_socket(env, fd);
+                    0
+                }
                 // Files must be synced if they require flushing
                 _ => {
                     if !file.needs_flush {
@@ -424,7 +440,7 @@ pub fn close(env: &mut Environment, fd: FileDescriptor) -> i32 {
             }
         }
         None => {
-            // TODO: set errno
+            set_errno(env, EBADF);
             -1
         }
     };
@@ -595,3 +611,46 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(flock(_, _)),
     export_c_func!(ftruncate(_, _)),
 ];
+
+/// Helper function, not part of API
+fn find_or_create_fd(env: &mut Environment, host_object: PosixFileHostObject) -> FileDescriptor {
+    let idx = if let Some(free_idx) = env
+        .libc_state
+        .posix_io
+        .files
+        .iter()
+        .position(|f| f.is_none())
+    {
+        env.libc_state.posix_io.files[free_idx] = Some(host_object);
+        free_idx
+    } else {
+        let idx = env.libc_state.posix_io.files.len();
+        env.libc_state.posix_io.files.push(Some(host_object));
+        idx
+    };
+    file_idx_to_fd(idx)
+}
+
+/// Helper function for socket creation, not part of API
+pub fn find_or_create_socket(env: &mut Environment) -> FileDescriptor {
+    let host_object = PosixFileHostObject {
+        file: GuestFile::Socket,
+        needs_flush: false,
+        reached_eof: false,
+    };
+    find_or_create_fd(env, host_object)
+}
+
+/// Helper function for socket check, not part of API
+pub fn is_socket(env: &mut Environment, fd: FileDescriptor) -> bool {
+    let guest_file = &env
+        .libc_state
+        .posix_io
+        .files
+        .get(fd_to_file_idx(fd))
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .file;
+    matches!(guest_file, GuestFile::Socket)
+}

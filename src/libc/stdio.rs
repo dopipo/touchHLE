@@ -62,7 +62,7 @@ fn fopen(env: &mut Environment, filename: ConstPtr<u8>, mode: ConstPtr<u8>) -> M
 
     let flags = match (basic_mode, plus) {
         (b'r', false) => O_RDONLY,
-        (b'r', true) => O_RDWR | O_APPEND,
+        (b'r', true) => O_RDWR,
         (b'w', false) => O_WRONLY | O_CREAT | O_TRUNC,
         (b'w', true) => O_RDWR | O_CREAT | O_TRUNC,
         (b'a', false) => O_WRONLY | O_APPEND | O_CREAT,
@@ -269,6 +269,13 @@ fn rewind(env: &mut Environment, file_ptr: MutPtr<FILE>) {
 fn fclose(env: &mut Environment, file_ptr: MutPtr<FILE>) -> i32 {
     // TODO: handle errno properly
     set_errno(env, 0);
+
+    if file_ptr.is_null() {
+        // According to the docs, this should segfault.
+        // But as tested on iPhone Simulator, it doesn't
+        log!("fclose(NULL) => EOF");
+        return EOF;
+    }
 
     let FILE { fd } = env.mem.read(file_ptr);
 

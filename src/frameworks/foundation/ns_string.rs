@@ -13,7 +13,7 @@ mod path_algorithms;
 use super::{ns_array, unichar};
 use super::{
     NSComparisonResult, NSNotFound, NSOrderedAscending, NSOrderedDescending, NSOrderedSame,
-    NSRange, NSUInteger,
+    NSRange, NSInteger, NSUInteger,
 };
 use crate::abi::VaList;
 use crate::frameworks::core_graphics::{CGFloat, CGPoint, CGRect, CGSize};
@@ -39,11 +39,14 @@ use yore::code_pages::CP1252;
 pub type NSStringEncoding = NSUInteger;
 pub const NSASCIIStringEncoding: NSUInteger = 1;
 pub const NSUTF8StringEncoding: NSUInteger = 4;
+pub const NSNonLossyASCIIStringEncoding: NSUInteger = 0x30009240;
+pub const NSISOLatin1StringEncoding: NSUInteger = 5;
 pub const NSShiftJISStringEncoding: NSUInteger = 8;
 pub const NSUnicodeStringEncoding: NSUInteger = 10;
 pub const NSWindowsCP1252StringEncoding: NSUInteger = 12;
 pub const NSMacOSRomanStringEncoding: NSUInteger = 30;
 pub const NSUTF16StringEncoding: NSUInteger = NSUnicodeStringEncoding;
+pub const NSUTF32StringEncoding: NSUInteger = 0x422;
 pub const NSUTF16BigEndianStringEncoding: NSUInteger = 0x90000100;
 pub const NSUTF16LittleEndianStringEncoding: NSUInteger = 0x94000100;
 
@@ -58,6 +61,7 @@ const C_STRING_FRIENDLY_ENCODINGS: &[NSStringEncoding] = &[
     NSASCIIStringEncoding,
     NSUTF8StringEncoding,
     NSWindowsCP1252StringEncoding,
+    NSMacOSRomanStringEncoding,
 ];
 
 pub const NSMaximumStringLength: NSUInteger = (i32::MAX - 1) as _;
@@ -94,7 +98,7 @@ enum StringHostObject {
 impl HostObject for StringHostObject {}
 impl StringHostObject {
     fn decode(bytes: Cow<[u8]>, encoding: NSStringEncoding) -> StringHostObject {
-        if bytes.len() == 0 {
+        if bytes.is_empty() {
             return StringHostObject::Utf8(Cow::Borrowed(""));
         }
 
@@ -107,6 +111,17 @@ impl StringHostObject {
                 let string = unsafe { String::from_utf8_unchecked(bytes.into_owned()) };
                 StringHostObject::Utf8(Cow::Owned(string))
             }
+            NSMacOSRomanStringEncoding => {
+                // TODO: support non ASCII symbols
+                assert!(bytes.iter().all(|byte| byte.is_ascii()));
+                // Safety: guaranteed by above assertion
+                let string = unsafe { String::from_utf8_unchecked(bytes.into_owned()) };
+                StringHostObject::Utf8(Cow::Owned(string))
+            }
+            NSNonLossyASCIIStringEncoding => {
+                let string = String::from_utf8(bytes.into_owned()).unwrap();
+                StringHostObject::Utf8(Cow::Owned(string))
+            }
             NSUTF8StringEncoding => {
                 let string = String::from_utf8(bytes.into_owned()).unwrap();
                 StringHostObject::Utf8(Cow::Owned(string))
@@ -116,17 +131,21 @@ impl StringHostObject {
                 let string = CP1252.decode(&bytes).to_string();
                 StringHostObject::Utf8(Cow::Owned(string))
             }
+            NSUTF32StringEncoding => {
+                let string = String::from_utf8(bytes.into_owned()).unwrap();
+                StringHostObject::Utf8(Cow::Owned(string))
+            }
             NSShiftJISStringEncoding => {
                 let (cow, encoding_used, had_errors) = SHIFT_JIS.decode(&bytes);
-                assert_eq!(encoding_used, SHIFT_JIS);
-                assert!(!had_errors);
+                // assert_eq!(encoding_used, SHIFT_JIS);
+                // assert!(!had_errors);
                 log_dbg!("ShiftJIS decoded {:?}", cow);
                 StringHostObject::Utf8(Cow::Owned(cow.to_string()))
             }
             NSUTF16StringEncoding
             | NSUTF16BigEndianStringEncoding
             | NSUTF16LittleEndianStringEncoding => {
-                assert!(bytes.len() % 2 == 0);
+                // assert!(bytes.len() % 2 == 0);
 
                 let is_big_endian = match encoding {
                     NSUTF16BigEndianStringEncoding => true,
@@ -282,6 +301,18 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg_class![env; _touchHLE_NSString allocWithZone:zone]
 }
 
++ (id)bytes {
+    nil
+}
+
++ (id)length {
+    nil
+}
+
++ (id)dataUsingEncoding:(NSUInteger)_encoding {
+    msg![env; this init]
+}
+
 + (id)stringWithString:(id)string { // NSString*
     let new: id = msg![env; this alloc];
     let new: id = msg![env; new initWithString:string];
@@ -300,6 +331,12 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, new)
 }
 
++ (id)stringWithCString:(ConstPtr<u8>)c_string length:(NSUInteger)length {
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithCString:c_string length:length];
+    autorelease(env, new)
+}
+
 + (id)stringWithCString:(ConstPtr<u8>)c_string
                encoding:(NSStringEncoding)encoding {
     let new: id = msg![env; this alloc];
@@ -313,6 +350,16 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, new)
 }
 
++ (id)stringWithContentsOfURL:(NSUInteger)_url {
+    msg![env; this init]
+}
+
++ (id)stringWithString:(id)string {
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithString:string];
+    autorelease(env, new)
+}
+
 + (id)stringWithContentsOfFile:(id)path // NSString*
                       encoding:(NSStringEncoding)encoding
                          error:(MutPtr<id>)error { // NSError**
@@ -322,6 +369,14 @@ pub const CLASSES: ClassExports = objc_classes! {
                                                  error:error];
     autorelease(env, new)
 }
+
++ (id)stringWithContentsOfURL:(id)url // NSURL*Add commentMore actions
+                  encoding:(NSStringEncoding)encoding
+                     error:(MutPtr<id>)error { // NSError**
+    let path: id = msg![env; url path];
+    msg_class![env; NSString stringWithContentsOfFile:path encoding:encoding error:error]
+}
+
 
 + (id)stringWithFormat:(id)format, // NSString*
                        ...args {
@@ -523,7 +578,7 @@ pub const CLASSES: ClassExports = objc_classes! {
         num
     }
 
-    assert_ne!(other, nil);
+    // assert_ne!(other, nil);
 
     // TODO: support foreign subclasses (perhaps via a helper function that
     // copies the string first)
@@ -698,20 +753,20 @@ pub const CLASSES: ClassExports = objc_classes! {
     let string = to_rust_string(env, this);
     // TODO: other encodings
     let bytes: Vec<u8> = match encoding {
-        NSASCIIStringEncoding | NSMacOSRomanStringEncoding => {
-            // TODO: properly support Mac OS Roman encoding.
+        NSNonLossyASCIIStringEncoding | NSASCIIStringEncoding | NSMacOSRomanStringEncoding | NSISOLatin1StringEncoding | NSWindowsCP1252StringEncoding => {
+            // TODO: properly support Mac OS Roman and ISO Latin 1 encodings.
             // The first 128 characters are identical to the ASCII
-            assert!(string.as_bytes().iter().all(|byte| byte.is_ascii()));
+            // assert!(string.as_bytes().iter().all(|byte| byte.is_ascii()));
             string.as_bytes().to_vec()
         },
         NSUTF8StringEncoding => {
             string.as_bytes().to_vec()
         },
         NSUTF16LittleEndianStringEncoding => string.encode_utf16().flat_map(u16::to_le_bytes).collect(),
-        _ => unimplemented!()
+        _ => unimplemented!("{}", encoding),
     };
     let null_size: GuestUSize = match encoding {
-        NSUTF8StringEncoding | NSASCIIStringEncoding | NSMacOSRomanStringEncoding => 1,
+        NSUTF8StringEncoding | NSASCIIStringEncoding | NSMacOSRomanStringEncoding | NSISOLatin1StringEncoding | NSWindowsCP1252StringEncoding => 1,
         NSUTF16LittleEndianStringEncoding => 2,
         _ => unimplemented!()
     };
@@ -912,7 +967,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (id)stringByAddingPercentEscapesUsingEncoding:(NSStringEncoding)encoding {
-    assert_eq!(encoding, NSASCIIStringEncoding); // TODO: other encodings
+    assert!(encoding == NSASCIIStringEncoding || encoding == NSUTF8StringEncoding); // TODO: other encodings
     // TODO: implement escaping as per RFC 2396
     let str = to_rust_string(env, this);
     // FIXME: figure out why '[' and ']' are escaped on iOS simulator
@@ -926,10 +981,11 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (id)stringByAppendingPathComponent:(id)component { // NSString*
     // TODO: avoid copying
-    // FIXME: check if Rust join() matches NSString (it probably doesn't)
-    let combined = GuestPath::new(&to_rust_string(env, this))
-        .join(to_rust_string(env, component));
-    let new_string = from_rust_string(env, String::from(combined));
+    let base_str = to_rust_string(env, this);
+    let component_str = to_rust_string(env, component);
+    let res = path_algorithms::string_by_appending_path_component(&base_str, &component_str);
+    log_dbg!("'{}' + '{}' -> '{}'", base_str, component_str, res);
+    let new_string = from_rust_string(env, res);
     autorelease(env, new_string)
 }
 
@@ -938,7 +994,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     let mut combined = to_rust_string(env, this).into_owned();
     // TODO: avoid copying
     let extension_string = to_rust_string(env, extension);
-    if extension_string.len() > 0 {
+    if !extension_string.is_empty(){
         combined.push('.');
         combined.push_str(&extension_string);
     }
@@ -947,11 +1003,28 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, new_string)
 }
 
+- (id)stringByExpandingTildeInPath {
+    let path = to_rust_string(env, this);
+
+    let new_path_str = if path.starts_with('~') {
+        let path = path.trim_start_matches('~');
+        assert!(!path.contains('~'));
+        let guest_path = env.fs.home_directory().join(path);
+        let resolved = fs::resolve_path(&guest_path, None);
+        format!("/{}", resolved.join("/"))
+    } else {
+        path.to_string()
+    };
+
+    log_dbg!("[(NSString *){:?} stringByExpandingTildeInPath] {} -> {}", this, path, new_path_str);
+
+    let new_string = from_rust_string(env, new_path_str);
+    autorelease(env, new_string)
+}
+    
 - (id)stringByStandardizingPath {
-    let path = to_rust_string(env, this); // TODO: avoid copying
-    // TODO: Expanding an initial tilde expression using
-    //       stringByExpandingTildeInPath
-    assert!(!path.contains('~'));
+    let expanded: id = msg![env; this stringByExpandingTildeInPath];
+    let path = to_rust_string(env, expanded); // TODO: avoid copying
     // TODO: Removing an initial component of "/private/var/automount",
     //       "/var/automount”, or "/private” from the path
     assert!(!path.starts_with("/private"));
@@ -1125,6 +1198,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, new)
 }
 
++ (id)string {
+    nil
+}
+
 // NSCopying implementation
 - (id)copyWithZone:(NSZonePtr)_zone {
     let new: id = msg_class![env; NSString alloc];
@@ -1201,6 +1278,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (())compare:(NSInteger)_compare options:(bool)_options range:(bool)_range {
+    // TODO
+}
+
 - (id)initWithCharacters:(ConstPtr<unichar>)characters length:(NSUInteger)len {
     assert!(!characters.is_null());
     let num_bytes = len * 2;
@@ -1226,9 +1307,14 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this initWithCString:c_string encoding:encoding]
 }
 
+- (id)initWithCString:(ConstPtr<u8>)c_string length:(NSUInteger)len {
+    let encoding: NSStringEncoding = msg_class![env; NSString defaultCStringEncoding];
+    msg![env; this initWithBytes:c_string length:len encoding:encoding]
+}
+
 - (id)initWithCString:(ConstPtr<u8>)c_string
              encoding:(NSStringEncoding)encoding {
-    assert!(C_STRING_FRIENDLY_ENCODINGS.contains(&encoding), "encoding {}", encoding);
+    // assert!(C_STRING_FRIENDLY_ENCODINGS.contains(&encoding), "encoding {}", encoding);
     let len: NSUInteger = env.mem.cstr_at(c_string).len().try_into().unwrap();
     msg![env; this initWithBytes:c_string length:len encoding:encoding]
 }
@@ -1273,6 +1359,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     *env.objc.borrow_mut(this) = host_object;
 
     this
+}
+
+- (id)integerValue {
+    nil
 }
 
 - (bool)isAbsolutePath {
@@ -1326,6 +1416,42 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, res)
 }
 
+- (NSRange)lineRangeForRange:(NSRange)range {
+    let host_object = env.objc.borrow_mut::<StringHostObject>(this);
+    let (orig_string, did_convert) = host_object.convert_to_utf16_inplace();
+    if did_convert {
+        log_dbg!("[{:?} length]: converted string to UTF-16", this);
+    }
+    let (start, end, _) = line_range_helper(orig_string, range, true, true);
+    NSRange { location: start, length: end - start }
+}
+
+- (())getLineStart:(MutPtr<NSUInteger>)start_ptr
+               end:(MutPtr<NSUInteger>)end_ptr
+       contentsEnd:(MutPtr<NSUInteger>)contents_end_ptr
+          forRange:(NSRange)range {
+    let host_object = env.objc.borrow_mut::<StringHostObject>(this);
+    let (orig_string, did_convert) = host_object.convert_to_utf16_inplace();
+    if did_convert {
+        log_dbg!("[{:?} length]: converted string to UTF-16", this);
+    }
+
+    let get_start = !start_ptr.is_null();
+    let get_end = !end_ptr.is_null() || !contents_end_ptr.is_null();
+    let (start, end, contents_end) = line_range_helper(orig_string, range, get_start, get_end);
+
+    if !start_ptr.is_null() {
+        env.mem.write(start_ptr, start);
+    }
+
+    if !end_ptr.is_null() {
+        env.mem.write(end_ptr, end);
+    }
+
+    if !contents_end_ptr.is_null() {
+        env.mem.write(contents_end_ptr, contents_end);
+    }
+}
 @end
 
 // Specialised subclass for static-lifetime strings.
@@ -1346,6 +1472,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 // Specialised subclasses for static-lifetime strings from the guest app binary.
 @implementation _touchHLE_NSString_CFConstantString_UTF8: _touchHLE_NSString_Static
 
+- (id)integerValue {
+    nil
+}
+
 - (ConstPtr<u8>)UTF8String {
     let cfstringStruct { bytes, .. } = env.mem.read(this.cast());
 
@@ -1355,6 +1485,11 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 @implementation _touchHLE_NSString_CFConstantString_UTF16: _touchHLE_NSString_Static
+
+- (id)integerValue {
+    nil
+}
+
 @end
 
 @implementation _touchHLE_NSMutableString: NSMutableString
@@ -1364,8 +1499,43 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.alloc_object(this, host_object, &mut env.mem)
 }
 
+- (id)bytes {
+    nil
+}
+
+- (id)dataUsingEncoding:(NSUInteger)_using {
+    msg![env; this init]
+}
+
 - (id)initWithCapacity:(NSUInteger)_capacity {
-    // TODO: capacity
+    msg![env; this init]
+}
+
+- (id)initWithString:(id)string { // NSString *
+    // TODO: optimize for more common cases (or maybe just call copy?)
+    let mut code_units = Vec::new();
+    for_each_code_unit(env, string, |_, c| code_units.push(c));
+    *env.objc.borrow_mut(this) = StringHostObject::Utf16(code_units);
+    this
+}
+
+- (id)initWithUTF8String:(NSUInteger)_string {
+    msg![env; this init]
+}
+
+- (())initWithContentsOfFile:(NSInteger)file encoding:(bool)_encoding error:(bool)_error {
+    // TODO
+}
+
+- (())initWithFormat:(NSInteger)format arguments:(bool)_arguments {
+    // TODO
+}
+
+- (())insertString:(NSInteger)string atIndex:(bool)_index {
+    // TODO
+}
+
+- (id)lengthOfBytesUsingEncoding:(NSUInteger)_bytes {
     msg![env; this init]
 }
 
@@ -1524,4 +1694,156 @@ fn float_value_common<F: std::str::FromStr + Default>(env: &mut Environment, str
     }
     // TODO: handle over/underflow properly
     st[..cutoff].parse().unwrap_or(Default::default())
+}
+
+/// Helper function for lineRangeForRange: and
+/// getLineStart:end:contentsEnd:forRange:.
+///
+/// The two last arguments (get_[start/end]) correspond to the
+/// start and end/contentsEnd returns. If false is specified for a given
+/// argument, the corresponding return values will not be calculated and
+/// set to 0.
+fn line_range_helper(
+    string: &Utf16String,
+    range: NSRange,
+    get_start: bool,
+    get_end: bool,
+) -> (NSUInteger, NSUInteger, NSUInteger) {
+    let NSRange {
+        location: r_start,
+        length,
+    } = range;
+    let r_end: usize = r_start.checked_add(length).unwrap().try_into().unwrap();
+    let r_start: usize = r_start.try_into().unwrap();
+    // All the line range functions are "counting the posts, not the fences", so
+    // it's ok if r_end = length.
+    let str_len = string.len();
+    assert!(r_end <= str_len, "Range out of bounds!");
+
+    let mut start_pos: usize = 0;
+    if get_start {
+        start_pos = r_start;
+        while start_pos > 0 {
+            let c: u16 = string[start_pos - 1];
+            // What counts as a line delimiter is noted here:
+            // https://developer.apple.com/documentation/foundation/nsstring/1415111-getlinestart?language=objc
+            // There's some special handling for if we start in the
+            // middle of a CRLF.
+            match c {
+                // 'LINE FEED (LF)' (\n), 'NEXT LINE (NEL)', 'LINE SEPARATOR',
+                // 'PARAGRAPH SEPARATOR'
+                0x000A | 0x0085 | 0x2028 | 0x2029 => break,
+                // 'CARRIAGE RETURN (CR)' (\r)
+                0x000D => {
+                    // If the first character is CR, and it is followed by an
+                    // LF, then it's not counted as a line delimiter.
+                    // (verified on simulator)
+                    if start_pos == r_start && start_pos < str_len {
+                        let after_cr: u16 = string[start_pos];
+                        // 'LINE FEED (LF)' (\n)
+                        if after_cr == 0x000A {
+                            start_pos -= 1;
+                            continue;
+                        }
+                    }
+                    break;
+                }
+                _ => {}
+            }
+            start_pos -= 1;
+        }
+    }
+
+    // There is very little extra cost for also getting contentsEnd if we're
+    // getting end (or vice-versa), so they're combined into one argument.
+    let mut end_pos = 0;
+    let mut cend_pos = 0;
+    if get_end {
+        // We want to include the entire line that covers the last char
+        // in [r_start, r_end).
+        cend_pos = if length > 0 { r_end - 1 } else { r_start };
+        while cend_pos < str_len {
+            let c: u16 = string[cend_pos];
+            // See above about what counts as a line delimiter.
+            // There's more understandable handling for CRLF here as well.
+            match c {
+                //  'NEXT LINE (NEL)', 'LINE SEPARATOR', 'PARAGRAPH SEPARATOR'
+                0x0085 | 0x2028 | 0x2029 => {
+                    end_pos = cend_pos + 1;
+                    break;
+                }
+                // 'LINE FEED (LF)' (\n),
+                0x000A => {
+                    // If this is the first character checked, then we also need
+                    // to check back for a CR.
+                    if cend_pos > 0 && string[cend_pos - 1] == 0x000D {
+                        cend_pos -= 1;
+                        end_pos = cend_pos + 2;
+                    } else {
+                        end_pos = cend_pos + 1;
+                    }
+                    break;
+                }
+                // 'CARRIAGE RETURN (CR)' (\r)
+                0x000D => {
+                    // Check if next character exists and is LF.
+                    if cend_pos < str_len - 1 {
+                        let after_cr: u16 = string[cend_pos + 1];
+                        // 'LINE FEED (LF)' (\n)
+                        if after_cr == 0x000A {
+                            end_pos = cend_pos + 2;
+                            break;
+                        }
+                    }
+                    end_pos = cend_pos + 1;
+                    break;
+                }
+                _ => {}
+            }
+            cend_pos += 1;
+        }
+        if cend_pos == str_len {
+            end_pos = cend_pos
+        }
+    }
+
+    (
+        start_pos.try_into().unwrap(),
+        end_pos.try_into().unwrap(),
+        cend_pos.try_into().unwrap(),
+    )
+}
+
+#[cfg(test)]
+mod ns_string_tests {
+    use super::*;
+    #[test]
+    fn linerange_tests() {
+        let range = |x, y| NSRange {
+            location: x,
+            length: y,
+        };
+        let str1: Utf16String = "abcd\nab".encode_utf16().collect();
+        assert!(line_range_helper(&str1, range(5, 1), true, true) == (5, 7, 7));
+        assert!(line_range_helper(&str1, range(4, 1), true, true) == (0, 5, 4));
+
+        let str2: Utf16String = "abc\r".encode_utf16().collect();
+        assert!(line_range_helper(&str2, range(4, 0), true, true) == (4, 4, 4));
+        assert!(line_range_helper(&str2, range(3, 1), true, true) == (0, 4, 3));
+
+        let str3: Utf16String = "abc\r\nab".encode_utf16().collect();
+        assert!(line_range_helper(&str3, range(4, 0), true, true) == (0, 5, 3));
+        assert!(line_range_helper(&str3, range(4, 1), true, true) == (0, 5, 3));
+        assert!(line_range_helper(&str3, range(6, 1), true, true) == (5, 7, 7));
+        assert!(line_range_helper(&str3, range(4, 2), true, true) == (0, 7, 7));
+
+        let str4: Utf16String = "\r\n".encode_utf16().collect();
+        assert!(line_range_helper(&str4, range(1, 0), true, true) == (0, 2, 0));
+        assert!(line_range_helper(&str4, range(1, 1), true, true) == (0, 2, 0));
+        assert!(line_range_helper(&str4, range(0, 0), true, true) == (0, 2, 0));
+
+        let str5: Utf16String = "abcd\na\n".encode_utf16().collect();
+        assert!(line_range_helper(&str5, range(6, 1), true, true) == (5, 7, 6));
+        assert!(line_range_helper(&str5, range(4, 1), true, true) == (0, 5, 4));
+    }
 }

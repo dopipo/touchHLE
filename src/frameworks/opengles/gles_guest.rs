@@ -58,7 +58,49 @@ const SUPPORTED_COMPRESSED_TEXTURE_FORMATS: &[GLenum] = &[
     gles11::PALETTE8_RGBA8_OES,
 ];
 
-fn with_ctx_and_mem<T, U>(env: &mut Environment, f: T) -> U
+/// Sync the current context and performs a function `f` within it.
+///
+/// In case of missing EAGL context for a current thread,
+/// returns a default value.
+fn with_ctx_and_mem<T, U: Default>(env: &mut Environment, f: T) -> U
+where
+    T: FnOnce(&mut dyn GLES, &mut Mem) -> U,
+{
+    if env
+        .framework_state
+        .opengles
+        .current_ctx_for_thread(env.current_thread)
+        .is_none()
+    {
+        log!(
+            "Warning: No EAGLContext for thread {}! Ignoring OpenGL ES call, returning default value.",
+            env.current_thread
+        );
+        return U::default();
+    }
+
+    let gles = super::sync_context(
+        &mut env.framework_state.opengles,
+        &mut env.objc,
+        env.window
+            .as_mut()
+            .expect("OpenGL ES is not supported in headless mode"),
+        env.current_thread,
+    );
+
+    //panic_on_gl_errors(&mut *gles);
+    let res = f(gles, &mut env.mem);
+    //panic_on_gl_errors(&mut *gles);
+    #[allow(clippy::let_and_return)]
+    res
+}
+
+/// Version of with_ctx_and_mem which panics on a missing context.
+///
+/// Needed because for return types such as `*mut GLvoid` we cannnot
+/// return a default value in case EAGL context is missing for
+/// a current thread.
+fn with_ctx_and_mem_no_skip<T, U>(env: &mut Environment, f: T) -> U
 where
     T: FnOnce(&mut dyn GLES, &mut Mem) -> U,
 {
@@ -71,9 +113,9 @@ where
         env.current_thread,
     );
 
-    //panic_on_gl_errors(&mut **gles);
+    //panic_on_gl_errors(&mut *gles);
     let res = f(gles, &mut env.mem);
-    //panic_on_gl_errors(&mut **gles);
+    //panic_on_gl_errors(&mut *gles);
     #[allow(clippy::let_and_return)]
     res
 }
@@ -1093,8 +1135,13 @@ fn glTexEnvi(env: &mut Environment, target: GLenum, pname: GLenum, param: GLint)
     })
 }
 fn glTexEnvfv(env: &mut Environment, target: GLenum, pname: GLenum, params: ConstPtr<GLfloat>) {
+    assert!(
+        target == gles11::TEXTURE_ENV || target == gles11::TEXTURE_FILTER_CONTROL_EXT,
+        "target {:#x}, pname {:#x}",
+        target,
+        pname
+    );
     // TODO: GL_POINT_SPRITE_OES
-    assert!(target == gles11::TEXTURE_ENV);
     with_ctx_and_mem(env, |gles, mem| {
         let params = mem.ptr_at(params, 4 /* upper bound */);
         unsafe { gles.TexEnvfv(target, pname, params) }
@@ -1257,7 +1304,7 @@ fn glMapBufferOES(env: &mut Environment, target: GLenum, access: GLenum) -> MutP
     assert!(matches!(target, ARRAY_BUFFER | ELEMENT_ARRAY_BUFFER));
     assert!(access == WRITE_ONLY_OES);
     let buffer_object_name = _get_currently_bound_buffer_object_name(env, target);
-    let host_buffer = with_ctx_and_mem(env, |gles, _mem| unsafe {
+    let host_buffer = with_ctx_and_mem_no_skip(env, |gles, _mem| unsafe {
         gles.MapBufferOES(target, access)
     });
     if host_buffer.is_null() {

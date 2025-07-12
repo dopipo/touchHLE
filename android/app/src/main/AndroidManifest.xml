@@ -31,6 +31,8 @@
         android:name="android.hardware.usb.host"
         android:required="false" />
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- External mouse input events -->
     <uses-feature
         android:name="android.hardware.type.pc"

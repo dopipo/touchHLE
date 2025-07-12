@@ -43,7 +43,7 @@ pub fn prep_stack_for_start(
         string_ptrs: &mut Vec<u32>,
         stack_base: usize,
     ) {
-        reversed_data.reserve(string.bytes().len() + 1);
+        reversed_data.reserve(string.len() + 1);
         reversed_data.push(b'\0'); // null terminator
         for &c in string.as_bytes().iter().rev() {
             reversed_data.push(c);

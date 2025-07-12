@@ -20,12 +20,16 @@ use crate::mem::{ConstPtr, ConstVoidPtr, GuestUSize, MutPtr, MutVoidPtr, Ptr, Sa
 use crate::Environment;
 use std::collections::HashMap;
 use std::ffi::{CStr, CString};
-use touchHLE_openal_soft_wrapper::ALC_DEVICE_SPECIFIER;
+use touchHLE_openal_soft_wrapper::{
+    ALC_DEVICE_SPECIFIER, ALC_FREQUENCY, ALC_MONO_SOURCES, ALC_STEREO_SOURCES, AL_EXTENSIONS,
+    AL_RENDERER, AL_VENDOR, AL_VERSION,
+};
 
 #[derive(Default)]
 pub struct State {
     devices: HashMap<MutPtr<GuestALCdevice>, *mut ALCdevice>,
     contexts: HashMap<MutPtr<GuestALCcontext>, *mut ALCcontext>,
+    strings_cache: HashMap<ALenum, ConstPtr<u8>>,
 }
 impl State {
     fn get(env: &mut Environment) -> &mut Self {
@@ -49,10 +53,19 @@ impl SafeWrite for GuestALCcontext {}
 fn alcOpenDevice(env: &mut Environment, devicename: ConstPtr<u8>) -> MutPtr<GuestALCdevice> {
     if !devicename.is_null() {
         // If device name name is not null, we check if it's the one which was
-        // obtained from a call to alcGetString(NULL, ALC_DEVICE_SPECIFIER)
+        // obtained from a call to alcGetString(NULL, ALC_DEVICE_SPECIFIER).
+        // And if not, we return NULL.
 
         let d_name = alcGetString(env, Ptr::null(), ALC_DEVICE_SPECIFIER);
-        assert_eq!(strcmp(env, d_name, devicename), 0);
+        if strcmp(env, d_name, devicename) != 0 {
+            log!(
+                "Unsupported device name {:?}, supported is {:?}. Returning NULL",
+                env.mem.cstr_at_utf8(devicename),
+                env.mem.cstr_at_utf8(d_name)
+            );
+            env.mem.free(d_name.cast_mut().cast());
+            return Ptr::null();
+        }
         env.mem.free(d_name.cast_mut().cast());
     }
 
@@ -97,16 +110,38 @@ fn alcGetString(
     env.mem.alloc_and_write_cstr(s.to_bytes()).cast_const()
 }
 
+const ALLOWED_CONTEXT_ATTRIBUTES: [ALCint; 3] =
+    [ALC_FREQUENCY, ALC_MONO_SOURCES, ALC_STEREO_SOURCES];
+
 fn alcCreateContext(
     env: &mut Environment,
     device: MutPtr<GuestALCdevice>,
-    attrlist: ConstPtr<i32>,
+    attr_list: ConstPtr<i32>,
 ) -> MutPtr<GuestALCcontext> {
-    assert!(attrlist.is_null()); // unimplemented
+    let attr_list_ptr: *const ALCint = if attr_list.is_null() {
+        std::ptr::null()
+    } else {
+        let mut ptr: MutPtr<i32> = attr_list.cast_mut();
+        // attribute list is NULL terminated
+        while env.mem.read(ptr) != 0 {
+            let attr = env.mem.read(ptr);
+            log_dbg!(
+                "alcCreateContext attribute {:#x} => {}",
+                attr,
+                env.mem.read(ptr + 1)
+            );
+            assert!(ALLOWED_CONTEXT_ATTRIBUTES.contains(&attr)); // TODO
+            ptr += 2;
+        }
+
+        let list_size = Ptr::to_bits(ptr) - Ptr::to_bits(attr_list);
+        let attr_list_slice = env.mem.bytes_at(attr_list.cast(), list_size);
+        attr_list_slice.as_ptr() as *const _
+    };
 
     let &host_device = State::get(env).devices.get(&device).unwrap();
 
-    let res = unsafe { al::alcCreateContext(host_device, std::ptr::null()) };
+    let res = unsafe { al::alcCreateContext(host_device, attr_list_ptr) };
     if res.is_null() {
         log_dbg!("alcCreateContext({:?}, NULL) returned NULL", device);
         return Ptr::null();
@@ -246,12 +281,45 @@ fn alIsBuffer(_env: &mut Environment, buffer: ALuint) -> ALboolean {
     unsafe { al::alIsBuffer(buffer) }
 }
 
+fn alGetBufferi(env: &mut Environment, buffer: ALuint, param: ALenum, value: MutPtr<ALint>) {
+    let value = env.mem.ptr_at(value, 1);
+    unsafe { al::alGetBufferi(buffer, param, value) }
+}
+
 fn alIsSource(_env: &mut Environment, source: ALuint) -> ALboolean {
     unsafe { al::alIsSource(source) }
 }
 
 fn alEnable(_env: &mut Environment, capability: ALenum) {
     unsafe { al::alEnable(capability) };
+}
+
+fn alGetString(env: &mut Environment, param: ALenum) -> ConstPtr<u8> {
+    let res = if let Some(&str) = env.framework_state.openal.strings_cache.get(&param) {
+        str
+    } else {
+        // Those values are extracted from the iPhone 3GS, iOS 4.0.1
+        // (same values were seen on the iPhone Simulator)
+        let s: &[u8] = match param {
+            AL_VENDOR => b"Apple Inc.",
+            AL_VERSION => b"1.1",
+            AL_RENDERER => b"Software",
+            AL_EXTENSIONS => b"AL_EXT_OFFSET AL_EXT_LINEAR_DISTANCE AL_EXT_EXPONENT_DISTANCE AL_EXT_STATIC_BUFFER",
+            _ => unreachable!()
+        };
+        let new_str = env.mem.alloc_and_write_cstr(s).cast_const();
+        env.framework_state
+            .openal
+            .strings_cache
+            .insert(param, new_str);
+        new_str
+    };
+    log_dbg!(
+        "alGetString({}) => '{:?}'",
+        param,
+        env.mem.cstr_at_utf8(res)
+    );
+    res
 }
 
 fn alListenerf(_env: &mut Environment, param: ALenum, value: ALfloat) {
@@ -597,8 +665,8 @@ fn alcGetIntegerv(
     _param: ALenum,
     _size: ALCsizei,
     _values: MutPtr<ALCint>,
-) {
-    todo!();
+) -> ALCboolean {
+    0
 }
 fn alcIsExtensionPresent(
     _env: &mut Environment,
@@ -608,9 +676,6 @@ fn alcIsExtensionPresent(
     0
 }
 fn alGetBufferf(_env: &mut Environment, _buffer: ALuint, _param: ALenum, _value: MutPtr<ALfloat>) {
-    todo!();
-}
-fn alGetBufferi(_env: &mut Environment, _buffer: ALuint, _param: ALenum, _value: MutPtr<ALint>) {
     todo!();
 }
 fn alDisable(_env: &mut Environment, _capability: ALenum) {
@@ -642,9 +707,6 @@ fn alGetIntegerv(_env: &mut Environment, _param: ALenum, _values: MutPtr<ALint>)
 }
 fn alGetProcAddress(env: &mut Environment, funcName: ConstPtr<u8>) -> MutVoidPtr {
     alcGetProcAddress(env, Ptr::null(), funcName)
-}
-fn alGetString(_env: &mut Environment, _param: ALenum) -> ConstPtr<u8> {
-    todo!();
 }
 fn alIsExtensionPresent(_env: &mut Environment, _extName: ConstPtr<u8>) -> ALboolean {
     todo!();

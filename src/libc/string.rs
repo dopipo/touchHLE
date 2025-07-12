@@ -68,7 +68,16 @@ fn bzero(env: &mut Environment, dest: MutVoidPtr, count: GuestUSize) {
     memset(env, dest, 0, count);
 }
 fn memset(env: &mut Environment, dest: MutVoidPtr, ch: i32, count: GuestUSize) -> MutVoidPtr {
-    GenericChar::<u8>::memset(env, dest.cast(), ch as u8, count).cast()
+    GenericChar::<u8>::memset(env, dest.cast(), ch as u8, count, GuestUSize::MAX).cast()
+}
+fn __memset_chk(
+    env: &mut Environment,
+    dest: MutVoidPtr,
+    ch: i32,
+    count: GuestUSize,
+    dest_count: GuestUSize,
+) -> MutVoidPtr {
+    GenericChar::<u8>::memset(env, dest.cast(), ch as u8, count, dest_count).cast()
 }
 fn memcpy(
     env: &mut Environment,
@@ -120,7 +129,7 @@ fn __strcat_chk(
 fn strcspn(env: &mut Environment, s: ConstPtr<u8>, charset: ConstPtr<u8>) -> GuestUSize {
     GenericChar::<u8>::strcspn(env, s, charset)
 }
-fn strncpy(
+pub(super) fn strncpy(
     env: &mut Environment,
     dest: MutPtr<u8>,
     src: ConstPtr<u8>,
@@ -239,6 +248,7 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(bzero(_, _)),
     // Functions shared with wchar.rs
     export_c_func!(memset(_, _, _)),
+    export_c_func!(__memset_chk(_, _, _, _)),
     export_c_func!(memcpy(_, _, _)),
     export_c_func!(memmove(_, _, _)),
     export_c_func!(memchr(_, _, _)),

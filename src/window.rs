@@ -12,6 +12,10 @@
 //! window system interaction in general, because it is assumed only one window
 //! will be needed for the runtime of the app.
 
+use crate::frameworks::uikit::ui_device::{
+    UIDeviceBatteryState, UIDeviceBatteryStateCharging, UIDeviceBatteryStateFull,
+    UIDeviceBatteryStateUnknown, UIDeviceBatteryStateUnplugged,
+};
 use crate::gles::present::present_frame;
 use crate::gles::{create_gles1_ctx, GLES};
 use crate::image::Image;
@@ -20,10 +24,12 @@ use crate::options::Options;
 use sdl2::mouse::MouseButton;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::surface::Surface;
+use sdl2_sys::SDL_PowerState;
 use std::collections::{HashMap, VecDeque};
 use std::env;
 use std::f32::consts::FRAC_PI_2;
 use std::num::NonZeroU32;
+use std::ptr::null_mut;
 use std::time::{Duration, Instant};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -171,7 +177,6 @@ impl Window {
     pub fn rotatable_fullscreen() -> bool {
         env::consts::OS == "android"
     }
-
     pub fn new(
         title: &str,
         icon: Option<Image>,
@@ -352,7 +357,7 @@ impl Window {
             let x = (in_x - vx as f32) / vw as f32 - 0.5;
             let y = (in_y - vy as f32) / vh as f32 - 0.5;
             // rotate
-            let matrix = window.rotation_matrix();
+            let matrix = window.rotation_matrix().inverse().unwrap();
             let [x, y] = matrix.transform([x, y]);
             // back to pixels
             let (out_w, out_h) = window.size_unrotated_unscaled();
@@ -754,7 +759,7 @@ impl Window {
         };
 
         // Correct for window rotation
-        let [x, y] = self.rotation_matrix().transform([x, y]);
+        let [x, y] = self.rotation_matrix().inverse().unwrap().transform([x, y]);
         let (x, y) = (x.clamp(-1.0, 1.0), y.clamp(-1.0, 1.0)); // just in case
 
         // Let's simulate tilting the device based on the analog stick inputs.
@@ -775,15 +780,10 @@ impl Window {
         // (x, y) are swapped because the controller Y axis usually corresponds
         // to forward/backward movement, but rotating about the Y axis means
         // tilting the device left/right.
-        // There used to be a bug in the matrix multiplication code that made it
-        // behave as if the matrix was transposed. This code was written before
-        // that was discovered, so it is probably incoherent. It might be worth
-        // rewriting it eventually (without changing how it behaves).
         let x_rotation = neutral_x - x_rotation_range * y;
         let y_rotation = neutral_y - y_rotation_range * x;
-        let matrix = Matrix::<3>::y_rotation(y_rotation)
-            .multiply(&Matrix::<3>::x_rotation(x_rotation))
-            .transpose();
+        let matrix =
+            Matrix::<3>::y_rotation(y_rotation).multiply(&Matrix::<3>::x_rotation(x_rotation));
         let [x, y, z] = matrix.transform(gravity);
 
         (x, y, z)
@@ -1181,10 +1181,11 @@ impl Window {
         return 0;
     }
 
-    /// Transformation matrix for texture co-ordinates when sampling the
-    /// framebuffer presented by the app and for touch inputs received by the
-    /// window. Rotates from the window co-ordinate space to the app co-ordinate
-    /// space. See [Self::rotate_device].
+    /// Transformation matrix for transforming between the window's co-ordinate
+    /// space and the app's original co-ordinate space when rotation is in use
+    /// (see [Self::rotate_device]). This returns a matrix appropriate for
+    /// rotating texture co-ordinates to display the image in the window; when
+    /// rotating input co-ordinates, invert the matrix.
     pub fn rotation_matrix(&self) -> Matrix<2> {
         match self.device_orientation {
             DeviceOrientation::Portrait => Matrix::identity(),
@@ -1206,4 +1207,85 @@ impl Window {
 
 pub fn open_url(url: &str) -> Result<(), String> {
     sdl2::url::open_url(url).map_err(|e| e.to_string())
+}
+
+/// Show an SDL messagebox for an error (typically after a panic).
+///
+/// The window argument allows for passing in the parent window for the
+/// messagebox, which is not required but should be done if possible.
+pub fn show_error_messagebox(window: Option<&Window>, error_message: &str) {
+    use sdl2::messagebox;
+    let mbox = [
+        messagebox::ButtonData {
+            flags: messagebox::MessageBoxButtonFlag::NOTHING,
+            button_id: 0,
+            text: "Open touchHLE directory",
+        },
+        messagebox::ButtonData {
+            flags: messagebox::MessageBoxButtonFlag::NOTHING,
+            button_id: 1,
+            text: "Close",
+        },
+    ];
+
+    let Ok(clicked_button) = messagebox::show_message_box(
+        messagebox::MessageBoxFlag::ERROR,
+        &mbox,
+        "touchHLE crashed!",
+        &format!(
+            "touchHLE crashed with the following error: {}",
+            error_message
+        ),
+        window.map(|win| &win.window),
+        None,
+    ) else {
+        panic!("Failed to show message box!");
+    };
+
+    match clicked_button {
+        messagebox::ClickedButton::CloseButton => {}
+        messagebox::ClickedButton::CustomButton(button) => {
+            match button.button_id {
+                // Open data directory (contains log file on android)
+                0 => match crate::paths::url_for_opening_user_data_dir() {
+                    Ok(url) => {
+                        if let Err(e) = crate::window::open_url(&url) {
+                            echo!("Couldn't open file manager at {:?}: {}", url, e);
+                        } else {
+                            echo!("Opened file manager at {:?}, exiting.", url);
+                        }
+                    }
+                    Err(e) => echo!("Couldn't open file manager: {}", e),
+                },
+                // Close
+                1 => {}
+                _ => unreachable!(),
+            }
+        }
+    }
+}
+
+/// Get current battery state from SDL2.
+///
+/// Returns:
+/// - pct: i32 - percentage of battery remaining.
+/// - status: [UIDeviceBatteryState] - the current status of the battery
+///   (unplugged, charging, full, etc.)
+pub fn get_battery_status() -> (i32, UIDeviceBatteryState) {
+    let mut pct = 0;
+    // Unfortunately, Rust-SDL2 does not expose this function yet.
+    // iPhoneOS does not measure the battery in seconds remaining,
+    // so we discard this argument.
+    let status = unsafe { sdl2_sys::SDL_GetPowerInfo(null_mut(), &mut pct) };
+    (
+        pct,
+        match status {
+            SDL_PowerState::SDL_POWERSTATE_UNKNOWN => UIDeviceBatteryStateUnknown,
+            SDL_PowerState::SDL_POWERSTATE_ON_BATTERY => UIDeviceBatteryStateUnplugged,
+            SDL_PowerState::SDL_POWERSTATE_NO_BATTERY | SDL_PowerState::SDL_POWERSTATE_CHARGING => {
+                UIDeviceBatteryStateCharging
+            }
+            SDL_PowerState::SDL_POWERSTATE_CHARGED => UIDeviceBatteryStateFull,
+        },
+    )
 }

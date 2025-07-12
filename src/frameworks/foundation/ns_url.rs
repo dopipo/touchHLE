@@ -5,12 +5,13 @@
  */
 //! `NSURL`.
 
-use super::ns_string::{from_rust_string, to_rust_string, NSUTF8StringEncoding};
-use super::NSUInteger;
+use super::ns_string::{from_rust_string, get_static_str, to_rust_string, NSUTF8StringEncoding};
+use super::{NSInteger, NSUInteger};
 use crate::fs::{GuestPath, GuestPathBuf};
 use crate::mem::MutPtr;
 use crate::objc::{
-    autorelease, id, msg, nil, objc_classes, release, retain, ClassExports, HostObject, NSZonePtr,
+    autorelease, id, msg, msg_class, nil, objc_classes, release, retain, ClassExports, HostObject,
+    NSZonePtr,
 };
 use crate::Environment;
 use std::borrow::Cow;
@@ -151,6 +152,15 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (id)isFileURL {
+    nil
+}
+
+- (id)host {
+    nil
+}
+
+
 - (bool)getFileSystemRepresentation:(MutPtr<u8>)buffer
                           maxLength:(NSUInteger)buffer_size {
     let &NSURLHostObject::FileURL { ns_string, .. } = env.objc.borrow(this) else {
@@ -159,6 +169,26 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; ns_string getCString:buffer
                          maxLength:buffer_size
                           encoding:NSUTF8StringEncoding]
+}
+
+- (id)URLByAppendingPathComponent:(id)path_component // NSString *
+                      isDirectory:(bool)is_directory {
+    let &NSURLHostObject::FileURL { ns_string, .. } = env.objc.borrow(this) else {
+        unimplemented!(); // TODO
+    };
+    let mut path: id = msg![env; ns_string stringByAppendingPathComponent:path_component];
+    if is_directory {
+        path = msg![env; path stringByAppendingString:(get_static_str(env, "/"))];
+    }
+    msg_class![env; NSURL fileURLWithPath:path]
+}
+
+- (id)URLByDeletingLastPathComponent {
+    let &NSURLHostObject::FileURL { ns_string, .. } = env.objc.borrow(this) else {
+        unimplemented!(); // TODO
+    };
+    let path: id = msg![env; ns_string stringByDeletingLastPathComponent];
+    msg_class![env; NSURL fileURLWithPath:path]
 }
 
 // TODO: more constructors, more accessors
@@ -172,6 +202,30 @@ pub const CLASSES: ClassExports = objc_classes! {
     // TODO
     nil
 }
+
++ (())setSharedURLCache:(bool)cache {
+    log!("TODO: setSharedURLCache:{}", cache);
+}
+
+- (())initWithMemoryCapacity:(NSInteger)_capacity diskCapacity:(bool)_disk diskPath:(bool)_path {
+    // TODO
+}
+
+@end
+
+@implementation NSHTTPCookieStorage: NSObject
++ (id)sharedHTTPCookieStorage {
+    // TODO
+    nil
+}
+
++ (())setSharedHTTPCookieStorage:(bool)storage {
+    log!("TODO: setSharedHTTPCookieStorage:{}", storage);
+}
+
+@end
+
+@implementation NSURLProtocol: NSObject
 @end
 
 };

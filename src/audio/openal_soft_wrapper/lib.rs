@@ -50,6 +50,11 @@ pub const ALC_TRUE: ALCboolean = 1;
 
 pub const ALC_DEVICE_SPECIFIER: ALCenum = 0x1005;
 
+// Context attributes
+pub const ALC_FREQUENCY: ALCint = 0x1007;
+pub const ALC_MONO_SOURCES: ALCint = 0x1010;
+pub const ALC_STEREO_SOURCES: ALCint = 0x1011;
+
 extern "C" {
     pub fn alcOpenDevice(devicename: *const ALCchar) -> *mut ALCdevice;
     pub fn alcCloseDevice(device: *mut ALCdevice) -> ALCboolean;
@@ -93,6 +98,11 @@ use al_types::*;
 
 pub const AL_NO_ERROR: ALenum = 0;
 
+pub const AL_VENDOR: ALenum = 0xb001;
+pub const AL_VERSION: ALenum = 0xb002;
+pub const AL_RENDERER: ALenum = 0xb003;
+pub const AL_EXTENSIONS: ALenum = 0xb004;
+
 pub const AL_MAX_GAIN: ALenum = 0x100E;
 
 pub const AL_SOURCE_STATE: ALenum = 0x1010;
@@ -121,6 +131,8 @@ extern "C" {
     pub fn alIsSource(source: ALuint) -> ALboolean;
 
     pub fn alEnable(capability: ALenum);
+
+    pub fn alGetBufferi(buffer: ALuint, param: ALenum, value: *const ALint);
 
     pub fn alListenerf(param: ALenum, value: ALfloat);
     pub fn alListener3f(param: ALenum, value1: ALfloat, value2: ALfloat, value3: ALfloat);

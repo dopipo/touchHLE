@@ -11,10 +11,10 @@
 use sdl2_sys::{SDL_StartTextInput, SDL_StopTextInput};
 
 use crate::dyld::{ConstantExports, HostConstant};
-use crate::frameworks::core_graphics::CGRect;
+use crate::frameworks::core_graphics::{CGPoint, CGRect};
 use crate::frameworks::foundation::ns_string::to_rust_string;
 use crate::frameworks::foundation::{ns_string, NSInteger, NSRange, NSUInteger};
-use crate::frameworks::uikit::ui_font::UITextAlignmentLeft;
+use crate::frameworks::uikit::ui_font::{UITextAlignment, UITextAlignmentLeft};
 use crate::frameworks::uikit::ui_view::ui_window::{
     UIKeyboardDidHideNotification, UIKeyboardDidShowNotification, UIKeyboardWillHideNotification,
     UIKeyboardWillShowNotification,
@@ -33,12 +33,39 @@ type UITextAutocorrectionType = NSInteger;
 
 // TODO: Actually send notification on text change
 const UITextFieldTextDidChangeNotification: &str = "UITextFieldTextDidChangeNotification";
+const UITextFieldTextDidEndEditingNotification: &str = "UITextFieldTextDidEndEditingNotification";
+const UITextFieldTextDidBeginEditingNotification: &str = "UITextFieldTextDidBeginEditingNotification";
+const UITextFieldDidEndEditingReason: &str = "UITextFieldDidEndEditingReason";
+const UITextFieldDidEndEditingReasonKey: &str = "UITextFieldDidEndEditingReasonKey";
+const UITextFieldDidEndEditingReasonCommitted: &str = "UITextFieldDidEndEditingReasonCommitted";
 
 /// `NSNotificationName` values.
-pub const CONSTANTS: ConstantExports = &[(
+pub const CONSTANTS: ConstantExports = &[
+    (
     "_UITextFieldTextDidChangeNotification",
     HostConstant::NSString(UITextFieldTextDidChangeNotification),
-)];
+    ),
+    (
+    "_UITextFieldTextDidEndEditingNotification",
+    HostConstant::NSString(UITextFieldTextDidEndEditingNotification),
+    ),
+    (
+    "_UITextFieldTextDidBeginEditingNotification",
+    HostConstant::NSString(UITextFieldTextDidBeginEditingNotification),
+    ),
+    (
+    "_UITextFieldDidEndEditingReason",
+    HostConstant::NSString(UITextFieldDidEndEditingReason),
+    ),
+    (
+    "_UITextFieldDidEndEditingReasonKey",
+    HostConstant::NSString(UITextFieldDidEndEditingReasonKey),
+    ),
+    (
+    "_UITextFieldDidEndEditingReasonCommitted",
+    HostConstant::NSString(UITextFieldDidEndEditingReasonCommitted),
+    ),
+];
 
 struct UITextFieldHostObject {
     superclass: super::UIControlHostObject,
@@ -141,6 +168,11 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; text_label setTextColor:color]
 }
 
+- (())setTextAlignment:(UITextAlignment)text_alignment {
+    let text_label = env.objc.borrow_mut::<UITextFieldHostObject>(this).text_label;
+    () = msg![env; text_label setTextAlignment:text_alignment];
+}
+
 - (())setFont:(id)new_font { // UIFont*
     let text_label = env.objc.borrow_mut::<UITextFieldHostObject>(this).text_label;
     msg![env; text_label setFont:new_font]
@@ -154,12 +186,24 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: setClearButtonMode:{}", mode);
 }
 
+- (())setAdjustsFontSizeToFitWidth:(bool)width {
+    log!("TODO: setAdjustsFontSizeToFitWidth:{}", width);
+}
+
+- (())setTextAlignment:(bool)text {
+    log!("TODO: setTextAlignment:{}", text);
+}
+
 - (())setSecureTextEntry:(bool)secure {
     log!("TODO: setSecureTextEntry:{}", secure);
 }
 
 - (())setPlaceholder:(id)placeholder { // NSString*
     log!("TODO: setPlaceholder:'{}'", to_rust_string(env, placeholder));
+}
+
+- (())setPosition:(CGPoint)position {
+    log!("TODO: setPosition:'{}'", position);
 }
 
 // weak/non-retaining

@@ -8,8 +8,9 @@
 use super::ns_string::from_rust_ordering;
 use super::{NSComparisonResult, NSTimeInterval};
 use crate::frameworks::core_foundation::time::{apple_epoch, SECS_FROM_UNIX_TO_APPLE_EPOCHS};
+use crate::frameworks::foundation::NSInteger;
 use crate::objc::{
-    autorelease, id, msg, msg_class, objc_classes, release, ClassExports, HostObject, NSZonePtr,
+    autorelease, id, msg, msg_class, nil, objc_classes, release, ClassExports, HostObject, NSZonePtr,
 };
 
 use crate::frameworks::foundation::ns_keyed_unarchiver::decode_current_date;
@@ -17,8 +18,8 @@ use std::ops::{Add, Sub};
 use std::time::{Duration, SystemTime};
 
 #[derive(Default)]
-struct NSDateHostObject {
-    time_interval: NSTimeInterval,
+pub(super) struct NSDateHostObject {
+    pub(super) time_interval: NSTimeInterval,
 }
 impl HostObject for NSDateHostObject {}
 
@@ -86,21 +87,15 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 + (id)dateWithTimeIntervalSince1970:(NSTimeInterval)secs {
-    let time_interval = -(SECS_FROM_UNIX_TO_APPLE_EPOCHS as f64) + secs;
-    let host_object = Box::new(NSDateHostObject {
-        time_interval
-    });
-    let new = env.objc.alloc_object(this, host_object, &mut env.mem);
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithTimeIntervalSince1970:secs];
     autorelease(env, new)
 }
 
 + (id)dateWithTimeInterval:(NSTimeInterval)secs
                  sinceDate:(id)date { // NSDate *
-    let time_interval = env.objc.borrow_mut::<NSDateHostObject>(date).time_interval + secs;
-    let host_object = Box::new(NSDateHostObject {
-        time_interval
-    });
-    let new = env.objc.alloc_object(this, host_object, &mut env.mem);
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithTimeInterval:secs sinceDate:date];
     autorelease(env, new)
 }
 
@@ -111,6 +106,13 @@ pub const CLASSES: ClassExports = objc_classes! {
         .duration_since(apple_epoch())
         .unwrap()
         .as_secs_f64();
+    env.objc.borrow_mut::<NSDateHostObject>(this).time_interval = time_interval;
+    this
+}
+
+- (id)initWithTimeInterval:(NSTimeInterval)secs
+                 sinceDate:(id)date { // NSDate *
+    let time_interval = env.objc.borrow_mut::<NSDateHostObject>(date).time_interval + secs;
     env.objc.borrow_mut::<NSDateHostObject>(this).time_interval = time_interval;
     this
 }
@@ -129,11 +131,27 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (id)initWithTimeIntervalSince1970:(NSTimeInterval)secs {
+    let time_interval = -(SECS_FROM_UNIX_TO_APPLE_EPOCHS as f64) + secs;
+    env.objc.borrow_mut::<NSDateHostObject>(this).time_interval = time_interval;
+    this
+}
+
+// NSCopying implementation
+- (id)copyWithZone:(NSZonePtr)_zone {
+    let host_object = Box::<NSDateHostObject>::default();
+    env.objc.alloc_object(this, host_object, &mut env.mem)
+}
+
 // NSCoding implementation
 - (id)initWithCoder:(id)coder {
     release(env, this);
     // Note: Assuming NSKeyedUnarchiver as coder here
     decode_current_date(env, coder)
+}
+
+- (id)UTF8String {
+    nil
 }
 
 - (NSTimeInterval)timeIntervalSinceDate:(id)anotherDate {
@@ -182,6 +200,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     let host_object = env.objc.borrow::<NSDateHostObject>(this);
     let another_date_host_object = env.objc.borrow::<NSDateHostObject>(anotherDate);
     from_rust_ordering(host_object.time_interval.total_cmp(&another_date_host_object.time_interval))
+}
+
+- (())descriptionWithCalendarFormat:(NSInteger)format timeZone:(bool)_zone locale:(bool)_locale {
+    // TODO
 }
 
 @end

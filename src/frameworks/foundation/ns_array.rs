@@ -7,15 +7,17 @@
 
 use super::ns_enumerator::{fast_enumeration_helper, NSFastEnumerationState};
 use super::ns_property_list_serialization::deserialize_plist_from_file;
-use super::{ns_keyed_unarchiver, ns_string, ns_url, NSInteger, NSNotFound, NSUInteger};
+use super::{ns_keyed_unarchiver, ns_string, ns_url, NSNotFound, NSOrderedAscending, NSOrderedDescending, NSOrderedSame, NSInteger, NSUInteger};
 use crate::abi::{CallFromHost, GuestFunction};
 use crate::fs::GuestPath;
 use crate::mem::{MutPtr, MutVoidPtr};
 use crate::objc::{
     autorelease, id, msg, msg_class, nil, objc_classes, release, retain, ClassExports, HostObject,
-    NSZonePtr,
+    NSZonePtr, SEL,
 };
 use crate::Environment;
+use std::cmp::Ordering;
+use std::mem;
 
 struct ObjectEnumeratorHostObject {
     /// the enumerated collection, NSArray *
@@ -76,6 +78,12 @@ pub const CLASSES: ClassExports = objc_classes! {
     let res = deserialize_plist_from_file(env, &path, /* array_expected: */ true);
     autorelease(env, res)
 }
+
++ (id)arrayWithObject:(id)anObject {
+    assert!(this == env.objc.get_known_class("NSArray", &mut env.mem));
+    from_vec(env, vec![anObject])
+}
+    
 + (id)arrayWithObject:(id)object {
     retain(env, object);
     let objects = vec![object];
@@ -119,6 +127,53 @@ pub const CLASSES: ClassExports = objc_classes! {
     retain(env, this)
 }
 
+// NSFastEnumeration implementation
+- (NSUInteger)countByEnumeratingWithState:(MutPtr<NSFastEnumerationState>)state
+                                  objects:(MutPtr<id>)stackbuf
+                                    count:(NSUInteger)len {
+    // assert!(this == env.objc.get_known_class("NSArray", &mut env.mem));
+
+    let host_object = env.objc.borrow::<ArrayHostObject>(this);
+
+    if host_object.array.len() == 0 {
+        return 0;
+    }
+
+    // TODO: handle size > 1
+    // assert!(host_object.array.len() == 1);
+    let array_len = host_object.array.len().try_into().unwrap();
+    assert!(len >= array_len);
+
+    let NSFastEnumerationState {
+        state: start_index,
+        ..
+    } = env.mem.read(state);
+
+    let mut array_iter = host_object.array.iter();
+    if start_index >= 1 {
+       _ = array_iter.nth((start_index-1).try_into().unwrap());
+    }
+
+    let mut batch_count = 0;
+    while batch_count < len {
+        if let Some(object) = array_iter.next() {
+            env.mem.write(stackbuf + batch_count, *object);
+            batch_count += 1;
+        } else {
+            break;
+        }
+    }
+    env.mem.write(state, NSFastEnumerationState {
+        state: start_index + batch_count,
+        items_ptr: stackbuf,
+        // can be anything as long as it's dereferenceable and the same
+        // each iteration
+        mutations_ptr: stackbuf.cast(),
+        extra: Default::default(),
+    });
+    batch_count
+}
+    
 - (NSUInteger)indexOfObject:(id)object {
     let count: NSUInteger = msg![env; this count];
     for i in 0..count {
@@ -216,9 +271,11 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 // NSCopying implementation
 - (id)copyWithZone:(NSZonePtr)_zone {
-    todo!(); // TODO: this should produce an immutable copy
+    let host_object = Box::new(ArrayHostObject {
+        array: Vec::new(),
+    });
+    env.objc.alloc_object(this, host_object, &mut env.mem)
 }
-
 @end
 
 // Our private subclass that is the single implementation of NSArray for the
@@ -285,6 +342,18 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (id)pal {
+    nil
+}
+
+- (())initWithArray:(NSInteger)array copyItems:(bool)_itmes {
+    // TODO
+}
+
+- (())writeToFile:(NSInteger)file atomically:(bool)_atomically {
+    // TODO
+}
+
 - (())dealloc {
     let host_object: &mut ArrayHostObject = env.objc.borrow_mut(this);
     let array = std::mem::take(&mut host_object.array);
@@ -301,20 +370,6 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 - (id)reverseObjectEnumerator { // NSEnumerator*
     reverse_object_enumerator_inner(env, this)
-}
-
-// NSFastEnumeration implementation
-- (NSUInteger)countByEnumeratingWithState:(MutPtr<NSFastEnumerationState>)state
-                                  objects:(MutPtr<id>)stackbuf
-                                    count:(NSUInteger)len {
-    let count: NSUInteger = msg![env; this count];
-    fast_enumeration_helper(env, this, |env, idx| {
-        if idx < count {
-            msg![env; this objectAtIndex:idx]
-        } else {
-            nil
-        }
-    }, state, stackbuf, len)
 }
 
 // TODO: more init methods, etc
@@ -383,6 +438,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (id)initWithObjects:(NSUInteger)_objects {
+    msg![env; this init]
+}
+
 // NSMutableCopying implementation
 - (id)mutableCopyWithZone:(NSZonePtr)_zone {
     let mut_arr: id = msg_class![env; NSMutableArray alloc];
@@ -405,11 +464,43 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.dealloc_object(this, &mut env.mem)
 }
 
+- (())makeObjectsPerformSelector:(SEL)sel {
+    let count: NSUInteger = msg![env; this count];
+    for idx in 0..count {
+        let obj: id = msg![env; this objectAtIndex:idx];
+        let _: id = msg![env; obj performSelector:sel];
+    }
+}
+
 - (id)objectEnumerator { // NSEnumerator*
     object_enumerator_inner(env, this)
 }
 - (id)reverseObjectEnumerator { // NSEnumerator*
     reverse_object_enumerator_inner(env, this)
+}
+
+- (id)ascender {
+    nil
+}
+
+- (id)drain {
+    nil
+}
+
+- (id)sortUsingSelector {
+    nil
+}
+
+- (id)removeObjectsInArray {
+    nil
+}
+
+- (id)removeObjectsInArray:(NSUInteger)_array {
+    msg![env; this init]
+}
+
+- (id)sortUsingSelector:(NSUInteger)_using {
+    msg![env; this init]
 }
 
 - (())sortUsingFunction:(GuestFunction)comparator
@@ -424,6 +515,27 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.borrow_mut::<ArrayHostObject>(this).array = array;
 }
 
+- (())sortUsingDescriptors:(id)descs {
+     let mut v = mem::take(&mut env.objc.borrow_mut::<ArrayHostObject>(this).array);
+     v.sort_by(|&a, &b| {
+         let mut order = NSOrderedAscending;
+         let descs_count: NSUInteger = msg![env; descs count];
+         for i in 0..descs_count {
+             let desc = msg![env; descs objectAtIndex: i];
+             order = msg![env; desc compareObject: a toObject: b];
+             if order != 0 {
+                 break
+             }
+         }
+         match order {
+             NSOrderedAscending => Ordering::Less,
+             NSOrderedSame => Ordering::Equal,
+             NSOrderedDescending => Ordering::Greater,
+             _ => panic!(),
+         }
+     });
+     env.objc.borrow_mut::<ArrayHostObject>(this).array = v;
+}
 // NSFastEnumeration implementation
 - (NSUInteger)countByEnumeratingWithState:(MutPtr<NSFastEnumerationState>)state
                                   objects:(MutPtr<id>)stackbuf
@@ -463,6 +575,21 @@ pub const CLASSES: ClassExports = objc_classes! {
     release(env, object)
 }
 
+- (())removeObject:(id)needle {
+    let mut objects = mem::take(&mut env.objc.borrow_mut::<ArrayHostObject>(this).array);
+    retain(env, needle);
+    objects.retain(|&obj| {
+        if obj == needle || msg![env; needle isEqual: obj] {
+            release(env, obj);
+            false
+        } else {
+            true
+        }
+    });
+    release(env, needle);
+    env.objc.borrow_mut::<ArrayHostObject>(this).array = objects;
+}
+
 - (())removeLastObject {
     let object = env.objc.borrow_mut::<ArrayHostObject>(this).array.pop().unwrap();
     release(env, object)
@@ -476,6 +603,22 @@ pub const CLASSES: ClassExports = objc_classes! {
     }
 
     env.objc.borrow_mut::<ArrayHostObject>(this).array = Vec::new()
+}
+
+- (())exchangeObjectAtIndex:(NSInteger)_index withObjectAtIndex:(bool)_object {
+    // TODO
+}
+
+- (())initWithArray:(NSInteger)array copyItems:(bool)_items {
+    // TODO
+}
+
+- (())insertObject:(NSInteger)object atIndex:(bool)_index {
+    // TODO
+}
+
+- (())pathForResource:(NSInteger)resource ofType:(bool)_type {
+    // TODO
 }
 
 @end
@@ -498,6 +641,30 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (())removeLastObject {
     env.objc.borrow_mut::<ArrayHostObject>(this).array.pop().unwrap();
+}
+
+- (())writeToFile:(NSInteger)file atomically:(bool)_atomically encoding:(bool)_encoding error:(bool)_error {
+    // TODO
+}
+
+- (())writeToFile:(NSInteger)file atomically:(bool)_atomically {
+    // TODO
+}
+
+- (())exchangeObjectAtIndex:(NSInteger)_index withObjectAtIndex:(bool)_object {
+    // TODO
+}
+
+- (())initWithArray:(NSInteger)array copyItems:(bool)_items {
+    // TODO
+}
+
+- (())insertObject:(NSInteger)object atIndex:(bool)_index {
+    // TODO
+}
+
+- (())pathForResource:(NSInteger)resource ofType:(bool)_type {
+    // TODO
 }
 
 @end

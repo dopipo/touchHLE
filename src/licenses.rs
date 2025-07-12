@@ -143,9 +143,14 @@ information.
 
 // Apple is mentioned because the GPLv2 allows repeating the original source
 // code offer when non-commercially redistributing binaries.
-const INTERNAL_DYLIBS_DESCRIPTION: &str = "
+const INTERNAL_FSF_DYLIBS_DESCRIPTION: &str = "
 This distribution of touchHLE includes binaries for the libgcc and libstdc++
 libraries from the Free Software Foundation, as originally distributed by Apple:
+";
+
+const INTERNAL_ZLIB_DYLIB_DESCRIPTION: &str = "
+This distribution of touchHLE includes binaries for zlib (libz), available under
+the following license:
 ";
 
 const INTERNAL_LIBERATION_FONTS_DESCRIPTION: &str = "
@@ -209,7 +214,7 @@ fn print(out: &mut String, resources_are_external_files: bool) -> Result<(), std
     writeln!(out, "{}", PVRTD_LICENSE.trim_end())?;
     if !resources_are_external_files {
         divider(out)?;
-        writeln!(out, "{}", INTERNAL_DYLIBS_DESCRIPTION)?;
+        writeln!(out, "{}", INTERNAL_FSF_DYLIBS_DESCRIPTION)?;
         writeln!(
             out,
             "{}.",
@@ -225,6 +230,13 @@ fn print(out: &mut String, resources_are_external_files: bool) -> Result<(), std
                 // Remove one level of Markdown quoting
                 .replace("\n> ", "\n")
                 .trim_start()
+        )?;
+        divider(out)?;
+        writeln!(out, "{}", INTERNAL_ZLIB_DYLIB_DESCRIPTION)?;
+        writeln!(
+            out,
+            "{}",
+            read_bundled_file(&format!("{}/COPYING.libz", crate::paths::DYLIBS_DIR))
         )?;
         divider(out)?;
         writeln!(out, "{}", INTERNAL_LIBERATION_FONTS_DESCRIPTION)?;

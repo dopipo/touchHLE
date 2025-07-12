@@ -7,17 +7,19 @@
 //! very long and frequently-updated list.
 
 use crate::frameworks::{
-    av_audio, core_animation, core_foundation, core_graphics, core_location, foundation, game_kit,
-    media_player, opengles, store_kit, uikit,
+    av_audio, avf_audio, core_animation, core_foundation, core_graphics, core_location, foundation, game_kit,
+    media_player, opengles, store_kit, system_configuration, uikit,
 };
 
 /// All the lists of classes that the runtime should search through.
 pub const CLASS_LISTS: &[super::ClassExports] = &[
     crate::app_picker::CLASSES, // Not a framework! Special internal classes.
+    avf_audio::av_audio_session::CLASSES,
     core_animation::ca_animation::CLASSES,
     core_animation::ca_eagl_layer::CLASSES,
     core_animation::ca_layer::CLASSES,
     core_animation::ca_media_timing_function::CLASSES,
+    core_animation::ca_transaction::CLASSES,
     core_graphics::cg_data_provider::CLASSES,
     core_graphics::cg_color::CLASSES,
     core_graphics::cg_color_space::CLASSES,
@@ -47,10 +49,13 @@ pub const CLASS_LISTS: &[super::ClassExports] = &[
     foundation::ns_notification_center::CLASSES,
     foundation::ns_null::CLASSES,
     foundation::ns_object::CLASSES,
+    foundation::ns_operation::CLASSES,
     foundation::ns_process_info::CLASSES,
     foundation::ns_property_list_serialization::CLASSES,
     foundation::ns_run_loop::CLASSES,
+    foundation::ns_scanner::CLASSES,
     foundation::ns_set::CLASSES,
+    foundation::ns_sort_descriptor::CLASSES,
     foundation::ns_string::CLASSES,
     foundation::ns_thread::CLASSES,
     foundation::ns_timer::CLASSES,
@@ -68,6 +73,7 @@ pub const CLASS_LISTS: &[super::ClassExports] = &[
     media_player::media_picker_controller::CLASSES,
     media_player::media_query::CLASSES,
     opengles::eagl::CLASSES,
+    system_configuration::sc_network_reachability::CLASSES,
     store_kit::sk_payment_queue::CLASSES,
     store_kit::sk_product::CLASSES,
     uikit::ui_accelerometer::CLASSES,
@@ -101,3 +107,51 @@ pub const CLASS_LISTS: &[super::ClassExports] = &[
     uikit::ui_view_controller::CLASSES,
     uikit::ui_view_controller::ui_navigation_controller::CLASSES,
 ];
+
+#[cfg(test)]
+mod tests {
+    use crate::objc::ClassTemplate;
+
+    use super::*;
+    use std::collections::HashSet;
+
+    #[test]
+    fn no_duplicate_classes() {
+        let mut seen_classes = HashSet::new();
+
+        for &class_list in CLASS_LISTS {
+            for (class_name, template) in class_list {
+                if !seen_classes.insert(class_name) {
+                    panic!("Found duplicate class export {}", class_name);
+                }
+                let ClassTemplate {
+                    class_methods,
+                    instance_methods,
+                    ..
+                } = template;
+
+                let mut seen_class_methods = HashSet::with_capacity(class_methods.len());
+
+                for (method_name, _) in *class_methods {
+                    if !seen_class_methods.insert(method_name) {
+                        panic!(
+                            "Found duplicate class method {} for class {}",
+                            method_name, class_name
+                        )
+                    }
+                }
+
+                let mut seen_instance_methods = HashSet::with_capacity(instance_methods.len());
+
+                for (method_name, _) in *instance_methods {
+                    if !seen_instance_methods.insert(method_name) {
+                        panic!(
+                            "Found duplicate instance method {} for class {}",
+                            method_name, class_name
+                        )
+                    }
+                }
+            }
+        }
+    }
+}

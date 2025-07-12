@@ -10,6 +10,8 @@ use super::{
     ns_array::ArrayHostObject, ns_data::NSDataHostObject, ns_dictionary::DictionaryHostObject,
     ns_value::NSNumberHostObject,
 };
+use crate::frameworks::core_foundation::time::apple_epoch;
+use crate::frameworks::foundation::ns_date::NSDateHostObject;
 use crate::fs::GuestPath;
 use crate::mem::{MutPtr, MutVoidPtr};
 use crate::objc::{
@@ -18,6 +20,8 @@ use crate::objc::{
 use crate::Environment;
 use plist::Value;
 use std::io::Cursor;
+use std::ops::Add;
+use std::time::{Duration, SystemTime};
 
 pub type NSPropertyListMutabilityOptions = NSUInteger;
 pub const NSPropertyListImmutable: NSPropertyListMutabilityOptions = 0;
@@ -36,7 +40,7 @@ pub const CLASSES: ClassExports = objc_classes! {
                     format:(NSPropertyListFormat)format
                 errorDescription:(MutPtr<id>)error_string { // NSString **
     assert_eq!(format, NSPropertyListBinaryFormat_v1_0); // TODO
-    assert!(error_string.is_null()); // TODO
+    // assert!(error_string.is_null()); // TODO
 
     let value = serialize_plist(env, plist);
     log_dbg!("dataFromPropertyList value {:?}", value);
@@ -53,11 +57,11 @@ pub const CLASSES: ClassExports = objc_classes! {
           mutabilityOption:(NSPropertyListMutabilityOptions)opt
                     format:(MutPtr<NSPropertyListFormat>)format
           errorDescription:(MutPtr<id>)error_string { // NSString **
-    assert_eq!(opt, NSPropertyListImmutable); // TODO
+    // assert_eq!(opt, NSPropertyListImmutable); // TODO
     let slice = ns_data::to_rust_slice(env, data);
 
     if let Ok(root) = Value::from_reader_xml(Cursor::new(slice)) {
-        assert!(root.as_array().is_some() || root.as_dictionary().is_some());
+        // assert!(root.as_array().is_some() || root.as_dictionary().is_some());
         if !format.is_null() {
             env.mem.write(format, NSPropertyListXMLFormat_v1_0);
         }
@@ -66,7 +70,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     }
 
     if let Ok(root) = Value::from_reader(Cursor::new(slice)) {
-        assert!(root.as_array().is_some() || root.as_dictionary().is_some());
+        // assert!(root.as_array().is_some() || root.as_dictionary().is_some());
         if !format.is_null() {
             env.mem.write(format, NSPropertyListBinaryFormat_v1_0);
         }
@@ -100,9 +104,12 @@ pub(super) fn deserialize_plist_from_file(
         return nil;
     };
 
-    let Ok(root) = Value::from_reader(Cursor::new(bytes)) else {
-        log_dbg!("Couldn't parse plist, returning nil.");
-        return nil;
+    let root = match Value::from_reader(Cursor::new(bytes)) {
+        Ok(root) => root,
+        Err(err) => {
+            log_dbg!("Couldn't parse plist, returning nil: {}", err);
+            return nil;
+        }
     };
 
     if array_expected && root.as_array().is_none() {
@@ -160,8 +167,11 @@ fn deserialize_plist(env: &mut Environment, value: &Value) -> id {
             let data: id = msg_class![env; NSData alloc];
             msg![env; data initWithBytesNoCopy:alloc length:length]
         }
-        Value::Date(_) => {
-            todo!("deserialize plist value: {:?}", value); // TODO
+        Value::Date(date_val) => {
+            let time: SystemTime = (*date_val).into();
+            let time_interval = time.duration_since(apple_epoch()).unwrap().as_secs_f64();
+            let date: id = msg_class![env; NSDate alloc];
+            msg![env; date initWithTimeIntervalSinceReferenceDate:time_interval]
         }
         Value::Integer(int) => {
             let number: id = msg_class![env; NSNumber alloc];
@@ -250,15 +260,21 @@ fn serialize_plist(env: &mut Environment, plist: id) -> Value {
         let num = env.objc.borrow::<NSNumberHostObject>(plist);
         match num {
             NSNumberHostObject::Bool(b) => Value::Boolean(*b),
+            NSNumberHostObject::UnsignedInt(ui) => Value::from(*ui),
             NSNumberHostObject::Int(i) => Value::from(*i),
             NSNumberHostObject::Float(f) => Value::from(*f),
             NSNumberHostObject::LongLong(ll) => Value::from(*ll),
+            NSNumberHostObject::Double(d) => Value::from(*d),
             _ => todo!("num {:?}", num),
         }
     } else if class == env.objc.get_known_class("NSData", &mut env.mem) {
         let data = env.objc.borrow::<NSDataHostObject>(plist);
         let buffer_slice = env.mem.bytes_at(data.bytes.cast(), data.length);
         Value::Data(buffer_slice.to_vec())
+    } else if class == env.objc.get_known_class("NSDate", &mut env.mem) {
+        let date = env.objc.borrow::<NSDateHostObject>(plist);
+        let time = apple_epoch().add(Duration::from_secs_f64(date.time_interval));
+        Value::Date(time.into())
     } else {
         unimplemented!("class {}", env.objc.get_class_name(class))
     }

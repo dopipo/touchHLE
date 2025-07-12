@@ -17,6 +17,8 @@ pub mod ui_scroll_view;
 pub mod ui_web_view;
 pub mod ui_window;
 
+use std::fmt::Debug;
+
 use super::ui_graphics::{UIGraphicsPopContext, UIGraphicsPushContext};
 use crate::frameworks::core_graphics::cg_affine_transform::{
     CGAffineTransform, CGAffineTransformIdentity,
@@ -24,19 +26,72 @@ use crate::frameworks::core_graphics::cg_affine_transform::{
 use crate::frameworks::core_graphics::cg_color::CGColorRef;
 use crate::frameworks::core_graphics::cg_context::{CGContextClearRect, CGContextRef};
 use crate::frameworks::core_graphics::{CGFloat, CGPoint, CGRect, CGSize};
+use crate::frameworks::foundation::ns_run_loop::NSDefaultRunLoopMode;
 use crate::frameworks::foundation::ns_string::get_static_str;
-use crate::frameworks::foundation::{ns_array, NSInteger, NSUInteger};
+use crate::frameworks::foundation::{ns_array, NSInteger, NSTimeInterval, NSUInteger};
+use crate::mem::ConstVoidPtr;
 use crate::objc::{
-    autorelease, id, msg, msg_class, nil, objc_classes, release, retain, Class, ClassExports,
-    HostObject, NSZonePtr,
+    autorelease, id, msg, msg_class, msg_send, nil, objc_classes, release, retain, Class,
+    ClassExports, HostObject, NSZonePtr, SEL,
 };
 use crate::Environment;
+
+type UIViewAnimationCurve = NSInteger;
 
 #[derive(Default)]
 pub struct State {
     /// List of views for internal purposes. Non-retaining!
     pub(super) views: Vec<id>,
     pub ui_window: ui_window::State,
+    animations: Vec<AnimationState>,
+    committed_animations: Vec<AnimationState>,
+}
+impl State {
+    fn get(env: &mut Environment) -> &State {
+        &env.framework_state.uikit.ui_view
+    }
+
+    fn get_mut(env: &mut Environment) -> &mut State {
+        &mut env.framework_state.uikit.ui_view
+    }
+}
+
+// The current implementation of UIView animations, instead of animating the
+// properties, updating each frame, waits the correct amount of time before
+// setting the properties' end values and notifying the delegate who may be
+// waiting to be called when the animation ends.
+// TODO: Implement the animation itself.
+#[derive(Copy, Clone)]
+struct AnimationState {
+    animation_id: id, // NSString*
+    duration: NSTimeInterval,
+    delay: NSTimeInterval,
+    repeat_count: f32,
+    delegate: id,
+    context: ConstVoidPtr,
+    did_stop_selector: SEL,
+}
+impl Default for AnimationState {
+    fn default() -> Self {
+        AnimationState {
+            animation_id: nil,
+            duration: 0.2,
+            delay: 0.0,
+            repeat_count: 0.0,
+            delegate: nil,
+            context: ConstVoidPtr::default(),
+            did_stop_selector: SEL::default(),
+        }
+    }
+}
+impl Debug for AnimationState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Animation {:?} (Delay of {}s) Duration of {}s x{} repeats",
+            self.animation_id, self.delay, self.duration, self.repeat_count
+        )
+    }
 }
 
 pub(super) struct UIViewHostObject {
@@ -52,6 +107,8 @@ pub(super) struct UIViewHostObject {
     clears_context_before_drawing: bool,
     user_interaction_enabled: bool,
     multiple_touch_enabled: bool,
+    clips_to_bounds: bool,        // TODO: Handle this property
+    transform: CGAffineTransform, // TODO: Handle this property
 }
 impl HostObject for UIViewHostObject {}
 impl Default for UIViewHostObject {
@@ -67,6 +124,8 @@ impl Default for UIViewHostObject {
             clears_context_before_drawing: true,
             user_interaction_enabled: true,
             multiple_touch_enabled: false,
+            clips_to_bounds: false,
+            transform: CGAffineTransformIdentity,
         }
     }
 }
@@ -92,7 +151,7 @@ fn init_common(env: &mut Environment, this: id) -> id {
 
     env.objc.borrow_mut::<UIViewHostObject>(this).layer = layer;
 
-    env.framework_state.uikit.ui_view.views.push(this);
+    State::get_mut(env).views.push(this);
 
     this
 }
@@ -110,6 +169,111 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 + (Class)layerClass {
     env.objc.get_known_class("CALayer", &mut env.mem)
+}
+
++ (())setAnimationDuration:(NSTimeInterval)duration {
+    log_dbg!("[UIView setAnimationDuration:{:?}]", duration);
+    State::get_mut(env).animations.last_mut().unwrap().duration = duration;
+}
+
++ (())setAnimationDelay:(NSTimeInterval)delay {
+    log_dbg!("[UIView setAnimationDelay:{:?}]", delay);
+    State::get_mut(env).animations.last_mut().unwrap().delay = delay;
+}
+
++ (())setAnimationCurve:(UIViewAnimationCurve)curve {
+    log!("TODO: [UIView setAnimationCurve:{:?}]", curve);
+}
+
++ (())setAnimationsEnabled:(bool)enabled {
+    log!("TODO: [UIView setAnimationsEnabled:{:?}]", enabled);
+}
+
++ (())setAnimationRepeatAutoreverses:(bool)repeatAutoreverses {
+    log!("TODO: [UIView setAnimationRepeatAutoreverses:{:?}]", repeatAutoreverses);
+}
+
++ (())setAnimationRepeatCount:(f32)repeatCount {
+    log_dbg!("[UIView setAnimationRepeatCount:{:?}]", repeatCount);
+    assert!(repeatCount >= 0.0);
+    State::get_mut(env).animations.last_mut().unwrap().repeat_count = repeatCount;
+}
+
++ (())setAnimationBeginsFromCurrentState:(bool)currentState {
+    log!("TODO: [UIView setAnimationBeginsFromCurrentState:{:?}]", currentState);
+}
+
++ (())setAnimationDelegate:(id)delegate {
+    log_dbg!("[UIView setAnimationDelegate:{:?}]", delegate);
+    retain(env, delegate);
+    State::get_mut(env).animations.last_mut().unwrap().delegate = delegate;
+}
+
++ (())setAnimationDidStopSelector:(SEL)selector {
+    log_dbg!("[UIView setAnimationDidStopSelector:{:?}]", selector);
+    State::get_mut(env).animations.last_mut().unwrap().did_stop_selector = selector;
+}
+
++ (())setAnimationTransition:(NSInteger)transition forView:(bool)_view cache:(bool)_cache {
+  // TODO
+}
+
++ (())beginAnimations:(id)animationID // NSString*
+              context:(ConstVoidPtr)context {
+    log_dbg!("[UIView beginAnimations:{:?} context:{:?}]", animationID, context);
+    for animation in State::get(env).animations.iter() {
+        assert_ne!(animationID, animation.animation_id);
+    }
+    State::get_mut(env).animations.push(AnimationState {
+        animation_id: animationID,
+        ..Default::default()
+    });
+}
+
++ (())commitAnimations {
+    log_dbg!("[UIView commitAnimations]");
+    let committed_animations = State::get(env).animations.clone();
+    for animation in committed_animations.iter() {
+        log_dbg!("Starting animation {:?}", animation);
+        if animation.delegate != nil && !animation.did_stop_selector.is_null() {
+            log_dbg!("The delegate {:?} {:?} will be notified when it finishes", animation.delegate, animation.did_stop_selector);
+        }
+        // Run an NSTimer for the animation duration and send to the delegate
+        // messages with each animation's selector and context.
+        // NSTimers are right now the only way we have to run code on a delay
+        // however, it's not necessarily the best options.
+        // TODO: Consider registering custom callbacks/sources in the run loop
+        // once those are implemented.
+        let total_time = animation.delay+animation.duration*(1.0 + animation.repeat_count as f64);
+        let selector = env.objc.lookup_selector("_touchHLE_animationFinished:").unwrap();
+        let user_info = animation.animation_id;
+        let timer:id = msg_class![env; NSTimer timerWithTimeInterval:total_time
+                                                target:this
+                                                selector:selector
+                                                userInfo:user_info
+                                                repeats:false];
+
+        let run_loop: id = msg_class![env; NSRunLoop mainRunLoop];
+        let mode: id = get_static_str(env, NSDefaultRunLoopMode);
+        () = msg![env; run_loop addTimer:timer forMode:mode];
+    }
+    let state = State::get_mut(env);
+    state.committed_animations.extend_from_slice(&committed_animations);
+    state.animations.clear();
+}
+
++ (())_touchHLE_animationFinished:(id)which {// NSTimer *
+    let animation_id: id = msg![env; which userInfo];
+    let committed_animations = &mut State::get_mut(env).committed_animations;
+    let animation_index = committed_animations.iter().position(|animation| animation.animation_id == animation_id).unwrap();
+    let animation = committed_animations.swap_remove(animation_index);
+    log_dbg!("Finished UIView animation: {:?}", animation);
+    if !animation.did_stop_selector.is_null() {
+        let finished: id = msg_class![env; NSNumber numberWithBool:true];
+        log_dbg!("Notifying delegate {:?} {:?} with args {:?}, {:?}, {:?}", animation.delegate, animation.did_stop_selector, animation.animation_id, finished, animation.context);
+        () = msg_send(env, (animation.delegate, animation.did_stop_selector, animation.animation_id, finished, animation.context));
+    }
+    release(env, animation.delegate);
 }
 
 // TODO: accessors etc
@@ -230,6 +394,13 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.borrow_mut::<UIViewHostObject>(this).user_interaction_enabled = enabled;
 }
 
+- (bool)isClipsToBounds {
+    env.objc.borrow::<UIViewHostObject>(this).clips_to_bounds
+}
+- (())setClipsToBounds:(bool)clips_to_bounds {
+    env.objc.borrow_mut::<UIViewHostObject>(this).clips_to_bounds = clips_to_bounds;
+}
+
 - (bool)isMultipleTouchEnabled {
     env.objc.borrow::<UIViewHostObject>(this).multiple_touch_enabled
 }
@@ -239,6 +410,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (())setExclusiveTouch:(bool)exclusive {
     log!("TODO: ignoring setExclusiveTouch:{} for view {:?}", exclusive, this);
+}
+
+- (())insertSubview:(NSInteger)_subview atIndex:(bool)_index {
+    // TODO
 }
 
 - (())layoutSubviews {
@@ -377,11 +552,13 @@ pub const CLASSES: ClassExports = objc_classes! {
         clears_context_before_drawing: _,
         user_interaction_enabled: _,
         multiple_touch_enabled: _,
+        clips_to_bounds: _,
+        transform: _,
     } = std::mem::take(env.objc.borrow_mut(this));
 
     release(env, layer);
-    assert!(view_controller == nil);
-    assert!(superview == nil);
+    // assert!(view_controller == nil);
+    // assert!(superview == nil);
     for subview in subviews {
         env.objc.borrow_mut::<UIViewHostObject>(subview).superview = nil;
         release(env, subview);
@@ -409,6 +586,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (())setClipsToBounds:(bool)clips {
     log!("TODO: [{:?} setClipsToBounds:{}]", this, clips);
+}
+
+- (())setNeedsLayout:(bool)layout {
+    log!("TODO: setNeedsLayout:{}", layout);
 }
 
 - (bool)isOpaque {
@@ -472,11 +653,15 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; layer setFrame:frame]
 }
 
+- (id)sendSubviewToBack:(NSUInteger)back {
+    msg![env; this init]
+}
+
 - (CGAffineTransform)transform {
-    CGAffineTransformIdentity
+    env.objc.borrow::<UIViewHostObject>(this).transform
 }
 - (())setTransform:(CGAffineTransform)transform {
-    log!("TODO: [{:?} setTransform:{:?}]", this, transform);
+    env.objc.borrow_mut::<UIViewHostObject>(this).transform = transform;
 }
 
 - (())setContentMode:(NSInteger)content_mode { // should be UIViewContentMode
@@ -596,7 +781,7 @@ pub const CLASSES: ClassExports = objc_classes! {
                  toView:(id)other { // UIView*
     if other == nil {
         let window: id = msg![env; this window];
-        assert!(window != nil);
+        // assert!(window != nil);
         // TODO: also assert that window is a key one?
         return msg![env; this convertPoint:point toView:window]
     }
@@ -638,6 +823,157 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 - (())sizeToFit {
     log!("TODO: [(UIView *){:?} sizeToFit]", this);
+}
+
+@end
+
+@implementation UINavigationBar: UIView
+- (())setBarStyle:(bool)style {
+    log!("TODO: setBarStyle:{}", style);
+}
+
+- (())setTintColor:(bool)color {
+    log!("TODO: setTintColor:{}", color);
+}
+
+- (())setDelegate:(bool)delegate {
+    log!("TODO: setDelegate:{}", delegate);
+}
+    
+- (())pushNavigationItem:(NSInteger)_item animated:(bool)_animated {
+    // TODO
+}
+
+- (())showButtonsWithLeftTitle:(NSInteger)title rightTitle:(bool)_right leftBack:(bool)_back {
+    // TODO
+}
+
+- (id)sizeToFit {
+    nil
+}
+
+@end
+
+@implementation UIProgressView: UIView
+
+- (id)initWithProgressViewStyle:(NSUInteger)style {
+    msg![env; this init]
+}
+
+- (id)progress {
+    nil
+}
+
+- (())setProgressViewStyle:(bool)style {
+    log!("TODO: setProgressViewStyle:{}", style);
+}
+
+- (())setProgress:(bool)progress {
+    log!("TODO: setProgress:{}", progress);
+}
+
+@end
+
+@implementation UIToolbar: UIView
+- (id)items {
+    nil
+}
+
+- (())setBarStyle:(bool)bar {
+    log!("TODO: setBarStyle:{}", bar);
+}
+
+- (())setTintColor:(bool)color {
+    log!("TODO: setTintColor:{}", color);
+}
+
+- (())setItems:(NSInteger)_items animated:(bool)_animated {
+    // TODO
+}
+
+- (())setItems:(id)_items {
+}
+
+- (id)sizeToFit {
+    nil
+}
+
+@end
+
+@implementation UINavigationItem: NSObject
+- (id)initWithCoder:(id)coder {
+    nil
+}
+- (id)initWithTitle:(id)title {
+    nil
+}
+@end
+
+@implementation UITableViewCell: UIView
+- (id)contentView {
+    nil
+}
+
+- (())setText:(bool)text {
+    log!("TODO: setText:{}", text);
+}
+
+@end
+
+@implementation UITabBar: UIControl
+
+- (())setItems:(NSInteger)items animated:(bool)_animated {
+  // TODO
+}
+
+@end
+
+@implementation UITabBarItem: UIControl
+
+- (())initWithTitle:(NSInteger)title image:(bool)_image tag:(bool)_tag {
+  // TODO
+}
+
+- (())initWithTabBarSystemItem:(NSInteger)item tag:(bool)_tag {
+  // TODO
+}
+
+@end
+
+@implementation UICustomObject: NSObject
+@end
+
+@implementation UIKeyboard: NSObject
+
+- (id)initWithCoder:(id)coder {
+    nil
+}
+- (id)initWithTitle:(id)title {
+    nil
+}
+
+@end
+
+@implementation UIDatePicker: UIView
+
+- (())setDatePickerMode:(bool)mode {
+    log!("TODO: setDatePickerMode:{}", mode);
+}
+
+- (())addTarget:(NSInteger)target action:(bool)_action forControlEvents:(bool)_events {
+    // TODO
+}
+
+@end
+
+@implementation UITabBarController: UIView
+
+- (id)view {
+    nil
+}
+
+- (())setViewControllers:(bool)controllers {
+    log!("TODO: setViewControllers:{}", controllers);
 }
 
 @end

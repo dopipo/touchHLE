@@ -8,6 +8,7 @@
 use crate::frameworks::core_graphics::cg_context::CGContextSetRGBFillColor;
 use crate::frameworks::core_graphics::cg_geometry::CGPointZero;
 use crate::frameworks::core_graphics::{CGFloat, CGPoint, CGRect, CGSize};
+use crate::frameworks::foundation::NSRange;
 use crate::frameworks::uikit::ui_color;
 use crate::frameworks::uikit::ui_font::{
     UILineBreakModeTailTruncation, UITextAlignment, UITextAlignmentLeft,
@@ -139,6 +140,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     () = msg![env; this setNeedsDisplay];
 }
 
+- (id)scrollRangeToVisible {
+    nil
+}
+
 - (UITextAlignment)textAlignment {
     env.objc.borrow::<UITextViewHostObject>(this).text_alignment
 }
@@ -175,8 +180,28 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (bool)isEditable {
     env.objc.borrow::<UITextViewHostObject>(this).editable
 }
+- (())setIndicatorStyle :(bool)style {
+    log!("TODO: setIndicatorStyle:{}", style);
+}
+
+- (())setAutocapitalizationType :(bool)_type {
+    log!("TODO: setAutocapitalizationType:{}", _type);
+}
+
 - (())setEditable:(bool)editable {
     env.objc.borrow_mut::<UITextViewHostObject>(this).editable = editable;
+}
+
+- (())scrollRangeToVisible:(NSRange)range {
+    log!("TODO: [(UITextView*) {:?} scrollRangeToVisible:{:?}]", this, range);
+}
+
+- (())setBackground:(bool)background {
+    log!("TODO: setBackground:{}", background);
+}
+
+- (())setKeyboardType:(bool)type_ {
+    log!("TODO: setKeyboardType:{}", type_);
 }
 
 - (())setReturnKeyType:(UIReturnKeyType)type_ {

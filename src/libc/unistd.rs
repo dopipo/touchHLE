@@ -19,6 +19,7 @@ type useconds_t = u32;
 
 const F_OK: i32 = 0;
 const R_OK: i32 = 4;
+const W_OK: i32 = 6;
 
 fn sleep(env: &mut Environment, seconds: u32) -> u32 {
     env.sleep(Duration::from_secs(seconds.into()), true);
@@ -38,6 +39,8 @@ fn usleep(env: &mut Environment, useconds: useconds_t) -> i32 {
 
 #[allow(non_camel_case_types)]
 pub type pid_t = i32;
+#[allow(non_camel_case_types)]
+type gid_t = u32;
 
 fn getpid(_env: &mut Environment) -> pid_t {
     // Not a real value, since touchHLE only simulates a single process.
@@ -46,6 +49,10 @@ fn getpid(_env: &mut Environment) -> pid_t {
 }
 fn getppid(_env: &mut Environment) -> pid_t {
     // Included just for completeness. Surely no app ever calls this.
+    0
+}
+fn getgid(_env: &mut Environment) -> gid_t {
+    // Not a real value
     0
 }
 
@@ -77,6 +84,13 @@ fn access(env: &mut Environment, path: ConstPtr<u8>, mode: i32) -> i32 {
             }
         }
         R_OK => {
+            if r {
+                0
+            } else {
+                -1
+            }
+        }
+        W_OK => {
             if r {
                 0
             } else {
@@ -121,6 +135,14 @@ fn gethostname(env: &mut Environment, name: MutPtr<u8>, namelen: GuestUSize) -> 
     0 // Success
 }
 
+fn get_etext(env: &mut Environment) -> u32 {
+    4096
+}
+
+fn get_end(env: &mut Environment) -> u32 {
+    927506432
+}
+
 fn getpagesize(_env: &mut Environment) -> i32 {
     PAGE_SIZE.try_into().unwrap()
 }
@@ -134,5 +156,8 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(access(_, _)),
     export_c_func!(unlink(_)),
     export_c_func!(gethostname(_, _)),
+    export_c_func!(get_etext()),
+    export_c_func!(get_end()),
     export_c_func!(getpagesize()),
+    export_c_func!(getgid()),
 ];

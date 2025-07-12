@@ -35,6 +35,7 @@ use std::fs;
 use std::fs::File;
 use std::io::{Read, Seek, Write};
 use std::path::{Path, PathBuf};
+use std::time::UNIX_EPOCH;
 
 /// The actual location of a file outside the virtual filesystem, e.g. a host
 /// file path.
@@ -168,6 +169,10 @@ impl GuestPath {
     /// implementation of `AsRef<GuestPath>` for all `AsRef<str>` types, so we
     /// would have to implement it for everything that can derference to `&str`.
     /// It's easier to just use `&str`.
+    ///
+    /// Warning! This function should only be used for internal touchHLE
+    /// purposes.
+    /// For Foundation case, use `[NSString stringByAppendingPathComponent:]`
     pub fn join<P: AsRef<str>>(&self, path: P) -> GuestPathBuf {
         GuestPathBuf::from(format!("{}/{}", self.as_str(), path.as_ref()))
     }
@@ -357,6 +362,7 @@ pub enum GuestFile {
     File(File),
     IpaBundleFile(IpaFile),
     ResourceFile(paths::ResourceFile),
+    Socket,
 }
 
 impl GuestFile {
@@ -381,6 +387,7 @@ impl GuestFile {
             GuestFile::File(file) => file.sync_all(),
             GuestFile::IpaBundleFile(_) | GuestFile::ResourceFile(_) => Ok(()),
             GuestFile::Directory => panic!("Attempt to sync a directory as a guest file"),
+            _ => unimplemented!(),
         }
     }
     pub fn set_len(&self, len: u64) -> std::io::Result<()> {
@@ -393,6 +400,7 @@ impl GuestFile {
                 panic!("Attempt to resize a read-only file: {:?}", file)
             }
             GuestFile::Directory => panic!("Attempt to resize a directory as a guest file"),
+            _ => unimplemented!(),
         }
     }
 }
@@ -404,6 +412,7 @@ impl Read for GuestFile {
             GuestFile::IpaBundleFile(file) => file.read(buf),
             GuestFile::ResourceFile(file) => file.get().read(buf),
             GuestFile::Directory => panic!("Attempt to read from a directory as a guest file"),
+            _ => unimplemented!(),
         }
     }
 }
@@ -419,6 +428,7 @@ impl Write for GuestFile {
                 panic!("Attempt to write to a read-only file: {:?}", file)
             }
             GuestFile::Directory => panic!("Attempt to write to a directory as a guest file"),
+            _ => unimplemented!(),
         }
     }
 
@@ -432,6 +442,7 @@ impl Write for GuestFile {
                 panic!("Attempt to flush a read-only file: {:?}", file)
             }
             GuestFile::Directory => panic!("Attempt to flush a directory as a guest file"),
+            _ => unimplemented!(),
         }
     }
 }
@@ -443,6 +454,7 @@ impl Seek for GuestFile {
             GuestFile::IpaBundleFile(file) => file.seek(pos),
             GuestFile::ResourceFile(file) => file.get().seek(pos),
             GuestFile::Directory => panic!("Attempt to seek in a directory as a guest file"),
+            _ => unimplemented!(),
         }
     }
 }
@@ -520,6 +532,23 @@ impl Fs {
             }
         });
 
+        if !read_only_mode {
+            // Special case: Some apps may create save files at
+            // Library/Preferences at the start, thus presence of that
+            // directory is expected
+            let path = paths::user_data_base_path()
+                .join(paths::SANDBOX_DIR)
+                .join(bundle_id)
+                .join("Library")
+                .join("Preferences");
+            if let Err(e) = std::fs::create_dir_all(&path) {
+                panic!(
+                    "Could not create documents sub-directory for app at {:?}: {:?}",
+                    path, e
+                );
+            }
+        }
+
         // Some Free Software libraries are bundled with touchHLE.
         use paths::DYLIBS_DIR;
         let usr_lib = FsNode::dir()
@@ -535,6 +564,25 @@ impl Fs {
             .with_child(
                 "libstdc++.6.0.9.dylib",
                 FsNode::resource_file(format!("{}/libstdc++.6.0.9.dylib", DYLIBS_DIR)),
+            )
+            .with_child(
+                "libz.1.2.3.dylib",
+                FsNode::resource_file(format!("{}/libz.1.2.3.dylib", DYLIBS_DIR)),
+            )
+            .with_child(
+                // symlink
+                "libz.1.dylib",
+                FsNode::resource_file(format!("{}/libz.1.2.3.dylib", DYLIBS_DIR)),
+            )
+            .with_child(
+                // symlink
+                "libz.dylib",
+                FsNode::resource_file(format!("{}/libz.1.2.3.dylib", DYLIBS_DIR)),
+            )
+            .with_child(
+                // symlink
+                "libz.1.1.3.dylib",
+                FsNode::resource_file(format!("{}/libz.1.2.3.dylib", DYLIBS_DIR)),
             );
 
         let mut app_dir_children = HashMap::new();
@@ -715,6 +763,19 @@ impl Fs {
                 FileLocation::IpaFileRef(ipa_file_ref) => {
                     Ok(ipa_file_ref.get_last_modified().into())
                 }
+                FileLocation::Path(path) => {
+                    // TODO: account for the current timezone, here it's in GMT
+                    fs::metadata(path)
+                        .and_then(|m| m.modified())
+                        .map(|t| {
+                            t.duration_since(UNIX_EPOCH)
+                                .unwrap()
+                                .as_secs()
+                                .try_into()
+                                .unwrap()
+                        })
+                        .map_err(|_| ())
+                }
                 _ => unimplemented!(),
             },
             _ => unimplemented!(),
@@ -727,6 +788,9 @@ impl Fs {
         match node {
             FsNode::File { location, .. } => match location {
                 FileLocation::IpaFileRef(ipa_file_ref) => Ok(ipa_file_ref.get_size()),
+                FileLocation::Path(path) => {
+                    fs::metadata(path).map(|meta| meta.len()).map_err(|_| ())
+                }
                 _ => unimplemented!(),
             },
             _ => unimplemented!(),

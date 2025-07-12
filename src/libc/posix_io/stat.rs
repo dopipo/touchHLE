@@ -123,6 +123,7 @@ fn fstat_inner(env: &mut Environment, fd: FileDescriptor, buf: MutPtr<stat>) -> 
 
             // TODO: st_size
         }
+        _ => unimplemented!(),
     }
 
     env.mem.write(buf, stat);

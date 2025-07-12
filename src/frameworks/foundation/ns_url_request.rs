@@ -5,7 +5,7 @@
  */
 //! `NSURLRequest and NSMutableURLRequest`.
 
-use super::{NSTimeInterval, NSUInteger};
+use super::{NSTimeInterval, NSInteger, NSUInteger};
 use crate::frameworks::foundation::ns_string::to_rust_string;
 use crate::msg;
 use crate::objc::{autorelease, id, nil, objc_classes, release, ClassExports};
@@ -56,7 +56,21 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 @implementation NSMutableURLRequest: NSURLRequest
-//TODO
+- (())setURL:(bool)_url {
+    log!("TODO: setURL:{}", _url);
+}
+
+- (())setHTTPMethod:(bool)method {
+    log!("TODO: setHTTPMethod:{}", method);
+}
+
+- (())setHTTPBody:(bool)body {
+    log!("TODO: setHTTPBody:{}", body);
+}
+
+- (())setValue:(NSInteger)value forHTTPHeaderField:(bool)_field {
+    // TODO
+}
 @end
 
 };

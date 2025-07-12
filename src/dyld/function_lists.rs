@@ -7,13 +7,14 @@
 //! very long and frequently-updated list.
 
 use crate::frameworks::{
-    audio_toolbox, core_foundation, core_graphics, dnssd, foundation, openal, opengles,
+    audio_toolbox, core_foundation, core_graphics, dnssd, foundation, misc, openal, opengles,
     system_configuration, uikit,
 };
 use crate::libc;
 
 /// All the lists of functions that the linker should search through.
 pub const FUNCTION_LISTS: &[super::FunctionExports] = &[
+    libc::arpa::inet::FUNCTIONS,
     libc::clocale::FUNCTIONS,
     libc::ctype::FUNCTIONS,
     libc::cxxabi::FUNCTIONS,
@@ -23,6 +24,7 @@ pub const FUNCTION_LISTS: &[super::FunctionExports] = &[
     libc::errno::FUNCTIONS,
     libc::ifaddrs::FUNCTIONS,
     libc::keymgr::FUNCTIONS,
+    libc::libkern::os_atomic::FUNCTIONS,
     libc::mach_host::FUNCTIONS,
     libc::mach_semaphore::FUNCTIONS,
     libc::mach_thread_info::FUNCTIONS,
@@ -50,12 +52,14 @@ pub const FUNCTION_LISTS: &[super::FunctionExports] = &[
     libc::sys::mount::FUNCTIONS,
     libc::sys::ptrace::FUNCTIONS,
     libc::sys::timeb::FUNCTIONS,
+    libc::sys::socket::FUNCTIONS,
     libc::sys::utsname::FUNCTIONS,
     libc::sysctl::FUNCTIONS,
     libc::time::FUNCTIONS,
     libc::unistd::FUNCTIONS,
     libc::wchar::FUNCTIONS,
     crate::objc::FUNCTIONS,
+    misc::FUNCTIONS,
     audio_toolbox::audio_components::FUNCTIONS,
     audio_toolbox::audio_file::FUNCTIONS,
     audio_toolbox::audio_queue::FUNCTIONS,
@@ -63,8 +67,10 @@ pub const FUNCTION_LISTS: &[super::FunctionExports] = &[
     audio_toolbox::audio_session::FUNCTIONS,
     audio_toolbox::audio_unit::FUNCTIONS,
     core_foundation::cf_array::FUNCTIONS,
+    core_foundation::cf_boolean::FUNCTIONS,
     core_foundation::cf_dictionary::FUNCTIONS,
     core_foundation::cf_bundle::FUNCTIONS,
+    core_foundation::cf_socket::FUNCTIONS,
     core_foundation::cf_data::FUNCTIONS,
     core_foundation::cf_locale::FUNCTIONS,
     core_foundation::cf_run_loop::FUNCTIONS,
@@ -94,3 +100,22 @@ pub const FUNCTION_LISTS: &[super::FunctionExports] = &[
     uikit::ui_geometry::FUNCTIONS,
     uikit::ui_graphics::FUNCTIONS,
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashSet;
+
+    #[test]
+    fn no_duplicate_functions() {
+        let mut seen = HashSet::new();
+
+        for function_list in FUNCTION_LISTS {
+            for (function_name, _) in *function_list {
+                if !seen.insert(function_name) {
+                    panic!("Found duplicate function export {}", function_name);
+                }
+            }
+        }
+    }
+}

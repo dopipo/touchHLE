@@ -668,7 +668,8 @@ impl GLES for GLES1OnGL2 {
     unsafe fn GetIntegerv(&mut self, pname: GLenum, params: *mut GLint) {
         let (type_, _count) = GET_PARAMS.get_type_info(pname);
         // TODO: type conversion
-        assert!(type_ == ParamType::Int);
+        let allowed_float = type_ == ParamType::Float && pname == gl21::POINT_SIZE_MAX;
+        assert!(type_ == ParamType::Int || allowed_float);
         gl21::GetIntegerv(pname, params);
     }
     unsafe fn GetTexEnviv(&mut self, target: GLenum, pname: GLenum, params: *mut GLint) {
@@ -844,6 +845,7 @@ impl GLES for GLES1OnGL2 {
                 mode
             );
         }
+        gl21::CullFace(mode);
     }
     unsafe fn DepthFunc(&mut self, func: GLenum) {
         assert!([
@@ -1488,6 +1490,7 @@ impl GLES for GLES1OnGL2 {
                 || format == gl21::RGBA
                 || format == gl21::LUMINANCE
                 || format == gl21::LUMINANCE_ALPHA
+                || format == gl21::BGRA
         );
         assert!(
             type_ == gl21::UNSIGNED_BYTE
@@ -1555,8 +1558,8 @@ impl GLES for GLES1OnGL2 {
 
             let index_count = width as usize * height as usize;
             let (index_word_size, index_word_count) = match index_is_nibble {
-                true => (1, (index_count + 1) / 2),
-                false => (4, (index_count + 3) / 4),
+                true => (1, index_count.div_ceil(2)),
+                false => (4, index_count.div_ceil(4)),
             };
             let indices_size = index_word_size * index_word_count;
 
@@ -1705,6 +1708,19 @@ impl GLES for GLES1OnGL2 {
         }
     }
     unsafe fn TexEnvfv(&mut self, target: GLenum, pname: GLenum, params: *const GLfloat) {
+        if target == gles11::TEXTURE_FILTER_CONTROL_EXT {
+            assert!(pname == gl21::TEXTURE_LOD_BIAS_EXT);
+            unsafe {
+                if !CStr::from_ptr(gl21::GetString(gl21::EXTENSIONS) as _)
+                    .to_str()
+                    .unwrap()
+                    .contains("EXT_texture_lod_bias")
+                {
+                    log_dbg!("GL_EXT_texture_lod_bias is unsupported, skipping TexEnvfv({:#x}, {:#x}, ...) call", target, pname);
+                    return;
+                }
+            };
+        }
         match target {
             gl21::TEXTURE_ENV => {
                 TEX_ENV_PARAMS.assert_known_param(pname);

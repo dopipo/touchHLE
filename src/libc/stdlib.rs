@@ -12,7 +12,9 @@ use crate::libc::clocale::{setlocale, LC_CTYPE};
 use crate::libc::errno::set_errno;
 use crate::libc::string::strlen;
 use crate::libc::wchar::wchar_t;
-use crate::mem::{ConstPtr, ConstVoidPtr, GuestUSize, MutPtr, MutVoidPtr, Ptr};
+use crate::mem::{
+    ConstPtr, ConstVoidPtr, GuestUSize, Mem, MutPtr, MutVoidPtr, Ptr, ZoneId, DEFAULT_ZONE_ID,
+};
 use crate::Environment;
 use std::str::FromStr;
 
@@ -33,7 +35,15 @@ fn malloc(env: &mut Environment, size: GuestUSize) -> MutVoidPtr {
     // TODO: handle errno properly
     set_errno(env, 0);
 
-    env.mem.alloc(size)
+    malloc_zone_malloc(env, DEFAULT_ZONE_ID, size)
+}
+
+fn malloc_zone_malloc(env: &mut Environment, zone: ZoneId, size: GuestUSize) -> MutVoidPtr {
+    env.mem.zone_alloc(zone, size)
+}
+
+fn malloc_size(env: &mut Environment, ptr: ConstVoidPtr) -> GuestUSize {
+    env.mem.malloc_size(ptr)
 }
 
 fn calloc(env: &mut Environment, count: GuestUSize, size: GuestUSize) -> MutVoidPtr {
@@ -41,9 +51,7 @@ fn calloc(env: &mut Environment, count: GuestUSize, size: GuestUSize) -> MutVoid
     set_errno(env, 0);
 
     let total = size.checked_mul(count).unwrap();
-    let res = env.mem.alloc(total);
-    env.mem.bytes_at_mut(res.cast(), total).fill(0);
-    res
+    env.mem.calloc(total)
 }
 
 fn realloc(env: &mut Environment, ptr: MutVoidPtr, size: GuestUSize) -> MutVoidPtr {
@@ -66,15 +74,27 @@ fn free(env: &mut Environment, ptr: MutVoidPtr) {
         env.objc.dealloc_object(ptr.cast(), &mut env.mem);
         return;
     }
+malloc_zone_free(env, DEFAULT_ZONE_ID, ptr);
+}
 
-    // TODO: handle errno properly
-    set_errno(env, 0);
-
+    fn malloc_zone_free(env: &mut Environment, zone: ZoneId, ptr: MutVoidPtr) {
     if ptr.is_null() {
         // "If ptr is a NULL pointer, no operation is performed."
         return;
     }
-    env.mem.free(ptr);
+    env.mem.zone_free(zone, ptr);
+}
+
+fn malloc_create_zone(env: &mut Environment, _start_size: GuestUSize, _flags: u32) -> ZoneId {
+    env.mem.create_zone(Mem::ZONE_SIZE)
+}
+
+fn malloc_destroy_zone(env: &mut Environment, zone: ZoneId) {
+    env.mem.destroy_zone(zone);
+}
+
+fn malloc_set_zone_name(env: &mut Environment, zone: ZoneId, name: ConstPtr<u8>) {
+    env.mem.set_zone_name(zone, name);
 }
 
 fn atexit(
@@ -286,13 +306,29 @@ pub fn strtoul(
     // TODO: handle errno properly
     set_errno(env, 0);
 
-    let s = env.mem.cstr_at_utf8(str).unwrap();
+    let start = skip_whitespace(env, str);
+    let whitespace_len = Ptr::to_bits(start) - Ptr::to_bits(str);
+
+    let s = env.mem.cstr_at_utf8(start).unwrap();
     log_dbg!("strtoul({:?} ({}), {:?}, {})", str, s, endptr, base);
-    assert_eq!(base, 16);
-    let without_prefix = s.trim_start_matches("0x");
-    let res = u32::from_str_radix(without_prefix, 16).unwrap_or(ULONG_MAX);
+    let (trimmed, len) = if base == 16 {
+        // We need to count prefix in the length
+        (
+            s.trim_start_matches("0x"),
+            s.len() + whitespace_len as usize,
+        )
+    } else {
+        assert_eq!(base, 10);
+        let trimmed = s.trim_end_matches(|c: char| !char::is_ascii_digit(&c));
+        (trimmed, trimmed.len() + whitespace_len as usize)
+    };
+    let res = if trimmed.is_empty() {
+        0
+    } else {
+        u32::from_str_radix(trimmed, base as u32).unwrap_or(ULONG_MAX)
+    };
     if !endptr.is_null() {
-        let len: GuestUSize = s.len().try_into().unwrap();
+        let len: GuestUSize = len.try_into().unwrap();
         env.mem.write(endptr, (str + len).cast_mut());
     }
     res
@@ -386,7 +422,7 @@ fn wcstombs(
         return 0;
     }
     let wcstr = env.mem.wcstr_at(pwcs);
-    let len: GuestUSize = wcstr.bytes().len() as GuestUSize;
+    let len: GuestUSize = wcstr.len() as GuestUSize;
     let len = len.min(n);
     log_dbg!("wcstombs '{}', len {}, n {}", wcstr, len, n);
     env.mem
@@ -400,8 +436,14 @@ fn wcstombs(
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(malloc(_)),
+    export_c_func!(malloc_size(_)),
     export_c_func!(calloc(_, _)),
     export_c_func!(realloc(_, _)),
+    export_c_func!(malloc_create_zone(_, _)),
+    export_c_func!(malloc_destroy_zone(_)),
+    export_c_func!(malloc_zone_free(_, _)),
+    export_c_func!(malloc_zone_malloc(_, _)),
+    export_c_func!(malloc_set_zone_name(_, _)),
     export_c_func!(free(_)),
     export_c_func!(atexit(_)),
     export_c_func!(atoi(_)),

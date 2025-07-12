@@ -23,8 +23,9 @@ const NSDocumentDirectory: NSSearchPathDirectory = 9;
 type NSSearchPathDomainMask = NSUInteger;
 const NSUserDomainMask: NSSearchPathDomainMask = 1;
 
-const NSFileModificationDate: &str = "NSFileModificationDate";
-const NSFileSize: &str = "NSFileSize";
+pub const NSFileModificationDate: &str = "NSFileModificationDate";
+pub const NSFileSize: &str = "NSFileSize";
+const NSFileSystemFreeSize: &str = "NSFileSystemFreeSize";
 
 pub const CONSTANTS: ConstantExports = &[
     (
@@ -32,6 +33,10 @@ pub const CONSTANTS: ConstantExports = &[
         HostConstant::NSString(NSFileModificationDate),
     ),
     ("_NSFileSize", HostConstant::NSString(NSFileSize)),
+    (
+        "_NSFileSystemFreeSize",
+        HostConstant::NSString(NSFileSystemFreeSize),
+    ),
 ];
 
 fn NSSearchPathForDirectoriesInDomains(
@@ -304,20 +309,41 @@ pub const CLASSES: ClassExports = objc_classes! {
     log_dbg!("[(NSFileManager *){:?} fileAttributesAtPath:{} traverse:{}]", this, path, traverse);
     let guest_path = GuestPath::new(&path);
 
-    let unix_timestamp: f64 = env.fs.modified(guest_path).unwrap() as f64;
-    let unix_ref_date: id = msg_class![env; NSDate dateWithTimeIntervalSince1970:0f64];
-    let unix_date: id = msg_class![env; NSDate dateWithTimeInterval:unix_timestamp sinceDate:unix_ref_date];
+    file_attributes_common(env, guest_path)
+}
 
-    let size = env.fs.size(guest_path).unwrap();
-    let size_num: id = msg_class![env; NSNumber numberWithUnsignedLongLong:size];
+- (id)attributesOfItemAtPath:(id)path // NSString *
+                       error:(MutPtr<id>)error { // NSError **
+    assert!(error.is_null()); // TODO
+
+    // TODO: other attributes
+    log!("Warning: NSFileManager attributesOfItemAtPath:error: returns only NSFileModificationDate and NSFileSize attributes!");
+
+    let path = ns_string::to_rust_string(env, path); // TODO: avoid copy
+    // TODO: traverse link
+    log_dbg!("[(NSFileManager *){:?} attributesOfItemAtPath:{} error:{:?}]", this, path, error);
+    let guest_path = GuestPath::new(&path);
+
+    file_attributes_common(env, guest_path)
+}
+
+- (id)attributesOfFileSystemForPath:(id)_path
+                              error:(MutPtr<id>)error {
+    // TODO: other attributes
+    log!("Warning: NSFileManager attributesOfFileSystemForPath:error: returns only NSFileSystemFreeSize attribute!");
+
+    assert!(error.is_null()); // TODO
 
     let dict = msg_class![env; NSMutableDictionary new];
 
-    let modif_date_key = get_static_str(env, NSFileModificationDate);
-    () = msg![env; dict setObject:unix_date forKey:modif_date_key];
+    // Reporting 1 Gb of free space should be enough
+    // TODO: unify with `statfs`
+    // TODO: account for path
+    let size: u64 = 1024 * 1024 * 1024;
+    let size_num: id = msg_class![env; NSNumber numberWithUnsignedLongLong:size];
 
-    let size_key = get_static_str(env, NSFileSize);
-    () = msg![env; dict setObject:size_num forKey:size_key];
+    let fs_free_size_key = get_static_str(env, NSFileSystemFreeSize);
+    () = msg![env; dict setObject:size_num forKey:fs_free_size_key];
 
     let dict_imm = msg![env; dict copy];
     release(env, dict);
@@ -336,3 +362,28 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 };
+
+/// Helper function for `fileAttributesAtPath:traverseLink:` and
+/// `attributesOfItemAtPath:error:`
+fn file_attributes_common(env: &mut Environment, guest_path: &GuestPath) -> id {
+    // TODO: support more attributes
+    let unix_timestamp: f64 = env.fs.modified(guest_path).unwrap() as f64;
+    let unix_ref_date: id = msg_class![env; NSDate dateWithTimeIntervalSince1970:0f64];
+    let unix_date: id =
+        msg_class![env; NSDate dateWithTimeInterval:unix_timestamp sinceDate:unix_ref_date];
+
+    let size = env.fs.size(guest_path).unwrap();
+    let size_num: id = msg_class![env; NSNumber numberWithUnsignedLongLong:size];
+
+    let dict = msg_class![env; NSMutableDictionary new];
+
+    let modif_date_key = get_static_str(env, NSFileModificationDate);
+    () = msg![env; dict setObject:unix_date forKey:modif_date_key];
+
+    let size_key = get_static_str(env, NSFileSize);
+    () = msg![env; dict setObject:size_num forKey:size_key];
+
+    let dict_imm = msg![env; dict copy];
+    release(env, dict);
+    autorelease(env, dict_imm)
+}

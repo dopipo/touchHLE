@@ -187,6 +187,30 @@ pub const CLASSES: ClassExports = objc_classes! {
     };
     msg_super![env; this setBackgroundColor:color]
 }
+- (())setAdjustsFontSizeToFitWidth:(bool)width {
+    log!("TODO: setAdjustsFontSizeToFitWidth:{}", width);
+}
+
+- (())setBaselineAdjustment:(bool)adjustment {
+    log!("TODO: setBaselineAdjustment:{}", adjustment);
+}
+- (())setMinimumFontSize:(bool)size {
+    log!("TODO: setMinimumFontSize:{}", size);
+}
+- (())setShadowColor:(bool)shadow {
+    log!("TODO: setShadowColor:{}", shadow);
+}
+- (())setShadowOffset:(bool)offset {
+    log!("TODO: setShadowOffset:{}", offset);
+}
+
+- (())setHighlightedTextColor:(bool)color {
+    log!("TODO: setHighlightedTextColor:{}", color);
+}
+
+- (())setNeedsLayout:(bool)layout {
+    log!("TODO: setNeedsLayout:{}", layout);
+}
 - (())setOpaque:(bool)_opaque {
     // Built-in views don't have user-controlled opaqueness.
 }

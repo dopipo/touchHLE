@@ -18,7 +18,7 @@ use crate::frameworks::core_graphics::cg_image::{
     kCGImageAlphaPremultipliedLast, kCGImageByteOrder32Big,
 };
 use crate::frameworks::core_graphics::{CGPoint, CGRect, CGSize};
-use crate::frameworks::foundation::ns_string;
+use crate::frameworks::foundation::{NSInteger, ns_string};
 use crate::mem::{GuestUSize, Ptr};
 use crate::objc::{id, msg, nil, objc_classes, release, retain, ClassExports, HostObject, ObjC};
 use std::collections::HashMap;
@@ -174,6 +174,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     sublayers.insert(idx, layer);
 }
 
+- (id)transform {
+    nil
+}
+
 - (())removeFromSuperlayer {
     let CALayerHostObject { ref mut superlayer, .. } = env.objc.borrow_mut(this);
     let superlayer = std::mem::take(superlayer);
@@ -251,6 +255,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 - (())setOpaque:(bool)opaque {
     env.objc.borrow_mut::<CALayerHostObject>(this).opaque = opaque;
+}
+
+- (())addAnimation:(NSInteger)animation forKey:(bool)_key {
+    // TODO
 }
 
 - (f32)opacity {
@@ -343,9 +351,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     let int_width = size.width.round() as GuestUSize;
     let int_height = size.height.round() as GuestUSize;
 
-    let need_new_context = cg_context.map_or(
-        true,
-        |existing| (
+    let need_new_context = cg_context.is_none_or(|existing| (
             CGBitmapContextGetWidth(env, existing) != int_width ||
             CGBitmapContextGetHeight(env, existing) != int_height
         )

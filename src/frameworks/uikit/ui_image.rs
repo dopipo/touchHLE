@@ -10,7 +10,7 @@ use crate::frameworks::core_graphics::cg_image::{
     self, CGImageGetHeight, CGImageGetWidth, CGImageRef, CGImageRelease, CGImageRetain,
 };
 use crate::frameworks::core_graphics::{CGFloat, CGPoint, CGRect, CGSize};
-use crate::frameworks::foundation::{ns_data, ns_string, NSInteger};
+use crate::frameworks::foundation::{ns_data, ns_string, NSInteger, NSUInteger};
 use crate::frameworks::uikit::ui_graphics::UIGraphicsGetCurrentContext;
 use crate::fs::GuestPath;
 use crate::image::Image;
@@ -52,6 +52,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this imageWithContentsOfFile:path]
 }
 
++ (id)applicationImageNamed:(NSUInteger)_named {
+    msg![env; this init]
+}
+
 + (id)imageWithContentsOfFile:(id)path { // NSString*
     let new: id = msg![env; this alloc];
     let new: id = msg![env; new initWithContentsOfFile:path];
@@ -62,6 +66,15 @@ pub const CLASSES: ClassExports = objc_classes! {
     let new: id = msg![env; this alloc];
     let new: id = msg![env; new initWithData:data];
     autorelease(env, new)
+}
+
++ (id)CGImage {
+    nil
+}
+
+- (id)copyWithZone:(NSZonePtr)_zone {
+    let host_object = Box::new(UIImageHostObject { cg_image: nil });
+    env.objc.alloc_object(this, host_object, &mut env.mem)
 }
 
 - (())dealloc {
@@ -105,6 +118,14 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (())stretchableImageWithLeftCapWidth:(NSInteger)width topCapHeight:(bool)_height {
+    // TODO
+}
+
+- (id)stretchableImageWithLeftCapWidth:(id)width {
+    nil
+}
+
 // TODO: more init methods
 // TODO: more accessors
 
@@ -144,6 +165,13 @@ pub const CLASSES: ClassExports = objc_classes! {
         }
     };
     CGContextDrawImage(env, context, rect, image);
+}
+
+- (())drawAtPoint:(CGPoint)point
+        blendMode:(i32)blend_mode // CGBlendMode
+            alpha:(CGFloat)alpha {
+    log!("drawAtPoint p {} bm {} al {}", point, blend_mode, alpha);
+    // assert_eq!(alpha, 0.0);
 }
 
 @end

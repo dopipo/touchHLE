@@ -49,6 +49,12 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, new)
 }
 
++ (id)setWithObjects:(id)first_obj, ...args {
+    let new: id = msg![env; this alloc];
+    env.objc.borrow_mut::<SetHostObject>(new).dict = set_from_objects(env, first_obj, args);
+    autorelease(env, new)
+}
+
 // NSCopying implementation
 - (id)copyWithZone:(NSZonePtr)_zone {
     retain(env, this)
@@ -210,6 +216,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; array objectEnumerator]
 }
 
+- (id)pal {
+    nil
+}
+
 // NSFastEnumeration implementation
 - (NSUInteger)countByEnumeratingWithState:(MutPtr<NSFastEnumerationState>)state
                                   objects:(MutPtr<id>)stackbuf
@@ -235,6 +245,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     let mut host_obj: SetHostObject = std::mem::take(env.objc.borrow_mut(this));
     host_obj.dict.insert(env, object, null, /* copy_key: */ false);
     *env.objc.borrow_mut(this) = host_obj;
+}
+
+- (id)removeObject {
+    nil
 }
 
 - (())removeAllObjects {

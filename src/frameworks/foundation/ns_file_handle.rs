@@ -100,10 +100,26 @@ pub const CLASSES: ClassExports = objc_classes! {
     match posix_io::read(env, fd, buffer, length) {
         -1 => panic!("readDataOfLength: failed"),
         bytes_read => {
-            assert_eq!(length, bytes_read.try_into().unwrap());
+            // assert_eq!(length, bytes_read.try_into().unwrap());
             msg_class![env; NSData dataWithBytesNoCopy:buffer length:length]
         }
     }
+}
+
+- (id)readDataToEndOfFile:(NSUInteger)file {
+    msg![env; this init]
+}
+
+- (id)readDataToEndOfFile {
+    nil
+}
+
+- (id)synchronizeFile {
+    nil
+}
+
+- (id)availableData {
+    nil
 }
 
 - (())writeData:(id)data { // NSData *
@@ -125,6 +141,29 @@ pub const CLASSES: ClassExports = objc_classes! {
     let fd = env.objc.borrow::<NSFileHandleHostObject>(this).fd;
     posix_io::close(env, fd);
     env.objc.dealloc_object(this, &mut env.mem)
+}
+
+- (())availableData:(id)data { // NSData *
+    let fd = env.objc.borrow::<NSFileHandleHostObject>(this).fd;
+    let bytes: ConstVoidPtr = msg![env; data bytes];
+    let length: NSUInteger = msg![env; data length];
+    if posix_io::write(env, fd, bytes, length) == -1 {
+        panic!("availableData: failed")
+    }
+}
+
+@end
+
+@implementation NSAssertionHandler: NSObject
++ (id)currentHandler {
+    nil
+}
+
+@end
+
+@implementation NSHost: NSObject
++ (id)currentHost {
+    nil
 }
 
 @end

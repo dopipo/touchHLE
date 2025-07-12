@@ -7,7 +7,7 @@
 
 use super::ns_run_loop::NSDefaultRunLoopMode;
 use super::NSTimeInterval;
-use super::{ns_run_loop, ns_string};
+use super::{ns_run_loop, ns_string, NSInteger};
 use crate::objc::{
     autorelease, id, msg, msg_class, msg_send, nil, objc_classes, release, retain, ClassExports,
     HostObject, SEL,
@@ -92,6 +92,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     timer
 }
 
++ (())scheduledTimerWithTimeInterval:(NSInteger)time invocation:(bool)_invocation repeats:(bool)_repeats {
+    // TODO
+}
+
 - (())dealloc {
     let &NSTimerHostObject {
         target,
@@ -128,9 +132,13 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (())fire {
     let &NSTimerHostObject {
+        ns_interval,
+        rust_interval,
         target,
         selector,
         repeats,
+        due_by,
+        run_loop,
         ..
     } = env.objc.borrow(this);
 
@@ -149,6 +157,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 // TODO: more constructors
 // TODO: more accessors
 
+- (())pathForResource:(NSInteger)resource ofType:(bool)_type {
+    // TODO
+}
+
 @end
 
 };
@@ -156,7 +168,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 /// For use by `NSRunLoop`
 pub(super) fn set_run_loop(env: &mut Environment, timer: id, run_loop: id) {
     let host_object = env.objc.borrow_mut::<NSTimerHostObject>(timer);
-    assert!(host_object.run_loop == nil); // TODO: what do we do here?
+    // assert!(host_object.run_loop == nil); // TODO: what do we do here?
     host_object.run_loop = run_loop;
 }
 

@@ -6,7 +6,8 @@
 //! `UIScrollView`.
 
 pub mod ui_text_view;
-use crate::frameworks::core_graphics::{CGPoint, CGRect, CGSize};
+use crate::frameworks::core_graphics::{CGFloat, CGPoint, CGRect, CGSize};
+use crate::frameworks::uikit::ui_view::NSInteger;
 use crate::objc::{
     id, impl_HostObject_with_superclass, msg, nil, objc_classes, ClassExports, NSZonePtr, SEL,
 };
@@ -60,6 +61,58 @@ pub const CLASSES: ClassExports = objc_classes! {
     // TODO
 }
 
+- (())setPagingEnabled:(bool)paging {
+    log!("TODO: setPagingEnabled:{}", paging);
+}
+
+- (())setAlwaysBounceHorizontal:(bool)bounce {
+    log!("TODO: setAlwaysBounceHorizontal:{}", bounce);
+}
+
+- (())setShowsHorizontalScrollIndicator:(bool)scroll {
+    log!("TODO: setShowsHorizontalScrollIndicator:{}", scroll);
+}
+
+- (())setAlwaysBounceVertical:(bool)bounce {
+    log!("TODO: setAlwaysBounceVertical:{}", bounce);
+}
+
+- (())setShowsVerticalScrollIndicator:(bool)scroll {
+    log!("TODO: setShowsVerticalScrollIndicator:{}", scroll);
+}
+
+- (())setScrollsToTop:(bool)scrolls {
+    log!("TODO: setScrollsToTop:{}", scrolls);
+}
+
+- (())setDelegate:(bool)delegate {
+    log!("TODO: setDelegate:{}", delegate);
+}
+
+- (())setIndicatorStyle:(bool)style {
+    log!("TODO: setIndicatorStyle:{}", style);
+}
+
+- (())setMaximumZoomScale:(bool)maximum {
+    log!("TODO: setMaximumZoomScale:{}", maximum);
+}
+
+- (())setMinimumZoomScale:(bool)minimum {
+    log!("TODO: setMinimumZoomScale:{}", minimum);
+}
+
+- (())setCanCancelContentTouches:(bool)touches {
+    log!("TODO: setCanCancelContentTouches:{}", touches);
+}
+
+- (())setDirectionalLockEnabled:(bool)enabled {
+    log!("TODO: setDirectionalLockEnabled:{}", enabled);
+}
+
+- (())setContentOffset:(CGPoint)content_offset
+              animated:(bool)animated {
+    log!("TODO: [(UIScrollView*) {:?} setScrollsToTop:{:?} animated:{}]", this, content_offset, animated);
+}
 - (bool)scrollEnabled {
     env.objc.borrow::<UIScrollViewHostObject>(this).scroll_enabled
 }
@@ -138,4 +191,74 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
+@implementation UITableView: UIScrollView
+
+- (id)initWithFrame:(CGRect)frame style:(NSInteger)_style {
+    // TODO: proper init
+    msg![env; this init]
+}
+
+- (id)reloadData {
+    nil
+}
+
+- (())setRowHeight:(CGFloat)_height {
+    // TODO
+}
+
+- (())setDelegate:(id)_delegate {
+    // TODO
+}
+
+- (())setDataSource:(id)_source {
+    // TODO
+}
+
+- (())setShowsVerticalScrollIndicator:(bool)_show {
+    // TODO
+}
+- (())setShowsHorizontalScrollIndicator:(bool)_show {
+    // TODO
+}
+
+- (())setAllowsSelection:(bool)selection {
+    log!("TODO: setAllowsSelection:{}", selection);
+}
+
+- (())setAllowsSelectionDuringEditing:(bool)editing {
+    log!("TODO: setAllowsSelectionDuringEditing:{}", editing);
+}
+
+- (())setSeparatorColor:(bool)color {
+    log!("TODO: setSeparatorColor:{}", color);
+}
+
+- (())setSeparatorStyle:(bool)style {
+    log!("TODO: setSeparatorStyle:{}", style);
+}
+
+- (())setSectionHeaderHeight:(bool)height {
+    log!("TODO: setSectionHeaderHeight:{}", height);
+}
+
+- (())setSectionFooterHeight:(bool)height {
+    log!("TODO: setSectionFooterHeight:{}", height);
+}
+
+- (())setSectionIndexMinimumDisplayRowCount:(bool)count {
+    log!("TODO: setSectionIndexMinimumDisplayRowCount:{}", count);
+}
+
+- (())setEditing:(bool)editing {
+    log!("TODO: setEditing:{}", editing);
+}
+
+- (())setTableHeaderView:(bool)view {
+    log!("TODO: setTableHeaderView:{}", view);
+}
+
+@end
+
+@implementation UITableViewController: UIScrollView
+@end
 };

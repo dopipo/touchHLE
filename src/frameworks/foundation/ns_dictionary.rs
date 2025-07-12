@@ -9,10 +9,11 @@ use super::ns_array::ArrayHostObject;
 use super::ns_property_list_serialization::{
     deserialize_plist_from_file, NSPropertyListBinaryFormat_v1_0,
 };
-use super::ns_string::{from_rust_string, to_rust_string};
-use super::{ns_array, ns_keyed_unarchiver, ns_string, ns_url, NSUInteger};
+use super::ns_string::{from_rust_string, get_static_str, to_rust_string};
+use super::{ns_array, ns_keyed_unarchiver, ns_string, ns_url, NSInteger, NSUInteger};
 use crate::abi::{CallFromHost, GuestFunction, VaList};
 use crate::frameworks::core_foundation::{CFHashCode, CFIndex};
+use crate::frameworks::foundation::ns_file_manager::{NSFileModificationDate, NSFileSize};
 use crate::fs::GuestPath;
 use crate::mem::{ConstPtr, MutPtr, Ptr, SafeRead};
 use crate::objc::{
@@ -76,6 +77,22 @@ impl DictionaryHostObject {
         }
         collisions.push((key, value));
         self.count += 1;
+    }
+    pub(super) fn remove(&mut self, env: &mut Environment, key: id) {
+        let hash: Hash = msg![env; key hash];
+        let Some(collisions) = self.map.get_mut(&hash) else {
+            return;
+        };
+        let Some(idx) = collisions.iter().position(|&(candidate_key, _)| {
+            candidate_key == key || msg![env; candidate_key isEqual:key]
+        }) else {
+            return;
+        };
+        let (existing_key, value) = collisions[idx];
+        release(env, existing_key);
+        release(env, value);
+        collisions.remove(idx);
+        self.count -= 1;
     }
     pub(super) fn release(&mut self, env: &mut Environment) {
         for collisions in self.map.values() {
@@ -461,6 +478,24 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this objectForKey:key]
 }
 
+// NSDictionary(NSFileAttributes) category
+// TODO: implement categories properly
+- (id)fileModificationDate {
+    let modif_date_key = get_static_str(env, NSFileModificationDate);
+    msg![env; this objectForKey:modif_date_key]
+}
+- (u64)fileSize {
+    let size_key = get_static_str(env, NSFileSize);
+    let num = msg![env; this objectForKey:size_key];
+    if num != nil {
+        msg![env; num unsignedLongLongValue]
+    } else {
+        // GnuStep docs claiming to return NSNotFound here [ref](https://www.gnustep.org/resources/documentation/Developer/Base/Reference/NSFileManager.html#method$NSDictionary(NSFileAttributes)-fileSize)
+        // But as seen on iPhone Simulator, it's returning 0 with an empty dict
+        0
+    }
+}
+
 @end
 
 // NSMutableDictionary is an abstract class. A subclass must provide everything
@@ -474,7 +509,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 + (id)allocWithZone:(NSZonePtr)zone {
     // NSDictionary might be subclassed by something which needs allocWithZone:
     // to have the normal behaviour. Unimplemented: call superclass alloc then.
-    assert!(this == env.objc.get_known_class("NSMutableDictionary", &mut env.mem));
+    // assert!(this == env.objc.get_known_class("NSMutableDictionary", &mut env.mem));
     msg_class![env; _touchHLE_NSMutableDictionary allocWithZone:zone]
 }
 
@@ -503,6 +538,37 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (id)initWithObjectsAndKeys:(id)first_object, ...dots {
     init_with_objects_and_keys(env, this, first_object, dots.start())
+}
+
+- (id)addEntriesFromDictionary {
+    this
+}
+
+- (id)allValues {
+    nil
+}
+
+- (id)dictionaryRepresentation {
+    this
+}
+- (id)headingAvailable {
+    nil
+}
+
+- (id)isGyroAvailable {
+    nil
+}
+
+- (id)keyEnumerator {
+    nil
+}
+
+- (id)locationServicesEnabled {
+    nil
+}
+
+- (id)objectEnumerator {
+    nil
 }
 
 - (id)init {
@@ -553,6 +619,67 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (id)description {
     build_description(env, this)
+}
+
+@end
+
+@implementation NSCondition: NSMutableDictionary
+@end
+
+@implementation NSNetServiceBrowser: NSMutableDictionary
+@end
+
+@implementation NSIndexPath: NSObject
+@end
+
+@implementation NSInvocation: NSObject
+
++ (id)invocationWithMethodSignature:(NSUInteger)signature {
+    msg![env; this init]
+}
+
++ (id)invoke {
+    nil
+}
+
++ (id)retainArguments {
+    nil
+}
+
++ (())setTarget:(bool)target {
+    log!("TODO: setTarget:{}", target);
+}
+
++ (())setSelector:(bool)selector {
+    log!("TODO: setSelector:{}", selector);
+}
+
++ (())setArgument:(NSInteger)argument atIndex:(bool)_index {
+    // TODO
+}
+
+@end
+
+@implementation NSInputStream: NSObject
+
++ (id)inputStreamWithFileAtPath:(NSUInteger)_path {
+    msg![env; this init]
+}
+
++ (id)hasBytesAvailable {
+    nil
+}
+
++ (id)open {
+    nil
+}
+
++ (id)close {
+    nil
+}
+
++ (())read:(NSInteger)read maxLength:(bool)_length {
+    // TODO
 }
 
 @end
@@ -618,6 +745,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     init_with_objects_for_keys_common(env, this, objects, keys)
 }
 
+- (id)removeAllObjects {
+    nil
+}
+
 // TODO: enumeration, more init methods, etc
 
 - (NSUInteger)count {
@@ -635,6 +766,14 @@ pub const CLASSES: ClassExports = objc_classes! {
     let entries: Vec<_> =
         env.objc.borrow_mut::<DictionaryHostObject>(this).map.values().flatten().copied().collect();
     dict_from_keys_and_objects(env, &entries)
+}
+
+- (id)lock {
+    nil
+}
+
+- (id)wait {
+    nil
 }
 
 // NSMutableCopying implementation
@@ -669,12 +808,38 @@ pub const CLASSES: ClassExports = objc_classes! {
     *env.objc.borrow_mut(this) = host_obj;
 }
 
+- (())removeObjectForKey:(id)key {
+    assert!(!key.is_null());
+    let mut host_obj: DictionaryHostObject = std::mem::take(env.objc.borrow_mut(this));
+    host_obj.remove(env, key);
+    *env.objc.borrow_mut(this) = host_obj;
+}
+
 - (())addEntriesFromDictionary:(id)other { // NSDictionary *
     let host_obj: DictionaryHostObject = std::mem::take(env.objc.borrow_mut(other));
     for (k, v) in host_obj.map.values().flatten() {
         () = msg![env; this setObject:(*v) forKey:(*k)];
     }
     *env.objc.borrow_mut(other) = host_obj;
+}
+
+- (())countByEnumeratingWithState:(NSInteger)state objects:(bool)_objects count:(bool)_count {
+    // TODO
+}
+
+- (())getObjects:(NSInteger)_objects andKeys:(bool)_keys {
+    // TODO
+}
+
+- (())initWithObjects:(NSInteger)_objects forKeys:(bool)_keys {
+    // TODO
+}
+
+- (())searchForServicesOfType:(NSInteger)_type inDomain:(bool)_domain {
+    // TODO
+}
+
+- (())synchronize {
 }
 
 - (id)description {

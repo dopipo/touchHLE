@@ -19,7 +19,9 @@ use crate::mem::MutPtr;
 use crate::objc::{id, msg, nil, objc_classes, release, retain, ClassExports, HostObject};
 use crate::options::Options;
 use crate::window::Window;
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 // These are used by the EAGLDrawable protocol implemented by CAEAGLayer.
@@ -60,7 +62,7 @@ pub(super) struct EAGLContextHostObject {
     pub(super) gles_ctx: Option<Box<dyn GLES>>,
     /// Mapping of OpenGL ES renderbuffer names to `EAGLDrawable` instances
     /// (always `CAEAGLLayer*`). Retains the instance so it won't dangle.
-    renderbuffer_drawable_bindings: HashMap<GLuint, id>,
+    renderbuffer_drawable_bindings: Rc<RefCell<HashMap<GLuint, id>>>,
     fps_counter: Option<FpsCounter>,
     next_frame_due: Option<Instant>,
     pub mapped_buffers: HashMap<GLuint, (MutPtr<GLvoid>, *mut GLvoid)>,
@@ -76,7 +78,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 + (id)alloc {
     let host_object = Box::new(EAGLContextHostObject {
         gles_ctx: None,
-        renderbuffer_drawable_bindings: HashMap::new(),
+        renderbuffer_drawable_bindings: Rc::new(RefCell::new(HashMap::new())),
         fps_counter: None,
         next_frame_due: None,
         mapped_buffers: HashMap::new(),
@@ -139,6 +141,8 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.framework_state.opengles.current_ctx_thread = None;
     env.window.as_mut().unwrap().set_share_with_current_context(false);
 
+    env.objc.borrow_mut::<EAGLContextHostObject>(res).renderbuffer_drawable_bindings = env.objc.borrow::<EAGLContextHostObject>(group).renderbuffer_drawable_bindings.clone();
+
     res
 }
 
@@ -184,9 +188,11 @@ pub const CLASSES: ClassExports = objc_classes! {
     for &(guest_buf, _host_buf) in host_obj.mapped_buffers.values() {
         env.mem.free(guest_buf);
     }
-    let bindings = std::mem::take(&mut host_obj.renderbuffer_drawable_bindings);
-    for (_renderbuffer, drawable) in bindings {
-        release(env, drawable);
+    if Rc::strong_count(&host_obj.renderbuffer_drawable_bindings) == 1 {
+        let bindings = std::mem::take(&mut host_obj.renderbuffer_drawable_bindings);
+        for (_renderbuffer, drawable) in bindings.take() {
+            release(env, drawable);
+        }
     }
     env.objc.dealloc_object(this, &mut env.mem);
 }
@@ -234,10 +240,11 @@ pub const CLASSES: ClassExports = objc_classes! {
 
     retain(env, drawable);
     let host_obj = env.objc.borrow_mut::<EAGLContextHostObject>(this);
-    if let Some(old_drawable) = host_obj.renderbuffer_drawable_bindings.insert(
+    let maybe_old_drawable = host_obj.renderbuffer_drawable_bindings.borrow_mut().insert(
         renderbuffer,
         drawable
-    ) {
+    );
+    if let Some(old_drawable) = maybe_old_drawable {
         release(env, old_drawable);
     }
 
@@ -277,6 +284,7 @@ pub const CLASSES: ClassExports = objc_classes! {
         .objc
         .borrow::<EAGLContextHostObject>(this)
         .renderbuffer_drawable_bindings
+        .borrow()
         .get(&renderbuffer) else {
         log_dbg!("Can't present a renderbuffer {:?} not bound to a drawable!", renderbuffer);
         return false;

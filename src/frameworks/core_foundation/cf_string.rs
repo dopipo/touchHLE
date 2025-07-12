@@ -25,7 +25,9 @@ pub type CFStringEncoding = u32;
 pub const kCFStringEncodingMacRoman: CFStringEncoding = 0;
 pub const kCFStringEncodingASCII: CFStringEncoding = 0x600;
 pub const kCFStringEncodingUTF8: CFStringEncoding = 0x8000100;
+pub const kCFStringEncodingNonLossyASCII: CFStringEncoding = 0x30009240;
 pub const kCFStringEncodingUnicode: CFStringEncoding = 0x100;
+pub const kCFStringEncodingUTF32: CFStringEncoding = 0x422;
 pub const kCFStringEncodingUTF16: CFStringEncoding = kCFStringEncodingUnicode;
 pub const kCFStringEncodingUTF16BE: CFStringEncoding = 0x10000100;
 pub const kCFStringEncodingUTF16LE: CFStringEncoding = 0x14000100;
@@ -50,7 +52,9 @@ fn CFStringConvertEncodingToNSStringEncoding(
     match encoding {
         kCFStringEncodingMacRoman => ns_string::NSMacOSRomanStringEncoding,
         kCFStringEncodingASCII => ns_string::NSASCIIStringEncoding,
+        kCFStringEncodingNonLossyASCII => ns_string::NSNonLossyASCIIStringEncoding,
         kCFStringEncodingUTF8 => ns_string::NSUTF8StringEncoding,
+        kCFStringEncodingUTF32 => ns_string::NSUTF32StringEncoding,
         kCFStringEncodingUTF16 => ns_string::NSUTF16StringEncoding,
         kCFStringEncodingUTF16BE => ns_string::NSUTF16BigEndianStringEncoding,
         kCFStringEncodingUTF16LE => ns_string::NSUTF16LittleEndianStringEncoding,
@@ -64,7 +68,9 @@ fn CFStringConvertNSStringEncodingToEncoding(
     match encoding {
         ns_string::NSMacOSRomanStringEncoding => kCFStringEncodingMacRoman,
         ns_string::NSASCIIStringEncoding => kCFStringEncodingASCII,
+        ns_string::NSNonLossyASCIIStringEncoding => kCFStringEncodingNonLossyASCII,
         ns_string::NSUTF8StringEncoding => kCFStringEncodingUTF8,
+        ns_string::NSUTF32StringEncoding => kCFStringEncodingUTF32,
         ns_string::NSUTF16StringEncoding => kCFStringEncodingUTF16,
         ns_string::NSUTF16BigEndianStringEncoding => kCFStringEncodingUTF16BE,
         ns_string::NSUTF16LittleEndianStringEncoding => kCFStringEncodingUTF16LE,

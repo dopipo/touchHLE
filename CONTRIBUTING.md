@@ -46,7 +46,7 @@ Once you're happy with your changes, you can push them for review on Gerrit with
 $ git push gerrit HEAD:refs/for/trunk
 ```
 
-Then go to GerritHub, make sure you didn't push anything you didn't intend to, and add `hikari_no_yume` as a reviewer.
+Then go to GerritHub, make sure you didn't push anything you didn't intend to, and add `hikari_no_yume` and `ciciplusplus` as reviewers.
 
 If you're submitting a large number of changes with a common theme, e.g. improving compatibility with some app, it is recommended to _also_ create a GitHub pull request. This improves visibility and ensures your changes are tested by the GitHub CI. You can then tag the Gerrit reviews with a “topic” named like `touchHLE/pull/xxx` where xxx is the pull request number. You can bulk-tag things using the checkboxes on the GerritHub homepage.
 
