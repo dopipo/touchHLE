@@ -907,6 +907,30 @@ pub fn objc_getClass(env: &mut Environment, name: ConstPtr<u8>) -> id {
     env.objc.get_class(name, false, &env.mem).unwrap()
 }
 
+fn get_implementation_ptr(env: &mut Environment, method: MethodRef) -> ConstVoidPtr {
+    let (class, name) = (method.0, method.1);
+    let obj: &ClassHostObject = env.objc.get_host_object(class.cast()).unwrap().as_any().downcast_ref().unwrap();
+    let opt = obj.methods.iter().find(|&(method, _i)| method.eq(&name));
+    let str_name = name.as_str(&env.mem);
+    let ptr = match opt {
+        None => {
+            panic!("Method {}::{} not found!", obj.name, str_name)
+        }
+        Some((_, imp)) => {
+            match imp {
+                IMP::Host(hostimp) => {
+                    env.dyld.create_guest_hostimp(&mut env.mem, "HostFN", *hostimp).to_ptr()
+                }
+                IMP::Guest(guestimp) => {
+                    guestimp.to_ptr()
+                }
+            }
+        }
+    };
+    log!("Returning ptr to: {:#x}", ptr.to_bits());
+    ptr
+}
+
 pub fn method_setImplementation(env: &mut Environment, method: ConstPtr<MethodRef>, imp: ConstVoidPtr) -> ConstVoidPtr {
     let method = env.mem.read(method);
     let (class, name) = (method.0, method.1);
