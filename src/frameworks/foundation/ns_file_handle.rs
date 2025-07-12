@@ -69,6 +69,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     }
 }
 
+- (id)fileDescriptor {
+    nil
+}
+
 - (i64)offsetInFile {
     let fd = env.objc.borrow::<NSFileHandleHostObject>(this).fd;
     match posix_io::lseek(env, fd, 0, posix_io::SEEK_CUR) {
