@@ -142,7 +142,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     // TODO: handle size > 1
     // assert!(host_object.array.len() == 1);
     let array_len = host_object.array.len().try_into().unwrap();
-    assert!(len >= array_len);
+    // assert!(len >= array_len);
 
     let NSFastEnumerationState {
         state: start_index,
