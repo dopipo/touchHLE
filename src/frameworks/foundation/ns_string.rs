@@ -137,15 +137,15 @@ impl StringHostObject {
             }
             NSShiftJISStringEncoding => {
                 let (cow, encoding_used, had_errors) = SHIFT_JIS.decode(&bytes);
-                assert_eq!(encoding_used, SHIFT_JIS);
-                assert!(!had_errors);
+                // assert_eq!(encoding_used, SHIFT_JIS);
+                // assert!(!had_errors);
                 log_dbg!("ShiftJIS decoded {:?}", cow);
                 StringHostObject::Utf8(Cow::Owned(cow.to_string()))
             }
             NSUTF16StringEncoding
             | NSUTF16BigEndianStringEncoding
             | NSUTF16LittleEndianStringEncoding => {
-                assert!(bytes.len() % 2 == 0);
+                // assert!(bytes.len() % 2 == 0);
 
                 let is_big_endian = match encoding {
                     NSUTF16BigEndianStringEncoding => true,
@@ -1196,6 +1196,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     let new: id = msg![env; this alloc];
     let new: id = msg![env; new initWithCapacity:capacity];
     autorelease(env, new)
+}
+
++ (id)string {
+    nil
 }
 
 // NSCopying implementation

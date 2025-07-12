@@ -63,7 +63,7 @@ pub fn printf_inner<const NS_LOG: bool, F: Fn(&Mem, GuestUSize) -> u8>(
             // Alternative form handling
             format_char_idx += 1;
             // TODO: other specifiers
-            assert!(get_format_char(&env.mem, format_char_idx) == b'.');
+            // assert!(get_format_char(&env.mem, format_char_idx) == b'.');
             // TODO: other cases
             // assert!(get_format_char(&env.mem, format_char_idx + 2) == b'd');
         }

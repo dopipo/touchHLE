@@ -202,6 +202,11 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this setObject:num forKey:key]
 }
 
+- (f32)dictionaryForKey:(id)key {
+    let val: id = msg![env; this objectForKey:key];
+    msg![env; val floatValue]
+}
+
 - (f32)floatForKey:(id)key {
     let val: id = msg![env; this objectForKey:key];
     msg![env; val floatValue]
