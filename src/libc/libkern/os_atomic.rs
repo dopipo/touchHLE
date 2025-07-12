@@ -16,6 +16,10 @@ use crate::export_c_func;
 use crate::mem::{MutPtr, MutVoidPtr};
 use crate::Environment;
 
+fn OSAtomicAdd32(env: &mut Environment, amount: i32, value_ptr: MutPtr<i32>) -> i32 {
+    OSAtomicAdd32Barrier(env, amount, value_ptr)
+}
+
 fn OSAtomicAdd32Barrier(env: &mut Environment, the_amount: i32, the_value: MutPtr<i32>) -> i32 {
     let curr = env.mem.read(the_value);
     let new = curr + the_amount;
@@ -61,6 +65,7 @@ fn OSAtomicCompareAndSwapPtrBarrier(
 }
 
 pub const FUNCTIONS: FunctionExports = &[
+    export_c_func!(OSAtomicAdd32(_, _)),
     export_c_func!(OSAtomicAdd32Barrier(_, _)),
     export_c_func!(OSAtomicCompareAndSwap32(_, _, _)),
     export_c_func!(OSAtomicCompareAndSwap32Barrier(_, _, _)),
