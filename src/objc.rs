@@ -30,7 +30,7 @@ mod properties;
 mod selectors;
 mod synchronization;
 
-pub use classes::{objc_classes, Class, ClassExports, ClassTemplate, objc_getClass};
+pub use classes::{objc_classes, Class, ClassExports, ClassTemplate, objc_getClass, method_getImplementation};
 pub use messages::{
     autorelease, msg, msg_class, msg_send, msg_send_super2, msg_super, objc_super, release, retain,
 };
@@ -174,5 +174,6 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(sel_registerName(_)),
     export_c_func!(_Block_object_dispose(_, _)),
     export_c_func!(objc_getClass(_)),
+    export_c_func!(method_getImplementation(_)),
     export_c_func!(method_setImplementation(_, _)),
 ];
