@@ -9,7 +9,7 @@ use super::ui_device::*;
 use crate::dyld::{export_c_func, ConstantExports, FunctionExports, HostConstant};
 use crate::frameworks::foundation::ns_string::{from_rust_string, get_static_str};
 use crate::frameworks::foundation::{ns_array, ns_string, NSInteger, NSUInteger, NSTimeInterval};
-use crate::mem::{ConstVoidPtr, MutPtr;
+use crate::mem::{ConstVoidPtr, MutPtr;}
 use crate::objc::{
     autorelease, id, msg, msg_class, nil, objc_classes, release, retain, ClassExports, HostObject,
     NSZonePtr,
