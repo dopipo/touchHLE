@@ -901,3 +901,8 @@ impl ObjC {
         }
     }
 }
+
+pub fn objc_getClass(env: &mut Environment, name: ConstPtr<u8>) -> id {
+    let name = env.mem.cstr_at_utf8(name).unwrap();
+    env.objc.get_class(name, false, &env.mem).unwrap()
+}
