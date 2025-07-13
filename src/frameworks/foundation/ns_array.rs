@@ -289,6 +289,17 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.alloc_object(this, host_object, &mut env.mem)
 }
 
+// NSMutableCopying implementation
+- (id)mutableCopyWithZone:(NSZonePtr)_zone {
+    let mut_arr: id = msg_class![env; NSMutableArray alloc];
+    let array = env.objc.borrow::<ArrayHostObject>(this).array.clone();
+    for &object in &array {
+        retain(env, object);
+    }
+    env.objc.borrow_mut::<ArrayHostObject>(this).array = array;
+    mut_arr
+}
+
 // NSCoding implementation
 - (id)initWithCoder:(id)coder {
     // It seems that every NSArray item in an NSKeyedArchiver plist looks like:
