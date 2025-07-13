@@ -978,4 +978,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
+@implementation UIPasteboard: NSObject
+@end
+
 };
