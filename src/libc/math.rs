@@ -1408,4 +1408,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(AudioServicesAddSystemSoundCompletion(_, _)),
     export_c_func!(mstats(_, _)),
     export_c_func!(srandomdev(_, _)),
+    export_c_func!(strcasestr(_, _)),
 ];
