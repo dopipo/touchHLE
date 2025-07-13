@@ -137,6 +137,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (id)description {
+    nil
+}
+
 // NSCopying implementation
 - (id)copyWithZone:(NSZonePtr)_zone {
     let host_object = Box::<NSDateHostObject>::default();
