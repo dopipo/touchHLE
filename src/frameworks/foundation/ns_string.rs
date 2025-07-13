@@ -1519,6 +1519,13 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (id)initWithFormat:(id)format, // NSString*
+                     ...args {
+    let res = with_format(env, format, args.start());
+    *env.objc.borrow_mut(this) = StringHostObject::Utf8(res.into());
+    this
+}
+
 - (id)initWithUTF8String:(NSUInteger)_string {
     msg![env; this init]
 }

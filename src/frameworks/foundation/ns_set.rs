@@ -77,6 +77,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg_class![env; _touchHLE_NSMutableSet allocWithZone:zone]
 }
 
++ (id)setWithArray:(NSUInteger)array {
+    msg![env; this init]
+}
+
 // NSCopying implementation
 - (id)copyWithZone:(NSZonePtr)_zone {
     todo!(); // TODO: this should produce an immutable copy

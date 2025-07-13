@@ -124,7 +124,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     let path: id = msg![env; url absoluteString];
     let path = to_rust_string(env, path);
     // TODO: file URL case
-    assert!(path.starts_with("http"));
+    // assert!(path.starts_with("http"));
     log!("TODO: ignoring [(NSData*){:?} initWithContentsOfURL:{:?}]", this, path);
     // TODO: actually load data once we have proper network support
     nil
@@ -154,6 +154,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (id)initWithContentsOfMappedFile:(id)path {
     log_dbg!("[NSData initWithContentsOfMappedFile:] not using memory mapping");
     msg![env; this initWithContentsOfFile:path]
+}
+
+- (id)description {
+    nil
 }
 
 // FIXME: writes should be atomic

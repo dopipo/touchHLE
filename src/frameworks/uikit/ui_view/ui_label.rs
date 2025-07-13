@@ -154,6 +154,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     () = msg![env; this setNeedsDisplay];
 }
 
+- (id)shadowOffset {
+    nil
+}
+
 - (id)textColor {
     env.objc.borrow::<UILabelHostObject>(this).text_color
 }

@@ -23,4 +23,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 @implementation MPMediaItem: NSObject
 @end 
 
+@implementation GKPeerPickerController: NSObject
+@end 
+
 };

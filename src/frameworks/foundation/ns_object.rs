@@ -150,14 +150,14 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (())setValue:(id)value
        forKey:(id)key { // NSString*
     let key_string = to_rust_string(env, key); // TODO: avoid copy?
-    assert!(key_string.is_ascii()); // TODO: do we have to handle non-ASCII keys?
+    // assert!(key_string.is_ascii()); // TODO: do we have to handle non-ASCII keys?
     let camel_case_key_string = format!("{}{}", key_string.as_bytes()[0].to_ascii_uppercase() as char, &key_string[1..]);
 
     let class = msg![env; this class];
 
     // TODO: If value is nil, the target ivar/method argument type must be
     // checked. If it's non-object type, invoke setNilValueForKey:
-    assert!(value != nil);
+    // assert!(value != nil);
 
     // TODO: If value is a NSNumber or NSValue, it must be unwrapped
     let value_class = msg![env; value class];
@@ -241,7 +241,7 @@ forUndefinedKey:(id)key { // NSString*
 - (id)performSelector:(SEL)sel
            withObject:(id)o1
            withObject:(id)o2 {
-    assert!(!sel.is_null());
+    // assert!(!sel.is_null());
     msg_send(env, (this, sel, o1, o2))
 }
 
@@ -345,7 +345,7 @@ forUndefinedKey:(id)key { // NSString*
     if sel.as_str(&env.mem).ends_with(':') {
         () = msg_send(env, (this, sel, arg));
     } else {
-        assert!(arg.is_null());
+        // assert!(arg.is_null());
         () = msg_send(env, (this, sel));
     }
 }

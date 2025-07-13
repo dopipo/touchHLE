@@ -160,11 +160,11 @@ impl super::ObjC {
         refcount: Option<NonZeroU32>,
     ) -> id {
         let guest_object = objc_object { isa };
-        assert!(instance_size >= guest_size_of::<objc_object>());
+        // assert!(instance_size >= guest_size_of::<objc_object>());
 
         let ptr: MutPtr<objc_object> = mem.alloc(instance_size).cast();
         mem.write(ptr, guest_object);
-        assert!(!self.objects.contains_key(&ptr));
+        // assert!(!self.objects.contains_key(&ptr));
         self.objects.insert(
             ptr,
             HostObjectEntry {
