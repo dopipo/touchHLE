@@ -178,6 +178,14 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; text_label setFont:new_font]
 }
 
+- (())setContentVerticalAlignment:(bool)vertical {
+    log!("TODO: setContentVerticalAlignment:{}", vertical);
+}
+
+- (())setContentHorizontalAlignment:(bool)alignment {
+    log!("TODO: setContentHorizontalAlignment:{}", alignment);
+}
+
 - (())setClearsOnBeginEditing:(bool)clear {
     log!("TODO: setClearsOnBeginEditing:{}", clear);
 }
