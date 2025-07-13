@@ -41,6 +41,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: [(UIAlertView*){:?} show]", this);
 }
 
+- (())setCancelButtonIndex:(bool)button {
+    log!("TODO: setCancelButtonIndex:{}", button);
+}
+
 - (())setDelegate:(bool)message {
     log!("TODO: setDelegate:{}", message);
 }
