@@ -609,6 +609,14 @@ pub const CLASSES: ClassExports = objc_classes! {
     // TODO
 }
 
+- (())writeToFile:(NSInteger)file atomically:(bool)_atomically {
+    // TODO
+}
+
+- (())writeToFile:(NSInteger)file atomically:(bool)_atomically encoding:(bool)_encoding error:(bool)_error {
+    // TODO
+}
+
 - (())initWithArray:(NSInteger)array copyItems:(bool)_items {
     // TODO
 }
