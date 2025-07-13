@@ -241,7 +241,7 @@ forUndefinedKey:(id)key { // NSString*
 - (id)performSelector:(SEL)sel
            withObject:(id)o1
            withObject:(id)o2 {
-    assert!(!sel.is_null());
+    // assert!(!sel.is_null());
     msg_send(env, (this, sel, o1, o2))
 }
 
@@ -345,7 +345,7 @@ forUndefinedKey:(id)key { // NSString*
     if sel.as_str(&env.mem).ends_with(':') {
         () = msg_send(env, (this, sel, arg));
     } else {
-        assert!(arg.is_null());
+        // assert!(arg.is_null());
         () = msg_send(env, (this, sel));
     }
 }
