@@ -178,6 +178,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; text_label setFont:new_font]
 }
 
+- (())setBackground:(bool)background {
+    log!("TODO: setBackground:{}", background);
+}
+
 - (())setContentVerticalAlignment:(bool)vertical {
     log!("TODO: setContentVerticalAlignment:{}", vertical);
 }
