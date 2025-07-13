@@ -90,6 +90,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: [(UIImageView*) {:?} setAnimationDuration:{}]", this, duration);
 }
 
+- (())setAnimationRepeatCount:(NSTimeInterval)count { // NSArray<UIImage *>*
+    log!("TODO: [(UIImageView*) {:?} setAnimationRepeatCount:{}]", this, count);
+}
+
 - (())startAnimating {
     log!("TODO: [(UIImageView*) {:?} startAnimating]", this);
 }
