@@ -77,6 +77,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg_class![env; _touchHLE_NSMutableSet allocWithZone:zone]
 }
 
++ (id)addObject {
+    nil
+}
+
 + (id)setWithArray:(NSUInteger)array {
     msg![env; this init]
 }
