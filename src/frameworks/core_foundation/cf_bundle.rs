@@ -160,6 +160,17 @@ pub fn CFBundleCopyPreferredLocalizationsFromArray(
     result
 }
 
+fn CFBundleCopyLocalizedString(
+    env: &mut Environment,
+    bundle: CFBundleRef,
+    key: CFStringRef,
+    value: CFStringRef,
+    table_name: CFStringRef,
+) -> CFStringRef {
+    let res = msg![env; bundle localizedStringForKey:key value:value table:table_name];
+    msg![env; res copy]
+}
+
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CFBundleGetMainBundle()),
     export_c_func!(CFBundleGetValueForInfoDictionaryKey(_, _)),
@@ -169,4 +180,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CFBundleCopyResourceURL(_, _, _, _)),
     export_c_func!(CFBundleCopyBundleLocalizations(_)),
     export_c_func!(CFBundleCopyPreferredLocalizationsFromArray(_)),
+    export_c_func!(CFBundleCopyLocalizedString(_, _, _, _)),
 ];
