@@ -278,7 +278,7 @@ forUndefinedKey:(id)key { // NSString*
         }
         return;
     }
-    if env.bundle.bundle_identifier().starts_with("com.gameloft.POP") && sel == env.objc.lookup_selector("startMovie:").unwrap() && wait {
+    if env.bundle.bundle_identifier().starts_with("com.ea.dragonslair.inc") && sel == env.objc.lookup_selector("startMovie:").unwrap() && wait {
         log!("Applying game-specific hack for PoP: WW: ignoring performSelectorOnMainThread:SEL(startMovie:) waitUntilDone:true");
         return;
     }
