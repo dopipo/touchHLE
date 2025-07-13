@@ -157,6 +157,12 @@ pub const CLASSES: ClassExports = objc_classes! {
     res_exists
 }
 
+- (bool)isReadableFileAtPath:(id)path { // NSString*
+    let path = ns_string::to_rust_string(env, path); // TODO: avoid copy
+    log!("isReadableFileAtPath: {:?}", path);
+    true
+}
+
 - (bool)createFileAtPath:(id)path // NSString*
                 contents:(id)data // NSData*
               attributes:(id)attributes { // NSDictionary*

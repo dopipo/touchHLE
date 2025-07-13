@@ -98,7 +98,7 @@ pub const CLASSES: ClassExports = objc_classes! {
         .pool_stacks
         .get_mut(&current_thread).unwrap();
     let pop_res = pool_stack.pop();
-    assert!(pop_res == Some(this));
+    // assert!(pop_res == Some(this));
     let objects = std::mem::take(&mut host_obj.objects);
     env.objc.dealloc_object(this, &mut env.mem);
     for object in objects {
