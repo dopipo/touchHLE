@@ -634,6 +634,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @implementation NSInvocation: NSObject
 
++ (id)invokeWithTarget:(NSUInteger)target {
+    msg![env; this init]
+}
+
 + (id)invocationWithMethodSignature:(NSUInteger)signature {
     msg![env; this init]
 }
