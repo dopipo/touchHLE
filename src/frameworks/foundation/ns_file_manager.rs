@@ -19,6 +19,7 @@ type NSSearchPathDirectory = NSUInteger;
 const NSApplicationDirectory: NSSearchPathDirectory = 1;
 const NSLibraryDirectory: NSSearchPathDirectory = 5;
 const NSDocumentDirectory: NSSearchPathDirectory = 9;
+const NSDeveloperDirectory: NSSearchPathDirectory = 14;
 
 type NSSearchPathDomainMask = NSUInteger;
 const NSUserDomainMask: NSSearchPathDomainMask = 1;
@@ -59,11 +60,18 @@ fn NSSearchPathForDirectoriesInDomains(
         }
         NSDocumentDirectory => env.fs.home_directory().join("Documents"),
         NSLibraryDirectory => env.fs.home_directory().join("Library"),
+        NSDeveloperDirectory => env.fs.home_directory().join("Library"),
         _ => todo!("NSSearchPathDirectory {}", directory),
     };
     let dir = ns_string::from_rust_string(env, String::from(dir));
     let dir_list = ns_array::from_vec(env, vec![dir]);
     autorelease(env, dir_list)
+}
+
+fn NSDeveloperDirectory(env: &mut Environment) -> id {
+    let dir = env.fs.home_directory();
+    let dir = ns_string::from_rust_string(env, String::from(dir.as_str()));
+    autorelease(env, dir)
 }
 
 fn NSHomeDirectory(env: &mut Environment) -> id {
@@ -81,6 +89,7 @@ fn NSTemporaryDirectory(env: &mut Environment) -> id {
 }
 
 pub const FUNCTIONS: FunctionExports = &[
+    export_c_func!(NSDeveloperDirectory()),
     export_c_func!(NSHomeDirectory()),
     export_c_func!(NSTemporaryDirectory()),
     export_c_func!(NSSearchPathForDirectoriesInDomains(_, _, _)),
