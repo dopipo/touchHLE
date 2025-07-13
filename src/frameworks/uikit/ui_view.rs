@@ -387,6 +387,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (id)description {
+    nil
+}
+
 - (bool)isUserInteractionEnabled {
     env.objc.borrow::<UIViewHostObject>(this).user_interaction_enabled
 }
