@@ -54,6 +54,19 @@ pub const CLASSES: ClassExports = objc_classes! {
     retain(env, this)
 }
 
+- (bool)containsObject:(id)object {
+    let enumerator: id = msg![env; this objectEnumerator];
+    loop {
+        let next: id = msg![env; enumerator nextObject];
+        if next == nil {
+            return false;
+        }
+        if msg![env; next isEqual:object] {
+            return true;
+        }
+    }
+}
+    
 @end
 
 // NSMutableSet is an abstract class. A subclass must provide everything
