@@ -30,7 +30,7 @@ mod properties;
 mod selectors;
 mod synchronization;
 
-pub use classes::{objc_classes, Class, ClassExports, ClassTemplate, objc_getClass, class_getSuperclass, class_getInstanceMethod, method_getImplementation};
+pub use classes::{objc_classes, Class, ClassExports, ClassTemplate, objc_getClass, class_getSuperclass, class_getInstanceMethod};
 pub use messages::{
     autorelease, msg, msg_class, msg_send, msg_send_super2, msg_super, objc_super, release, retain,
 };
@@ -51,7 +51,6 @@ use objects::{objc_object, HostObjectEntry};
 use properties::{ivar_list_t, objc_copyStruct, objc_getProperty, objc_setProperty};
 use selectors::sel_registerName;
 use synchronization::{objc_sync_enter, objc_sync_exit};
-use crate::objc::classes::method_setImplementation;
 
 /// Typedef for `NSZone *`. This is a [fossil type] found in the signature of
 /// `allocWithZone:` and similar methods. Its value is always ignored.
@@ -176,6 +175,4 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(objc_getClass(_)),
     export_c_func!(object_getClass(_)),
     export_c_func!(class_getSuperclass(_)),
-    export_c_func!(method_getImplementation(_)),
-    export_c_func!(method_setImplementation(_, _)),
 ];
