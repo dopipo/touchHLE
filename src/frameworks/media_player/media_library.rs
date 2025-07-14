@@ -24,6 +24,9 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end 
 
 @implementation GKPeerPickerController: NSObject
-@end 
+@end
+
+@implementation ABPeoplePickerNavigationController: NSObject
+@end
 
 };
