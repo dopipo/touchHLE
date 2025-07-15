@@ -1120,6 +1120,9 @@ fn localeconv(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn CFURLCreateWithBytes(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn CFHostCreateWithName(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1421,4 +1424,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CFStringGetCharactersPtr(_, _)),
     export_c_func!(localeconv(_, _)),
     export_c_func!(CFURLCreateWithBytes(_, _)),
+    export_c_func!(CFHostCreateWithName(_, _)),
 ];
