@@ -1126,6 +1126,9 @@ fn CFHostCreateWithName(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn CGGradientRelease(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn wcstol(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1429,4 +1432,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CFURLCreateWithBytes(_, _)),
     export_c_func!(CFHostCreateWithName(_, _)),
     export_c_func!(CGGradientRelease(_, _)),
+    export_c_func!(wcstol(_, _)),
 ];
