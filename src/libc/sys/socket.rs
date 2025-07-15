@@ -175,7 +175,7 @@ fn socket(env: &mut Environment, domain: i32, type_: i32, protocol: i32) -> File
 }
 
 fn ioctl(env: &mut Environment, fd: i32, request: u32, _args: DotDotDot) -> i32 {
-    assert!(is_socket(env, fd));
+    // assert!(is_socket(env, fd));
     log!("TODO: ioctl({} (socket), {:#x?}, ...) => -1", fd, request);
     -1
 }
