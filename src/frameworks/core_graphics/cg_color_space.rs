@@ -9,7 +9,7 @@ use crate::dyld::{export_c_func, ConstantExports, FunctionExports, HostConstant}
 use crate::frameworks::core_foundation::cf_string::CFStringRef;
 use crate::frameworks::core_foundation::{CFRelease, CFRetain, CFTypeRef};
 use crate::frameworks::foundation::ns_string;
-use crate::objc::{msg, objc_classes, ClassExports, HostObject};
+use crate::objc::{id, msg, nil, objc_classes, ClassExports, HostObject};
 use crate::Environment;
 
 pub const CLASSES: ClassExports = objc_classes! {
@@ -20,6 +20,11 @@ pub const CLASSES: ClassExports = objc_classes! {
 // those are just Objective-C types, so we need a class for it, but its name is
 // not visible anywhere.
 @implementation _touchHLE_CGColorSpace: NSObject
+
+- (id)CGImage {
+    nil
+}
+
 @end
 
 };
