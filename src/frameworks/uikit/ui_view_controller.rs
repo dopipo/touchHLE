@@ -70,6 +70,22 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (id)closeConnection {
+    nil
+}
+
+- (id)navigationController {
+    nil
+}
+
+- (id)navigationItem {
+    nil
+}
+
+- (id)tabBarItem {
+    nil
+}
+
 - (())dealloc {
     let &UIViewControllerHostObject { view, nib_name, bundle } = env.objc.borrow(this);
 

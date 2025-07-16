@@ -202,6 +202,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (id)indexPathForSelectedRow {
+    nil
+}
+
 - (())setRowHeight:(CGFloat)_height {
     // TODO
 }

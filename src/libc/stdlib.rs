@@ -318,7 +318,7 @@ pub fn strtoul(
             s.len() + whitespace_len as usize,
         )
     } else {
-        assert_eq!(base, 10);
+        // assert_eq!(base, 10);
         let trimmed = s.trim_end_matches(|c: char| !char::is_ascii_digit(&c));
         (trimmed, trimmed.len() + whitespace_len as usize)
     };

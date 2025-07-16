@@ -43,6 +43,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; new_object init]
 }
 
++ (id)CGImage {
+    nil
+}
+
 + (Class)class {
     this
 }
