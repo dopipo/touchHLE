@@ -311,6 +311,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.borrow::<NSNumberHostObject>(this).as_int()
 }
 
+- (bool)stringValue {
+    env.objc.borrow::<NSNumberHostObject>(this).as_bool()
+}
+
 - (f32)floatValue {
     env.objc.borrow::<NSNumberHostObject>(this).as_float()
 }
