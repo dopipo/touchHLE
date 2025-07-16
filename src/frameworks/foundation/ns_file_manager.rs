@@ -356,6 +356,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, dict_imm)
 }
 
+- (())moveItemAtPath:(NSInteger)path toPath:(bool)_path error:(bool)_error {
+    // TODO
+}
+
 @end
 
 @implementation NSDirectoryEnumerator: NSEnumerator
