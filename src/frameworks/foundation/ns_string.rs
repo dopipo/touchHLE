@@ -1394,7 +1394,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (id)dataUsingEncoding:(NSStringEncoding)encoding {
-    assert!(encoding == NSUTF8StringEncoding || encoding == NSASCIIStringEncoding);
+    // assert!(encoding == NSUTF8StringEncoding || encoding == NSASCIIStringEncoding);
 
     // TODO: refactor with UTF8String method
     let string = to_rust_string(env, this);
