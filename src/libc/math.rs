@@ -1156,6 +1156,9 @@ fn CGContextSetTextMatrix(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn CGContextShowTextAtPoint(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn CGPathContainsPoint(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1470,4 +1473,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CGPathAddLineToPoint(_, _)),
     export_c_func!(CGContextSetTextMatrix(_, _)),
     export_c_func!(CGContextShowTextAtPoint(_, _)),
+    export_c_func!(CGPathContainsPoint(_, _)),
 ];

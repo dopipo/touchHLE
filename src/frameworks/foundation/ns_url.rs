@@ -226,6 +226,11 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 @implementation NSURLProtocol: NSObject
+
++ (id)registerClass {
+    nil
+}
+
 @end
 
 };

@@ -311,6 +311,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.borrow::<NSNumberHostObject>(this).as_int()
 }
 
+- (bool)stringValue {
+    env.objc.borrow::<NSNumberHostObject>(this).as_bool()
+}
+
 - (f32)floatValue {
     env.objc.borrow::<NSNumberHostObject>(this).as_float()
 }
@@ -370,6 +374,44 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 // TODO: accessors etc
+
+@end
+
+@implementation NSNumberFormatter: NSNumber
++ (())setDefaultFormatterBehavior:(bool)behavior {
+    log!("TODO: setDefaultFormatterBehavior:{}", behavior);
+}
+
+- (())setNumberStyle:(bool)style {
+    log!("TODO: setNumberStyle:{}", style);
+}
+
+- (())setFormatWidth:(bool)width {
+    log!("TODO: setFormatWidth:{}", width);
+}
+
+- (())setPaddingCharacter:(bool)character {
+    log!("TODO: setPaddingCharacter:{}", character);
+}
+
+- (())setFormatterBehavior:(bool)behavior {
+    log!("TODO: setFormatterBehavior:{}", behavior);
+}
+
+- (())setUsesGroupingSeparator:(bool)separator {
+    log!("TODO: setUsesGroupingSeparator:{}", separator);
+}
+
+- (())setGroupingSeparator:(bool)separator {
+    log!("TODO: setGroupingSeparator:{}", separator);
+}
+
+@end
+
+@implementation NSDecimalNumber: NSNumber
++ (id)decimalNumberWithString:(NSUInteger)_string {
+    msg![env; this init]
+}
 
 @end
 
