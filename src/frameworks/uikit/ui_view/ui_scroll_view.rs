@@ -245,6 +245,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: setAllowsSelectionDuringEditing:{}", editing);
 }
 
+- (())setAccessoryType:(bool)accessory {
+    log!("TODO: setAccessoryType:{}", accessory);
+}
+
 - (())setSeparatorColor:(bool)color {
     log!("TODO: setSeparatorColor:{}", color);
 }
