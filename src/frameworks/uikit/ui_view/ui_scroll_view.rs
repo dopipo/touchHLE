@@ -218,6 +218,10 @@ pub const CLASSES: ClassExports = objc_classes! {
   // TODO
 }
 
+- (())scrollToRowAtIndexPath:(NSInteger)path atScrollPosition:(bool)_position animated:(bool)_animated {
+  // TODO
+}
+
 - (())setRowHeight:(CGFloat)_height {
     // TODO
 }
