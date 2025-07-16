@@ -7,7 +7,7 @@
 
 pub mod ui_text_view;
 use crate::frameworks::core_graphics::{CGFloat, CGPoint, CGRect, CGSize};
-use crate::frameworks::uikit::ui_view::NSInteger;
+use crate::frameworks::uikit::ui_view::{NSInteger, NSUInteger};
 use crate::objc::{
     id, impl_HostObject_with_superclass, msg, nil, objc_classes, ClassExports, NSZonePtr, SEL,
 };
@@ -206,8 +206,8 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
-- (id)cellForRowAtIndexPath {
-    nil
+- (id)cellForRowAtIndexPath:(NSUInteger)_path {
+    msg![env; this init]
 }
 
 - (())deselectRowAtIndexPath:(NSInteger)path animated:(bool)_animated {
