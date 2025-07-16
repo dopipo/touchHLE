@@ -588,6 +588,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; layer setHidden:hidden]
 }
 
+- (())addObserver:(NSInteger)observer forKeyPath:(bool)_path options:(bool)_options context:(bool)_context  {
+    // TODO
+}
+
 - (())setClipsToBounds:(bool)clips {
     log!("TODO: [{:?} setClipsToBounds:{}]", this, clips);
 }
