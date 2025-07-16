@@ -206,6 +206,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (id)cellForRowAtIndexPath {
+    nil
+}
+
 - (())deselectRowAtIndexPath:(NSInteger)path animated:(bool)_animated {
   // TODO
 }
