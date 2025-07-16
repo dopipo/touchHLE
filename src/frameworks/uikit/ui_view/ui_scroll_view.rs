@@ -202,6 +202,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (id)view {
+    nil
+}
+
 - (id)indexPathForSelectedRow {
     nil
 }
