@@ -1147,6 +1147,9 @@ fn CGPathAddPath(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn CFHostGetAddressing(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn CGPathAddLineToPoint(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1458,4 +1461,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CGPathMoveToPoint(_, _)),
     export_c_func!(CGPathAddPath(_, _)),
     export_c_func!(CFHostGetAddressing(_, _)),
+    export_c_func!(CGPathAddLineToPoint(_, _)),
 ];
