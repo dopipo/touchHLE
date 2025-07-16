@@ -377,6 +377,44 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
+@implementation NSNumberFormatter: NSNumber
++ (())setDefaultFormatterBehavior:(bool)behavior {
+    log!("TODO: setDefaultFormatterBehavior:{}", behavior);
+}
+
+- (())setNumberStyle:(bool)style {
+    log!("TODO: setNumberStyle:{}", style);
+}
+
+- (())setFormatWidth:(bool)width {
+    log!("TODO: setFormatWidth:{}", width);
+}
+
+- (())setPaddingCharacter:(bool)character {
+    log!("TODO: setPaddingCharacter:{}", character);
+}
+
+- (())setFormatterBehavior:(bool)behavior {
+    log!("TODO: setFormatterBehavior:{}", behavior);
+}
+
+- (())setUsesGroupingSeparator:(bool)separator {
+    log!("TODO: setUsesGroupingSeparator:{}", separator);
+}
+
+- (())setGroupingSeparator:(bool)separator {
+    log!("TODO: setGroupingSeparator:{}", separator);
+}
+
+@end
+
+@implementation NSDecimalNumber: NSNumber
++ (id)decimalNumberWithString:(NSUInteger)_string {
+    msg![env; this init]
+}
+
+@end
+
 };
 
 fn equality_helper(env: &mut Environment, this: id, other: id) -> bool {
