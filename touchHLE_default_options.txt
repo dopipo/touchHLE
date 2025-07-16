@@ -115,7 +115,7 @@ com.ea.simcityinc: --preferred-languages=en
 
 # Tom Clancy's Splinter Cell: Conviction
 # Note: "Force composition" flag is needed to fix broken render after the first level.
-com.gameloft.SplinterCell: --force-composition
+com.gameloft.SplinterCell: 
 
 # Iron Man
 # A = Fire, X = Dodge (on Level Tutorial 1), B = Dodge (on other levels), Start = Pause
@@ -148,3 +148,6 @@ com.gameloft.SkateNation: --landscape-left --button-to-touch=DPadLeft,45,237 --b
 # (we need to force Japanese language)
 com.konami.mgst: --preferred-languages=ja --landscape-left
 com.konami-europe.mgst: --preferred-languages=ja --landscape-left
+
+# Ferrari gt revolution
+com.gameloft.Ferrari: --force-composition
