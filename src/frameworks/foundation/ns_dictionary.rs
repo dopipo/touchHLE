@@ -630,6 +630,11 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 @implementation NSIndexPath: NSObject
+
+- (())indexPathForRow:(NSInteger)_row inSection:(bool)_section {
+    // TODO
+}
+
 @end
 
 @implementation NSInvocation: NSObject
