@@ -164,6 +164,15 @@ pub const CLASSES: ClassExports = objc_classes! {
     }
 }
 
+- (())insertSublayer:(id)layer atIndex:(u32)idx {
+    retain(env, layer);
+    () = msg![env; layer removeFromSuperlayer];
+    env.objc.borrow_mut::<CALayerHostObject>(layer).superlayer = this;
+
+    let CALayerHostObject { ref mut sublayers, .. } = env.objc.borrow_mut(this);
+    sublayers.insert(idx.try_into().unwrap(), layer);
+}
+    
 - (())insertSublayer:(id)layer below:(id)sibling {
     retain(env, layer);
     () = msg![env; layer removeFromSuperlayer];
