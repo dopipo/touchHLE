@@ -567,6 +567,14 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this compare:other options:NSCaseInsensitiveSearch]
 }
 
+- (NSComparisonResult)compare:(id)other // NSString*
+                      options:(NSStringCompareOptions)options
+                        range:(NSRange)range {
+    // TODO: avoid substring copying
+    let substr = msg![env; this substringWithRange:range];
+    msg![env; substr compare:other options:options]
+}
+    
 - (NSComparisonResult)compare:(id)other options:(NSStringCompareOptions)mask { // NSString*
     fn ascii_number(iter: &mut Peekable<CodeUnitIterator>, leftmost_digit: char) -> u32 {
         let mut num = leftmost_digit.to_digit(10).unwrap();
