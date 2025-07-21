@@ -527,6 +527,31 @@ pub const CLASSES: ClassExports = objc_classes! {
     () = msg![env; layer addSublayer:subview_layer];
 }
 
+- (())sendSubviewToBack:(id)subview {
+    if subview == nil {
+        log_dbg!("Tolerating [{:?} sendSubviewToBack:nil]", this);
+        return;
+    }
+
+    let &mut UIViewHostObject {
+        ref mut subviews,
+        layer,
+        ..
+    } = env.objc.borrow_mut(this);
+
+    let Some(idx) = subviews.iter().position(|&subview2| subview2 == subview) else {
+        log_dbg!("Warning: Unable to find the subview {:?} in subviews of {:?}", subview, this);
+        return;
+    };
+    let subview2 = subviews.remove(idx);
+    assert!(subview2 == subview);
+    subviews.insert(0, subview);
+
+    let subview_layer = env.objc.borrow::<UIViewHostObject>(subview).layer;
+    () = msg![env; subview_layer removeFromSuperlayer];
+    () = msg![env; layer insertSublayer:subview_layer atIndex:0u32];
+}
+    
 - (())removeFromSuperview {
     let &mut UIViewHostObject {
         ref mut superview,
