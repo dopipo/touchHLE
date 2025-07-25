@@ -72,6 +72,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
++ (id)sleepUntilDate {
+    nil
+}
+
 + (id)currentThread {
     // TODO: use ThreadId as key for lookup
     // `pthread_self` internally is O(num of threads) time

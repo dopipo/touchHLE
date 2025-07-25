@@ -5,7 +5,7 @@
  */
 //! `UINavigationController`.
 
-use crate::frameworks::foundation::{ns_array, NSUInteger};
+use crate::frameworks::foundation::{ns_array, NSInteger, NSUInteger};
 use crate::objc::{
     autorelease, id, impl_HostObject_with_superclass, msg, nil, objc_classes, release, retain,
     ClassExports, NSZonePtr, SEL,
@@ -148,6 +148,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 - (())setNavigationBarHidden:(bool)_hidden {
     // TODO
+}
+
+- (())setNavigationBarHidden:(NSInteger)hidden animated:(bool)_animated {
+  // TODO
 }
 
 @end

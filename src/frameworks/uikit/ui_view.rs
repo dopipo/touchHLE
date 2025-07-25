@@ -625,6 +625,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: setNeedsLayout:{}", layout);
 }
 
+- (())setContentScaleFactor:(bool)factor {
+    log!("TODO: setContentScaleFactor:{}", factor);
+}
+
 - (bool)isOpaque {
     let layer = env.objc.borrow::<UIViewHostObject>(this).layer;
     msg![env; layer isOpaque]

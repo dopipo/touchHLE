@@ -221,6 +221,29 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 @implementation NSDateComponents: NSDate
+- (())setYear:(bool)year {
+    log!("TODO: setYear:{}", year);
+}
+
+- (())setMonth:(bool)month {
+    log!("TODO: setMonth:{}", month);
+}
+
+- (())setDay:(bool)day {
+    log!("TODO: setDay:{}", day);
+}
+
+- (())setHour:(bool)hour {
+    log!("TODO: setHour:{}", hour);
+}
+
+- (())setMinute:(bool)minute {
+    log!("TODO: setMinute:{}", minute);
+}
+
+- (())setSecond:(bool)second {
+    log!("TODO: setSecond:{}", second);
+}
 @end
 
 };

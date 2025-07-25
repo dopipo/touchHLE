@@ -629,6 +629,14 @@ pub const CLASSES: ClassExports = objc_classes! {
 @implementation NSNetServiceBrowser: NSMutableDictionary
 @end
 
+@implementation NSNotificationQueue: NSNotification
+
++ (id)defaultQueue {
+    nil
+}
+
+@end
+
 @implementation NSIndexPath: NSObject
 
 + (())indexPathForRow:(NSInteger)_row inSection:(bool)_section {
@@ -850,6 +858,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (())setName:(bool)name {
     log!("TODO: setName:{}", name);
+}
+
+- (())setDictionary:(bool)dictionary{
+    log!("TODO: setDictionary:{}", dictionary);
 }
 
 - (())synchronize {

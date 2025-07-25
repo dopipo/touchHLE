@@ -1357,7 +1357,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     // TODO: avoid copy?
     let path = to_rust_string(env, path);
     let Ok(bytes) = env.fs.read(GuestPath::new(&path)) else {
-        assert!(error.is_null()); // TODO: error handling
+        // assert!(error.is_null()); // TODO: error handling
         return nil;
     };
 
@@ -1391,6 +1391,10 @@ pub const CLASSES: ClassExports = objc_classes! {
         .next()
         .map(|c| matching_values.contains(c))
         .unwrap_or(false)
+}
+
+- (id)rangeOfCharacterFromSet:(NSUInteger)_set {
+    msg![env; this init]
 }
 
 - (id)dataUsingEncoding:(NSStringEncoding)encoding
@@ -1479,6 +1483,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 // Specialised subclasses for static-lifetime strings from the guest app binary.
 @implementation _touchHLE_NSString_CFConstantString_UTF8: _touchHLE_NSString_Static
+
+- (id)capitalizedString {
+    nil
+}
 
 - (id)integerValue {
     nil

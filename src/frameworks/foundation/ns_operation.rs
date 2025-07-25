@@ -77,6 +77,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @implementation NSOperationQueue: NSObject
 
+- (id)operations {
+    nil
+}
+
 - (())addOperation:(id)op {
     let opclass = msg![env; op class];
     dbg!(env.objc.get_class_name(opclass));
