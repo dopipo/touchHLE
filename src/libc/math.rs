@@ -1168,6 +1168,9 @@ fn _NSGetExecutablePath(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn CGImageGetBitmapInfo(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn __CFStringMakeConstantString(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1486,4 +1489,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(sysconf(_, _)),
     export_c_func!(_NSGetExecutablePath(_, _)),
     export_c_func!(CGImageGetBitmapInfo(_, _)),
+    export_c_func!(__CFStringMakeConstantString(_, _)),
 ];
