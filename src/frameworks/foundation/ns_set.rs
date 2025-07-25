@@ -81,6 +81,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
++ (id)set {
+    nil
+}
+
 + (id)setWithArray:(NSUInteger)array {
     msg![env; this init]
 }
