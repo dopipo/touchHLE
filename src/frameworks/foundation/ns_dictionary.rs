@@ -860,6 +860,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: setName:{}", name);
 }
 
+- (())setDictionary:(bool)dictionary{
+    log!("TODO: setDictionary:{}", dictionary);
+}
+
 - (())synchronize {
 }
 
