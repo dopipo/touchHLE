@@ -1349,7 +1349,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     // TODO: avoid copy?
     let path = to_rust_string(env, path);
     let Ok(bytes) = env.fs.read(GuestPath::new(&path)) else {
-        assert!(error.is_null()); // TODO: error handling
+        // assert!(error.is_null()); // TODO: error handling
         return nil;
     };
 
