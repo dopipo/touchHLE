@@ -1385,6 +1385,10 @@ pub const CLASSES: ClassExports = objc_classes! {
         .unwrap_or(false)
 }
 
+- (id)rangeOfCharacterFromSet:(NSUInteger)_set {
+    msg![env; this init]
+}
+
 - (id)dataUsingEncoding:(NSStringEncoding)encoding
    allowLossyConversion:(bool)lossy {
     if lossy {
