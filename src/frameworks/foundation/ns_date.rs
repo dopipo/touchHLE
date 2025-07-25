@@ -221,6 +221,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 @implementation NSDateComponents: NSDate
+- (())setMonth:(bool)month {
+    log!("TODO: setMonth:{}", month);
+}
+
 - (())setDay:(bool)day {
     log!("TODO: setDay:{}", day);
 }
