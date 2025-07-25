@@ -1472,6 +1472,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 // Specialised subclasses for static-lifetime strings from the guest app binary.
 @implementation _touchHLE_NSString_CFConstantString_UTF8: _touchHLE_NSString_Static
 
+- (id)capitalizedString {
+    nil
+}
+
 - (id)integerValue {
     nil
 }
