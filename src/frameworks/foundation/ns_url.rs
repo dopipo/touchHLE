@@ -213,7 +213,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
-@implementation NSHTTPCookieStorage: NSObject
+@implementation NSHTTPCookie: NSObject
+@end
+
+@implementation NSHTTPCookieStorage: NSHTTPCookie
 + (id)sharedHTTPCookieStorage {
     // TODO
     nil
