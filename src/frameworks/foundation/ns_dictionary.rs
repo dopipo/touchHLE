@@ -765,6 +765,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     init_with_objects_for_keys_common(env, this, objects, keys)
 }
 
+- (id)isDeviceMotionAvailable {
+    nil
+}
+
 - (id)removeAllObjects {
     nil
 }
