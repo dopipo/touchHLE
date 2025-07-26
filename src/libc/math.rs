@@ -1207,6 +1207,9 @@ fn valloc(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn OSSpinLockUnlock(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn CFStreamCreatePairWithSocketToHost(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1538,4 +1541,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(OSMemoryBarrier(_, _)),
     export_c_func!(valloc(_, _)),
     export_c_func!(OSSpinLockUnlock(_, _)),
+    export_c_func!(CFStreamCreatePairWithSocketToHost(_, _)),
 ];
