@@ -55,7 +55,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, new)
 }
 
-- (id)set {
++ (id)set {
     nil
 }
 
