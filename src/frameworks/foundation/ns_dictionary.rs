@@ -571,6 +571,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (())countByEnumeratingWithState:(NSInteger)state objects:(bool)_objects count:(bool)_count {
+    // TODO
+}
+
 - (id)init {
     *env.objc.borrow_mut(this) = <DictionaryHostObject as Default>::default();
     this
