@@ -110,6 +110,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.dealloc_object(this, &mut env.mem)
 }
 
+- (id)valueForKey:(NSUInteger)key {
+    msg![env; this init]
+}
+
 - (Class)class {
     ObjC::read_isa(this, &env.mem)
 }
