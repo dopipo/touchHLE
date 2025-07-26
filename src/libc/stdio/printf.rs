@@ -21,11 +21,11 @@ use crate::Environment;
 use std::collections::HashSet;
 use std::io::Write;
 
-const ALL_SPECIFIERS: [u8; 25] = [
+const ALL_SPECIFIERS: [u8; 26] = [
     // IEEE printf specification
     b'd', b'i', b'o', b'u', b'x', b'X', b'f', b'F', b'e', b'E', b'g', b'G', b'a', b'A', b'c', b's',
     b'p', b'n', b'C', b'S', b'%', // NSString formatting
-    b'@', b'D', b'U', b'O',
+    b'@', b'D', b'U', b'u', b'O',
 ];
 
 const INTEGER_SPECIFIERS: [u8; 6] = [b'd', b'i', b'o', b'u', b'x', b'X'];
