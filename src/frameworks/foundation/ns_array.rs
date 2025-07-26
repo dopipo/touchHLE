@@ -506,6 +506,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (())setArray:(bool)array {
+    log!("TODO: setArray:{}", array);
+}
+
 - (id)removeObjectsInArray:(NSUInteger)_array {
     msg![env; this init]
 }
