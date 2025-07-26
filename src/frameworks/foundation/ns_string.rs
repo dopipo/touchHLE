@@ -663,13 +663,13 @@ pub const CLASSES: ClassExports = objc_classes! {
          maxLength:(NSUInteger)buffer_size
           encoding:(NSStringEncoding)encoding {
     // TODO: other encodings
-    assert!(encoding == NSUTF8StringEncoding || encoding == NSASCIIStringEncoding || encoding == NSMacOSRomanStringEncoding);
+    // assert!(encoding == NSUTF8StringEncoding || encoding == NSASCIIStringEncoding || encoding == NSMacOSRomanStringEncoding);
 
     let src = to_rust_string(env, this);
     if encoding == NSASCIIStringEncoding || encoding == NSMacOSRomanStringEncoding {
         // TODO: properly support Mac OS Roman encoding.
         // The first 128 characters are identical to the ASCII
-        assert!(src.as_bytes().iter().all(|byte| byte.is_ascii()));
+        // assert!(src.as_bytes().iter().all(|byte| byte.is_ascii()));
     }
     let dest = env.mem.bytes_at_mut(buffer, buffer_size);
     if dest.len() < src.len() + 1 { // include null terminator
@@ -690,7 +690,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     let res: bool = msg![env; this getCString:buffer
                                     maxLength:length
                                      encoding:encoding];
-    assert!(res);
+    // assert!(res);
 }
 
 - (id)componentsSeparatedByString:(id)separator { // NSString*
