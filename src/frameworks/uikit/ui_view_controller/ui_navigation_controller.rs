@@ -142,6 +142,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     () = msg![env; this pushViewController:last_vc animated:animated];
 }
 
+- (id)view {
+    nil
+}
+
 - (id)navigationBar {
     // TODO
     nil
