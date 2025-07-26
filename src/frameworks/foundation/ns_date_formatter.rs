@@ -71,6 +71,18 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, res)
 }
 
+- (())setDateStyle:(bool)style {
+    log!("TODO: setDateStyle:{}", style);
+}
+
+- (())setTimeStyle:(bool)style {
+    log!("TODO: setTimeStyle:{}", style);
+}
+
+- (())setFormatterBehavior:(bool)behavior {
+    log!("TODO: setFormatterBehavior:{}", behavior);
+}
+
 @end
 
 };
