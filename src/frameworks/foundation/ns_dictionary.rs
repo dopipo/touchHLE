@@ -730,6 +730,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     init_with_dictionary_common(env, this, dictionary)
 }
 
+- (id)initWithCondition:(NSUInteger)condition {
+    msg![env; this init]
+}
+
 - (id)init {
     *env.objc.borrow_mut(this) = <DictionaryHostObject as Default>::default();
     this
