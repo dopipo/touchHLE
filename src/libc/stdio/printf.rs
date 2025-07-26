@@ -873,9 +873,9 @@ fn sscanf_common(
                 format_char_idx += 1;
                 if env.mem.read(format + format_char_idx) == b'h' {
                     format_char_idx += 1;
-                    Some("uu")
+                    Some("hh")
                 } else {
-                    Some("u")
+                    Some("h")
                 }
             }
             b's' => {
