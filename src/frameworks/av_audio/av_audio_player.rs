@@ -112,6 +112,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: [(AVAudioPlayer*){:?} setDelegate:{:?}]", this, delegate);
 }
 
+- (id)duration {
+    nil
+}
+
 - (f32)volume {
     let aq_ref = env.objc.borrow_mut::<AVAudioPlayerHostObject>(this).audio_queue;
     if aq_ref.is_none() {
