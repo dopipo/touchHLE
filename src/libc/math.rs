@@ -1195,6 +1195,12 @@ fn xmlFreeDoc(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn xmlGetProp(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn OSSpinLockLock(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn OSMemoryBarrier(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1522,4 +1528,6 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(xmlReadFile(_, _)),
     export_c_func!(xmlFreeDoc(_, _)),
     export_c_func!(xmlGetProp(_, _)),
+    export_c_func!(OSSpinLockLock(_, _)),
+    export_c_func!(OSMemoryBarrier(_, _)),
 ];
