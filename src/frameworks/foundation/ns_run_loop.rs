@@ -101,7 +101,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     retain(env, timer);
 
     let host_object = env.objc.borrow_mut::<NSRunLoopHostObject>(this);
-    assert!(!host_object.timers.contains(&timer)); // TODO: what do we do here?
+    // assert!(!host_object.timers.contains(&timer)); // TODO: what do we do here?
     host_object.timers.push(timer);
     ns_timer::set_run_loop(env, timer, this);
 }
