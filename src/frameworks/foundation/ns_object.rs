@@ -77,6 +77,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     true
 }
 
+- (id)self {
+    nil
+}
+
 - (id)init {
     this
 }
