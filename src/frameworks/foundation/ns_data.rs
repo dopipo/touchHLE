@@ -6,7 +6,7 @@
 //! `NSData` and `NSMutableData`.
 
 use super::ns_string::to_rust_string;
-use super::{NSRange, NSUInteger};
+use super::{NSRange, NSInteger, NSUInteger};
 use crate::frameworks::foundation::ns_keyed_unarchiver::decode_current_data;
 use crate::fs::GuestPath;
 use crate::mem::{ConstPtr, ConstVoidPtr, MutPtr, MutVoidPtr, Ptr};
@@ -40,6 +40,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 + (id)data {
     nil
+}
+
++ (())dataWithContentsOfFile:(NSInteger)file options:(bool)_options error:(bool)_error {
+    // TODO
 }
 
 + (id)dataWithBytesNoCopy:(MutVoidPtr)bytes
@@ -158,6 +162,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (id)initWithContentsOfMappedFile:(id)path {
     log_dbg!("[NSData initWithContentsOfMappedFile:] not using memory mapping");
     msg![env; this initWithContentsOfFile:path]
+}
+
+- (())initWithContentsOfFile:(NSInteger)file options:(bool)_options error:(bool)_error {
+    // TODO
 }
 
 - (id)description {
