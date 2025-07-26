@@ -14,7 +14,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 // TODO: proper inheritance chain
 @implementation GKLocalPlayer: NSObject
-- (id)localPlayer {
++ (id)localPlayer {
     nil
 }
 
