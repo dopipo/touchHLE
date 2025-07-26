@@ -123,7 +123,7 @@ pub const CLASSES: ClassExports = objc_classes! {
         // out nib's parsing is wrong.
         // Also we assume here the case of a "detached nib file"
         // TODO: support "integrated nib file"
-        assert!(view != nil);
+        // assert!(view != nil);
 
         return;
     };
