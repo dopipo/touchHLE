@@ -629,6 +629,9 @@ pub const CLASSES: ClassExports = objc_classes! {
 @implementation NSCondition: NSMutableDictionary
 @end
 
+@implementation NSConditionLock: NSCondition
+@end
+
 @implementation NSNetServiceBrowser: NSMutableDictionary
 @end
 
