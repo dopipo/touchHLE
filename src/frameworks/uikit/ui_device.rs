@@ -9,7 +9,7 @@ use crate::dyld::ConstantExports;
 use crate::dyld::HostConstant;
 use crate::frameworks::foundation::ns_string;
 use crate::frameworks::foundation::NSInteger;
-use crate::objc::{id, objc_classes, ClassExports, TrivialHostObject};
+use crate::objc::{id, nil, objc_classes, ClassExports, TrivialHostObject};
 use crate::window::DeviceOrientation;
 use sdl2_sys::SDL_PowerState;
 use std::ptr::null_mut;
@@ -72,6 +72,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (())endGeneratingDeviceOrientationNotifications {
     log!("TODO: endGeneratingDeviceOrientationNotifications");
 }
+- (id)main {
+    nil
+}
+
 - (id)model {
     // TODO: Hardcoded to iPhone for now
     ns_string::get_static_str(env, "iPhone")
