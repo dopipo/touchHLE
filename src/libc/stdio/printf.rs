@@ -21,11 +21,11 @@ use crate::Environment;
 use std::collections::HashSet;
 use std::io::Write;
 
-const ALL_SPECIFIERS: [u8; 26] = [
+const ALL_SPECIFIERS: [u8; 25] = [
     // IEEE printf specification
     b'd', b'i', b'o', b'u', b'x', b'X', b'f', b'F', b'e', b'E', b'g', b'G', b'a', b'A', b'c', b's',
     b'p', b'n', b'C', b'S', b'%', // NSString formatting
-    b'@', b'D', b'U', b'u', b'O',
+    b'@', b'D', b'U', b'O',
 ];
 
 const INTEGER_SPECIFIERS: [u8; 6] = [b'd', b'i', b'o', b'u', b'x', b'X'];
@@ -867,15 +867,6 @@ fn sscanf_common(
                     env.mem.write(dst_ptr, b'\0');
                 } else {
                     matched_args -= 1;
-                }
-            }
-            b'u' => {
-                format_char_idx += 1;
-                if env.mem.read(format + format_char_idx) == b'h' {
-                    format_char_idx += 1;
-                    Some("hh")
-                } else {
-                    Some("h")
                 }
             }
             b's' => {
