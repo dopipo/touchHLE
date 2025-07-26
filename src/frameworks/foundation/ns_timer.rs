@@ -7,7 +7,7 @@
 
 use super::ns_run_loop::NSDefaultRunLoopMode;
 use super::NSTimeInterval;
-use super::{ns_run_loop, ns_string, NSInteger, NSUInteger };
+use super::{ns_run_loop, ns_string, NSInteger, NSUInteger};
 use crate::objc::{
     autorelease, id, msg, msg_class, msg_send, nil, objc_classes, release, retain, ClassExports,
     HostObject, SEL,
