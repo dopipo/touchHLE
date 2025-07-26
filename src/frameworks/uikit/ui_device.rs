@@ -120,6 +120,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (bool)isBatteryMonitoringEnabled {
     true
 }
+
+- (bool)isGeneratingDeviceOrientationNotifications {
+    true
+}
 - (())setBatteryMonitoringEnabled:(bool)enabled {
     log!("TODO: [(UIDevice*) {:?} setBatteryMonitoringEnabled:{:?}]", this, enabled);
 }
