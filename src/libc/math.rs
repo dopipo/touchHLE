@@ -1225,6 +1225,9 @@ fn class_replaceMethod(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn memset_pattern16(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn glGenFramebuffers(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1562,4 +1565,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(method_getTypeEncoding(_, _)),
     export_c_func!(class_replaceMethod(_, _)),
     export_c_func!(memset_pattern16(_, _)),
+    export_c_func!(glGenFramebuffers(_, _)),
 ];
