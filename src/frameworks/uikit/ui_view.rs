@@ -1018,4 +1018,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 @implementation UIPasteboard: NSObject
 @end
 
+@implementation UILocalNotification: NSObject
+@end
+
 };

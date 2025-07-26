@@ -5,7 +5,7 @@
  */
 //! `NSThread`.
 
-use super::NSTimeInterval;
+use super::{NSTimeInterval, NSUInteger};
 use crate::dyld::HostFunction;
 use crate::frameworks::core_foundation::CFTypeRef;
 use crate::libc::pthread::thread::{
@@ -72,8 +72,8 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
-+ (id)sleepUntilDate {
-    nil
++ (id)sleepUntilDate:(NSUInteger)_date {
+    msg![env; this init]
 }
 
 + (id)currentThread {
@@ -213,6 +213,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (id)isCancelled {
+    nil
+}
+
+- (id)isFinished {
     nil
 }
 

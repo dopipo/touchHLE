@@ -5,10 +5,10 @@
  */
 //! `NSLocale`.
 
-use super::{ns_array, ns_string};
+use super::{ns_array, ns_string, NSUInteger};
 use crate::dyld::{ConstantExports, HostConstant};
 use crate::frameworks::core_foundation::cf_locale::kCFLocaleCountryCode;
-use crate::objc::{id, nil, objc_classes, release, retain, ClassExports, HostObject, NSZonePtr};
+use crate::objc::{id, msg, nil, objc_classes, release, retain, ClassExports, HostObject, NSZonePtr};
 use crate::options::Options;
 use crate::Environment;
 use std::ffi::CStr;
@@ -192,6 +192,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (id)localeIdentifier {
     nil
+}
+
+- (id)initWithLocaleIdentifier:(NSUInteger)locale {
+    msg![env; this init]
 }
 
 - (id)objectForKey:(id)key {

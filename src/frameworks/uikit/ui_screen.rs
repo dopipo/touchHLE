@@ -34,6 +34,11 @@ pub const CLASSES: ClassExports = objc_classes! {
         new
    }
 }
+
++ (id)main {
+    nil
+}
+
 - (id)retain { this }
 - (())release {}
 - (id)autorelease { this }
@@ -56,6 +61,10 @@ pub const CLASSES: ClassExports = objc_classes! {
         bounds.size.height -= STATUS_BAR_HEIGHT;
     }
     bounds
+}
+
+- (id)currentMode {
+    nil
 }
 
 - (id)scale {

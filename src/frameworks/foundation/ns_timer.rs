@@ -7,7 +7,7 @@
 
 use super::ns_run_loop::NSDefaultRunLoopMode;
 use super::NSTimeInterval;
-use super::{ns_run_loop, ns_string, NSInteger};
+use super::{ns_run_loop, ns_string, NSInteger, NSUInteger};
 use crate::objc::{
     autorelease, id, msg, msg_class, msg_send, nil, objc_classes, release, retain, ClassExports,
     HostObject, SEL,
@@ -90,6 +90,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     let _: () = msg![env; run_loop addTimer:timer forMode:mode];
 
     timer
+}
+
++ (id)instanceMethodForSelector:(NSUInteger)_selector {
+    msg![env; this init]
 }
 
 + (())scheduledTimerWithTimeInterval:(NSInteger)time invocation:(bool)_invocation repeats:(bool)_repeats {

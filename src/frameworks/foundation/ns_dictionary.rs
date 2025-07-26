@@ -623,6 +623,9 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
+@implementation CMMotionManager: NSMutableDictionary
+@end
+
 @implementation NSCondition: NSMutableDictionary
 @end
 
@@ -760,6 +763,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (id)initWithObjects:(id)objects //NSArray *
               forKeys:(id)keys { //NSArray *
     init_with_objects_for_keys_common(env, this, objects, keys)
+}
+
+- (id)isDeviceMotionAvailable {
+    nil
 }
 
 - (id)removeAllObjects {

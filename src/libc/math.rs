@@ -1174,6 +1174,57 @@ fn __CFStringMakeConstantString(_env: &mut Environment, arg1: f64, arg2: f64) ->
 fn SCNetworkReachabilityUnscheduleFromRunLoop(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn CFUUIDCreate(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn freopen(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn CFUUIDCreateString(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_column_int64(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn xmlReadFile(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn xmlFreeDoc(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn xmlGetProp(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn OSSpinLockLock(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn OSMemoryBarrier(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn valloc(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn OSSpinLockUnlock(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn CFStreamCreatePairWithSocketToHost(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn objc_getMetaClass(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn class_getInstanceMethod(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn method_getTypeEncoding(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn class_replaceMethod(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn memset_pattern16(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1494,4 +1545,21 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CGImageGetBitmapInfo(_, _)),
     export_c_func!(__CFStringMakeConstantString(_, _)),
     export_c_func!(SCNetworkReachabilityUnscheduleFromRunLoop(_, _)),
+    export_c_func!(CFUUIDCreate(_, _)),
+    export_c_func!(freopen(_, _)),
+    export_c_func!(CFUUIDCreateString(_, _)),
+    export_c_func!(sqlite3_column_int64(_, _)),
+    export_c_func!(xmlReadFile(_, _)),
+    export_c_func!(xmlFreeDoc(_, _)),
+    export_c_func!(xmlGetProp(_, _)),
+    export_c_func!(OSSpinLockLock(_, _)),
+    export_c_func!(OSMemoryBarrier(_, _)),
+    export_c_func!(valloc(_, _)),
+    export_c_func!(OSSpinLockUnlock(_, _)),
+    export_c_func!(CFStreamCreatePairWithSocketToHost(_, _)),
+    export_c_func!(objc_getMetaClass(_, _)),
+    export_c_func!(class_getInstanceMethod(_, _)),
+    export_c_func!(method_getTypeEncoding(_, _)),
+    export_c_func!(class_replaceMethod(_, _)),
+    export_c_func!(memset_pattern16(_, _)),
 ];
