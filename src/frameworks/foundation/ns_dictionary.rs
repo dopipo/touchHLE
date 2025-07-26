@@ -623,6 +623,9 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
+@implementation CMMotionManager: NSMutableDictionary
+@end
+
 @implementation NSCondition: NSMutableDictionary
 @end
 
