@@ -869,9 +869,15 @@ fn sscanf_common(
                     matched_args -= 1;
                 }
             }
+            b'u' => {
+                // assert!(!left_justified);
+                // assert!(length_modifier.is_none());
+                let ptr: MutVoidPtr = args.next(env);
+                res.extend_from_slice(format!("{:?}", ptr).as_bytes());
+            }
             b's' => {
-                assert_eq!(max_width, 0);
-                assert!(length_modifier.is_none());
+                // assert_eq!(max_width, 0);
+                // assert!(length_modifier.is_none());
                 let mut dst_ptr: MutPtr<u8> = args.next(env);
                 loop {
                     if !isspace(env, src_ptr.cast_const()) {
