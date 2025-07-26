@@ -1174,6 +1174,12 @@ fn __CFStringMakeConstantString(_env: &mut Environment, arg1: f64, arg2: f64) ->
 fn SCNetworkReachabilityUnscheduleFromRunLoop(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn CFUUIDCreate(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn freopen(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1494,4 +1500,6 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CGImageGetBitmapInfo(_, _)),
     export_c_func!(__CFStringMakeConstantString(_, _)),
     export_c_func!(SCNetworkReachabilityUnscheduleFromRunLoop(_, _)),
+    export_c_func!(CFUUIDCreate(_, _)),
+    export_c_func!(freopen(_, _)),
 ];
