@@ -1498,6 +1498,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     bytes
 }
 
+- (())stringByReplacingCharactersInRange:(NSInteger)range withString:(bool)_string {
+    // TODO
+}
+
 @end
 
 @implementation _touchHLE_NSString_CFConstantString_UTF16: _touchHLE_NSString_Static
