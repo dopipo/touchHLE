@@ -870,10 +870,13 @@ fn sscanf_common(
                 }
             }
             b'u' => {
-                // assert!(!left_justified);
-                // assert!(length_modifier.is_none());
-                let ptr: MutVoidPtr = args.next(env);
-                res.extend_from_slice(format!("{:?}", ptr).as_bytes());
+                format_char_idx += 1;
+                if env.mem.read(format + format_char_idx) == b'h' {
+                    format_char_idx += 1;
+                    Some("uu")
+                } else {
+                    Some("u")
+                }
             }
             b's' => {
                 // assert_eq!(max_width, 0);
