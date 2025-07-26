@@ -1282,6 +1282,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     // TODO
 }
 
+- (())getFileSystemRepresentation:(NSInteger)representation maxLength:(bool)_length {
+    // TODO
+}
+
 - (id)initWithCharacters:(ConstPtr<unichar>)characters length:(NSUInteger)len {
     assert!(!characters.is_null());
     let num_bytes = len * 2;
