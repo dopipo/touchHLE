@@ -58,6 +58,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     bounds
 }
 
+- (id)currentMode {
+    nil
+}
+
 - (id)scale {
     nil
 }
