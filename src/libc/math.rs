@@ -1249,6 +1249,9 @@ fn glFramebufferRenderbuffer(_env: &mut Environment, arg1: f64, arg2: f64) -> f6
 fn glCheckFramebufferStatus(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn glDiscardFramebufferEXT(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1594,4 +1597,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(glGetRenderbufferParameteriv(_, _)),
     export_c_func!(glFramebufferRenderbuffer(_, _)),
     export_c_func!(glCheckFramebufferStatus(_, _)),
+    export_c_func!(glDiscardFramebufferEXT(_, _)),
 ];
