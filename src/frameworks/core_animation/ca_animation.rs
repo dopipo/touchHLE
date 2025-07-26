@@ -228,6 +228,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: [(CATransition*){:?} setType:{:?} ({:?})]", this, transitionType, to_rust_string(env, transitionType));
 }
 
+- (())setSubtype:(bool)sub {
+    log!("TODO: setSubtype:{}", sub);
+}
+
 @end
 
 };
