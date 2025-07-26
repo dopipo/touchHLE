@@ -138,6 +138,10 @@ pub const CLASSES: ClassExports = objc_classes! {
      env.objc.class_has_method(this, selector)
 }
 
+- (bool)methodSignatureForSelector:(SEL)selector {
+     env.objc.class_has_method(this, selector)
+}
+
 - (NSUInteger)hash {
     this.to_bits()
 }
