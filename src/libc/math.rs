@@ -1216,6 +1216,9 @@ fn objc_getMetaClass(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn class_getInstanceMethod(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn method_getTypeEncoding(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1550,4 +1553,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CFStreamCreatePairWithSocketToHost(_, _)),
     export_c_func!(objc_getMetaClass(_, _)),
     export_c_func!(class_getInstanceMethod(_, _)),
+    export_c_func!(method_getTypeEncoding(_, _)),
 ];
