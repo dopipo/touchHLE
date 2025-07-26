@@ -258,6 +258,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this dataWithCapacity:0u32]
 }
 
++ (id)appendData {
+    nil
+}
+
 + (id)dataWithCapacity:(NSUInteger)capacity {
     let new: id = msg![env; this alloc];
     let new: id = msg![env; new initWithCapacity:capacity];
