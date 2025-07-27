@@ -130,7 +130,7 @@ fn alcCreateContext(
                 attr,
                 env.mem.read(ptr + 1)
             );
-            assert!(ALLOWED_CONTEXT_ATTRIBUTES.contains(&attr)); // TODO
+            // assert!(ALLOWED_CONTEXT_ATTRIBUTES.contains(&attr)); // TODO
             ptr += 2;
         }
 
