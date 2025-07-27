@@ -869,32 +869,20 @@ fn sscanf_common(
                     matched_args -= 1;
                 }
             }
+             b'c' => {
+                format_char_idx += 1;
+                Some("ll")
+            }
+
+            _ => None,
+        };
             b'u' => {
-                // assert_eq!(max_width, 0);
-                // assert!(length_modifier.is_none());
-                let mut dst_ptr: MutPtr<u8> = args.next(env);
-                loop {
-                    if !isspace(env, src_ptr.cast_const()) {
-                        env.mem.write(dst_ptr, env.mem.read(src_ptr));
-                        src_ptr += 1;
-                        dst_ptr += 1;
-                    } else {
-                        break;
-                    }
-                }
-            b'c' => {
-                // assert_eq!(max_width, 0);
-                // assert!(length_modifier.is_none());
-                let mut dst_ptr: MutPtr<u8> = args.next(env);
-                loop {
-                    if !isspace(env, src_ptr.cast_const()) {
-                        env.mem.write(dst_ptr, env.mem.read(src_ptr));
-                        src_ptr += 1;
-                        dst_ptr += 1;
-                    } else {
-                        break;
-                    }
-                }
+                format_char_idx += 1;
+                Some("ll")
+            }
+
+            _ => None,
+        };
             b's' => {
                 // assert_eq!(max_width, 0);
                 // assert!(length_modifier.is_none());
