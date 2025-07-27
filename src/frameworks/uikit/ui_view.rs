@@ -966,7 +966,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
-@implementation UIDatePicker: UIView
+@implementation UIDatePicker: UIControl
 
 - (())setDatePickerMode:(bool)mode {
     log!("TODO: setDatePickerMode:{}", mode);
@@ -978,7 +978,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
-@implementation UITabBarController: UIView
+@implementation UITabBarController: UIViewController
 
 - (id)view {
     nil
