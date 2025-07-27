@@ -1287,7 +1287,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     // TODO
 }
 
-- (())initWithCharactersNoCopy:(NSInteger)copy length(bool)_length freeWhenDone(bool)_done {
+- (())initWithCharactersNoCopy:(NSInteger)copy length:(bool)_length freeWhenDone:(bool)_done {
     // TODO
 }
 
