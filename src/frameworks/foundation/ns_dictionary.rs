@@ -639,6 +639,9 @@ pub const CLASSES: ClassExports = objc_classes! {
 @implementation NSNetServiceBrowser: NSObject
 @end
 
+@implementation ADBannerView: NSObject
+@end
+
 @implementation NSUbiquitousKeyValueStore: NSObject
 
 + (id)defaultStore {
