@@ -1286,6 +1286,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     // TODO
 }
 
+- (id)drawInRect:(NSUInteger)_rect {
+    msg![env; this init]
+}
+
 - (id)initWithCharacters:(ConstPtr<unichar>)characters length:(NSUInteger)len {
     assert!(!characters.is_null());
     let num_bytes = len * 2;
