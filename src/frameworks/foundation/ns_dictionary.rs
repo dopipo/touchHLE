@@ -643,6 +643,11 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 @implementation CTTelephonyNetworkInfo: NSObject
+
+- (id)subscriberCellularProvider {
+    nil
+}
+
 @end
 
 @implementation NSUbiquitousKeyValueStore: NSObject
