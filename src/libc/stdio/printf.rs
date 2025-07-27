@@ -869,20 +869,6 @@ fn sscanf_common(
                     matched_args -= 1;
                 }
             }
-             b'c' => {
-                format_char_idx += 1;
-                Some("ll")
-            }
-
-            _ => None,
-        };
-            b'u' => {
-                format_char_idx += 1;
-                Some("ll")
-            }
-
-            _ => None,
-        };
             b's' => {
                 // assert_eq!(max_width, 0);
                 // assert!(length_modifier.is_none());
