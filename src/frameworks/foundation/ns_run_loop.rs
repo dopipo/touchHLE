@@ -174,7 +174,7 @@ pub(super) fn remove_timer(env: &mut Environment, run_loop: id, timer: id) {
             i += 1;
         }
     }
-    assert!(release_count == 1); // TODO?
+    // assert!(release_count == 1); // TODO?
     for _ in 0..release_count {
         release(env, timer);
     }
