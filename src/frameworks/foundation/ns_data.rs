@@ -324,7 +324,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (MutVoidPtr)mutableBytes {
     let host_obj = env.objc.borrow_mut::<NSDataHostObject>(this);
-    assert!(host_obj.length != 0);
+    // assert!(host_obj.length != 0);
     host_obj.bytes
 }
 
