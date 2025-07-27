@@ -627,19 +627,19 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
-@implementation CMMotionManager: NSMutableDictionary
+@implementation CMMotionManager: NSObject
 @end
 
-@implementation NSCondition: NSMutableDictionary
+@implementation NSCondition: NSObject
 @end
 
-@implementation NSConditionLock: NSCondition
+@implementation NSConditionLock: NSObject
 @end
 
-@implementation NSNetServiceBrowser: NSMutableDictionary
+@implementation NSNetServiceBrowser: NSObject
 @end
 
-@implementation NSNotificationQueue: NSNotification
+@implementation NSNotificationQueue: NSObject
 
 + (id)defaultQueue {
     nil
