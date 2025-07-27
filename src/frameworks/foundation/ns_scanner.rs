@@ -6,7 +6,7 @@
 //! The `NSScanner` class.
 
 use crate::frameworks::foundation::ns_string::{from_u16_vec, to_rust_string};
-use crate::frameworks::foundation::{unichar, NSUInteger};
+use crate::frameworks::foundation::{unichar, NSUInteger, NSInteger};
 use crate::mem::MutPtr;
 use crate::objc::{
     autorelease, id, msg, msg_class, nil, objc_classes, release, ClassExports, HostObject,
@@ -128,6 +128,22 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (id)isAtEnd {
     nil
+}
+
+- (())scanString:(NSInteger)string intoString:(bool)_string {
+    // TODO
+}
+
+- (())scanUpToString:(NSInteger)string intoString:(bool)_string {
+    // TODO
+}
+
+- (())setCharactersToBeSkipped:(bool)skipped {
+    log!("TODO: setCharactersToBeSkipped:{}", skipped);
+}
+
+- (())setCaseSensitive:(bool)case {
+    log!("TODO: setCaseSensitive:{}", case);
 }
 
 @end
