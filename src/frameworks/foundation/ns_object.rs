@@ -134,6 +134,26 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this init]
 }
 
+- (id)getArgumentTypeAtIndex:(NSUInteger)idx {
+    msg![env; this init]
+}
+
+- (id)getArgumentTypeAtIndex {
+    nil
+}
+
+- (id)numberOfArguments:(NSUInteger)arguments {
+    msg![env; this init]
+}
+
+- (id)numberOfArguments {
+    nil
+}
+
+- (id)frameLength {
+    nil
+}
+
 - (Class)class {
     ObjC::read_isa(this, &env.mem)
 }
