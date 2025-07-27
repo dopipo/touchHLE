@@ -30,7 +30,7 @@ const kAudioSessionProperty_PreferredHardwareIOBufferDuration: AudioSessionPrope
     fourcc(b"iobd");
 const kAudioSessionProperty_PreferredHardwareSampleRate: AudioSessionPropertyID = fourcc(b"hwsr");
 const kAudioSessionProperty_Mode: AudioSessionPropertyID = fourcc(b"rout");
-const kAudioSessionProperty_OutputDestinations¹: AudioSessionPropertyID = fourcc(b"cmix");
+const kAudioSessionProperty_OutputDestinations: AudioSessionPropertyID = fourcc(b"cmix");
 
 const kAudioSessionCategory_SoloAmbientSound: u32 = fourcc(b"solo");
 
