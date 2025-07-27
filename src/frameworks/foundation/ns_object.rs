@@ -130,6 +130,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     // TODO
 }
 
+- (())performSelector:(NSInteger)selector onThread:(bool)_thread withObject:(bool)_object waitUntilDone:(bool)_done {
+    // TODO
+}
+
 - (id)valueForKey:(NSUInteger)key {
     msg![env; this init]
 }
