@@ -27,6 +27,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (id)description {
+    nil
+}
+
 - (())setDrawableProperties:(id)props { // NSDictionary<NSString*, id>*
     let props: id = msg![env; props copy];
     env.objc.borrow_mut::<CALayerHostObject>(this).drawable_properties = props;
