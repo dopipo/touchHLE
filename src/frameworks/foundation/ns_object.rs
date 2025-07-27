@@ -17,7 +17,7 @@
 use super::ns_dictionary::dict_from_keys_and_objects;
 use super::ns_run_loop::NSDefaultRunLoopMode;
 use super::ns_string::{from_rust_string, get_static_str, to_rust_string};
-use super::{NSTimeInterval, NSUInteger};
+use super::{NSTimeInterval, NSInteger, NSUInteger};
 use crate::mem::MutVoidPtr;
 use crate::objc::{
     id, msg, msg_class, msg_send, nil, objc_classes, retain, Class, ClassExports, NSZonePtr, ObjC,
@@ -124,6 +124,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (())dealloc {
     log_dbg!("[{:?} dealloc]", this);
     env.objc.dealloc_object(this, &mut env.mem)
+}
+
+- (())performSelectorInBackground:(NSInteger)background withObject:(bool)_object {
+    // TODO
 }
 
 - (id)valueForKey:(NSUInteger)key {
