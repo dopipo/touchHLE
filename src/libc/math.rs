@@ -1288,6 +1288,9 @@ fn strcoll(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn CFReadStreamCreateWithFile(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn CCHmac(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1646,4 +1649,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(glRenderbufferStorage(_, _)),
     export_c_func!(strcoll(_, _)),
     export_c_func!(CFReadStreamCreateWithFile(_, _)),
+    export_c_func!(CCHmac(_, _)),
 ];
