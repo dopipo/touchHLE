@@ -642,6 +642,9 @@ pub const CLASSES: ClassExports = objc_classes! {
 @implementation ADBannerView: NSObject
 @end
 
+@implementation CTTelephonyNetworkInfo: NSObject
+@end
+
 @implementation NSUbiquitousKeyValueStore: NSObject
 
 + (id)defaultStore {
