@@ -633,6 +633,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; layer setBackgroundColor:color]
 }
 
+- (())setNeedsDisplayInRect:(bool)rect {
+    log!("TODO: setNeedsDisplayInRect:{}", rect);
+}
+
 // TODO: support setNeedsDisplayInRect:
 - (())setNeedsDisplay {
     let layer = env.objc.borrow::<UIViewHostObject>(this).layer;
