@@ -29,6 +29,8 @@ const kAudioSessionProperty_CurrentHardwareOutputVolume: AudioSessionPropertyID 
 const kAudioSessionProperty_PreferredHardwareIOBufferDuration: AudioSessionPropertyID =
     fourcc(b"iobd");
 const kAudioSessionProperty_PreferredHardwareSampleRate: AudioSessionPropertyID = fourcc(b"hwsr");
+const kAudioSessionProperty_Mode: AudioSessionPropertyID = fourcc(b"rout");
+const kAudioSessionProperty_OutputDestinations¹: AudioSessionPropertyID = fourcc(b"cmix");
 
 const kAudioSessionCategory_SoloAmbientSound: u32 = fourcc(b"solo");
 
@@ -117,6 +119,14 @@ fn AudioSessionGetProperty(
             env.mem.write(out_data.cast(), value);
         }
         kAudioSessionProperty_PreferredHardwareIOBufferDuration => {
+            let value: f32 = state.current_hardware_output_volume;
+            env.mem.write(out_data.cast(), value);
+        }
+        kAudioSessionProperty_Mode => {
+            let value: f32 = state.current_hardware_output_volume;
+            env.mem.write(out_data.cast(), value);
+        }
+        kAudioSessionProperty_OutputDestinations => {
             let value: f32 = state.current_hardware_output_volume;
             env.mem.write(out_data.cast(), value);
         }
@@ -210,6 +220,8 @@ fn get_audio_session_property_size(in_ID: AudioSessionPropertyID) -> GuestUSize 
         kAudioSessionProperty_CurrentHardwareOutputNumberChannels => guest_size_of::<u32>(),
         kAudioSessionProperty_PreferredHardwareIOBufferDuration => guest_size_of::<f32>(),
         kAudioSessionProperty_CurrentHardwareOutputVolume => guest_size_of::<f32>(),
+        kAudioSessionProperty_Mode => guest_size_of::<f32>(),
+        kAudioSessionProperty_OutputDestinations => guest_size_of::<f32>(),
         _ => unimplemented!("Unimplemented property ID: {}", debug_fourcc(in_ID)),
     }
 }
