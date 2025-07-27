@@ -1287,6 +1287,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     // TODO
 }
 
+- (())initWithCharactersNoCopy:(NSInteger)copy length(bool)_length freeWhenDone(bool)_done {
+    // TODO
+}
+
 - (())getFileSystemRepresentation:(NSInteger)representation maxLength:(bool)_length {
     // TODO
 }
