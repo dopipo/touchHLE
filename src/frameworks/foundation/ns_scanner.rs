@@ -54,7 +54,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (id)initWithString:(id)string { // NSString *
-    assert!(string != nil);
+    // assert!(string != nil);
     let string: id = msg![env; string copy]; // Same behaviour as simulator
     let len: NSUInteger = msg![env; string length];
     *env.objc.borrow_mut(this) = NSScannerHostObject {
