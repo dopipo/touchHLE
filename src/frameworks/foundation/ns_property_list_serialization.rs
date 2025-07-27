@@ -261,10 +261,12 @@ fn serialize_plist(env: &mut Environment, plist: id) -> Value {
         match num {
             NSNumberHostObject::Bool(b) => Value::Boolean(*b),
             NSNumberHostObject::UnsignedInt(ui) => Value::from(*ui),
+            NSNumberHostObject::UnsignedLongLong(ull) => Value::from(*ull),
             NSNumberHostObject::Int(i) => Value::from(*i),
             NSNumberHostObject::Float(f) => Value::from(*f),
             NSNumberHostObject::LongLong(ll) => Value::from(*ll),
             NSNumberHostObject::Double(d) => Value::from(*d),
+
             _ => todo!("num {:?}", num),
         }
     } else if class == env.objc.get_known_class("NSData", &mut env.mem) {
