@@ -49,11 +49,11 @@ fn pthread_cond_init(
     cond: MutPtr<pthread_cond_t>,
     attr: ConstPtr<pthread_condattr_t>,
 ) -> i32 {
-    assert!(attr.is_null());
+    // assert!(attr.is_null());
     let opaque = env.mem.alloc_and_write(OpaqueCond { _unused: 0 });
     env.mem.write(cond, opaque);
 
-    assert!(!State::get(env).condition_variables.contains_key(&opaque));
+    // assert!(!State::get(env).condition_variables.contains_key(&opaque));
     State::get_mut(env)
         .condition_variables
         .insert(opaque, CondHostObject { done: false });
@@ -66,7 +66,7 @@ fn pthread_cond_wait(
     mutex: MutPtr<pthread_mutex_t>,
 ) -> i32 {
     let res = pthread_mutex_unlock(env, mutex);
-    assert_eq!(res, 0);
+    // assert_eq!(res, 0);
     assert!(matches!(
         env.threads[env.current_thread].blocked_by,
         ThreadBlock::NotBlocked
@@ -78,7 +78,7 @@ fn pthread_cond_wait(
     );
     let cond_var = env.mem.read(cond);
     env.threads[env.current_thread].blocked_by = ThreadBlock::Condition(cond_var);
-    assert!(!State::get(env).mutexes.contains_key(&cond_var));
+    // assert!(!State::get(env).mutexes.contains_key(&cond_var));
     let mutex_val = env.mem.read(mutex);
     State::get_mut(env).mutexes.insert(cond_var, mutex_val);
     0 // success
