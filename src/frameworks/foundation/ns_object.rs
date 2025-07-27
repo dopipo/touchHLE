@@ -58,12 +58,16 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.class_is_subclass_of(this, class)
 }
 
++ (id)cancelPreviousPerformRequestsWithTarget:(NSUInteger)target {
+    msg![env; this init]
+}
+
 + (bool)instanceMethodSignatureForSelector:(SEL)selector {
      env.objc.class_has_method(this, selector)
 }
 
-+ (bool)instanceMethodForSelector:(SEL)selector {
-     env.objc.class_has_method(this, selector)
++ (id)instanceMethodForSelector:(NSUInteger)selector {
+    msg![env; this init]
 }
 
 // See the instance method section for the normal versions of these.
@@ -138,12 +142,12 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.class_is_subclass_of(this_class, class)
 }
 
-- (bool)methodForSelector:(SEL)selector {
-     env.objc.class_has_method(this, selector)
+- (id)methodForSelector:(NSUInteger)selector {
+    msg![env; this init]
 }
 
-- (bool)methodSignatureForSelector:(SEL)selector {
-     env.objc.class_has_method(this, selector)
+- (id)methodSignatureForSelector:(NSUInteger)selector {
+    msg![env; this init]
 }
 
 - (NSUInteger)hash {
