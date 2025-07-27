@@ -408,6 +408,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: [(CALayer*){:?} setZPosition: {}]", this, position); // TODO
 }
 
+- (())setTransform:(u32)transform {
+    log!("TODO: [(CALayer*){:?} setTransform: {}]", this, transform); // TODO
+}
+
 - (())setEdgeAntialiasingMask:(u32)mask {
     log!("TODO: [(CALayer*){:?} setEdgeAntialiasingMask: {}]", this, mask); // TODO
 }
