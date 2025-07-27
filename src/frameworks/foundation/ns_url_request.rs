@@ -8,7 +8,7 @@
 use super::{NSTimeInterval, NSInteger, NSUInteger};
 use crate::frameworks::foundation::ns_string::to_rust_string;
 use crate::msg;
-use crate::objc::{autorelease, id, nil, objc_classes, release, ClassExports};
+use crate::objc::{autorelease, id, msg, nil, objc_classes, release, ClassExports};
 
 type NSURLRequestCachePolicy = NSUInteger;
 const NSURLRequestUseProtocolCachePolicy: NSURLRequestCachePolicy = 0;
@@ -56,6 +56,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 @implementation NSMutableURLRequest: NSURLRequest
+- (id)initWithURL:(NSUInteger)_url {
+    msg![env; this init]
+}
+
 - (())setURL:(bool)_url {
     log!("TODO: setURL:{}", _url);
 }
