@@ -639,6 +639,14 @@ pub const CLASSES: ClassExports = objc_classes! {
 @implementation NSNetServiceBrowser: NSObject
 @end
 
+@implementation NSUbiquitousKeyValueStore: NSObject
+
++ (id)defaultStore {
+    nil
+}
+
+@end
+
 @implementation NSNotificationQueue: NSObject
 
 + (id)defaultQueue {
