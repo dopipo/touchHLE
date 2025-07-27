@@ -47,6 +47,7 @@ pub const NSWindowsCP1252StringEncoding: NSUInteger = 12;
 pub const NSMacOSRomanStringEncoding: NSUInteger = 30;
 pub const NSUTF16StringEncoding: NSUInteger = NSUnicodeStringEncoding;
 pub const NSUTF32StringEncoding: NSUInteger = 0x422;
+pub const NSUTF32BigEndianStringEncoding: NSUInteger = 0x1c000100;
 pub const NSUTF16BigEndianStringEncoding: NSUInteger = 0x90000100;
 pub const NSUTF16LittleEndianStringEncoding: NSUInteger = 0x94000100;
 
@@ -132,6 +133,10 @@ impl StringHostObject {
                 StringHostObject::Utf8(Cow::Owned(string))
             }
             NSUTF32StringEncoding => {
+                let string = String::from_utf8(bytes.into_owned()).unwrap();
+                StringHostObject::Utf8(Cow::Owned(string))
+            }
+            NSUTF32BigEndianStringEncoding => {
                 let string = String::from_utf8(bytes.into_owned()).unwrap();
                 StringHostObject::Utf8(Cow::Owned(string))
             }
