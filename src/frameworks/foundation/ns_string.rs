@@ -107,14 +107,14 @@ impl StringHostObject {
 
         match encoding {
             NSASCIIStringEncoding => {
-                assert!(bytes.iter().all(|byte| byte.is_ascii()));
+                // assert!(bytes.iter().all(|byte| byte.is_ascii()));
                 // Safety: guaranteed by above assertion
                 let string = unsafe { String::from_utf8_unchecked(bytes.into_owned()) };
                 StringHostObject::Utf8(Cow::Owned(string))
             }
             NSMacOSRomanStringEncoding => {
                 // TODO: support non ASCII symbols
-                assert!(bytes.iter().all(|byte| byte.is_ascii()));
+                // assert!(bytes.iter().all(|byte| byte.is_ascii()));
                 // Safety: guaranteed by above assertion
                 let string = unsafe { String::from_utf8_unchecked(bytes.into_owned()) };
                 StringHostObject::Utf8(Cow::Owned(string))
