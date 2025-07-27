@@ -283,7 +283,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
-@implementation UITableViewController: UIScrollView
+@implementation UITableViewController: UIViewController
 
 - (id)initWithStyle:(NSUInteger)style {
     msg![env; this init]
