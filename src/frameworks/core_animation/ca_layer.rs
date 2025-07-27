@@ -174,6 +174,30 @@ pub const CLASSES: ClassExports = objc_classes! {
     sublayers.insert(idx, layer);
 }
 
+- (id)backgroundColor {
+    nil
+}
+
+- (id)shadowOpacity {
+    nil
+}
+
+- (id)shadowRadius {
+    nil
+}
+
+- (id)shadowOffset {
+    nil
+}
+
+- (id)borderColor {
+    nil
+}
+
+- (id)borderWidth {
+    nil
+}
+
 - (id)transform {
     nil
 }
@@ -213,6 +237,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 - (())setAnchorPoint:(CGPoint)anchor_point {
     env.objc.borrow_mut::<CALayerHostObject>(this).anchor_point = anchor_point;
+}
+
+- (id)mask {
+    nil
 }
 
 - (CGRect)frame {
