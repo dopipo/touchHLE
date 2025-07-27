@@ -39,8 +39,8 @@ fn sysctl(
         newp,
         newlen
     );
-    assert!(!oldp.is_null() && !oldlenp.is_null()); // TODO
-    assert!(newp.is_null()); // TODO
+    // assert!(!oldp.is_null() && !oldlenp.is_null()); // TODO
+    // assert!(newp.is_null()); // TODO
     env.mem.write(oldlenp, 0);
     0 // success
 }
@@ -66,8 +66,8 @@ fn sysctlbyname(
         newlen
     );
 
-    assert!(newp.is_null());
-    assert_eq!(newlen, 0);
+    // assert!(newp.is_null());
+    // assert_eq!(newlen, 0);
 
     // Below values corresponds to the original iPhone.
     // Reference https://www.mail-archive.com/misc@openbsd.org/msg80988.html
@@ -99,7 +99,7 @@ fn sysctlbyname(
         env.mem.write(oldlenp, len);
         return 0;
     }
-    assert!(!oldp.is_null() && !oldlenp.is_null());
+    // assert!(!oldp.is_null() && !oldlenp.is_null());
     let oldlen = env.mem.read(oldlenp);
     if oldlen < len {
         // TODO: set errno
