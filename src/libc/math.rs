@@ -1279,6 +1279,9 @@ fn task_info(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn UIImagePNGRepresentation(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn glRenderbufferStorage(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1634,4 +1637,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(if_nametoindex(_, _)),
     export_c_func!(task_info(_, _)),
     export_c_func!(UIImagePNGRepresentation(_, _)),
+    export_c_func!(glRenderbufferStorage(_, _)),
 ];
