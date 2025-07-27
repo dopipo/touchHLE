@@ -199,9 +199,9 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (bool)renderbufferStorage:(NSUInteger)target
                fromDrawable:(id)drawable { // EAGLDrawable (always CAEAGLayer*)
-    assert!(drawable != nil); // TODO: handle unbinding
+    // assert!(drawable != nil); // TODO: handle unbinding
 
-    assert!(target == gles11::RENDERBUFFER_OES);
+    // assert!(target == gles11::RENDERBUFFER_OES);
 
     let props: id = msg![env; drawable drawableProperties];
 
@@ -252,7 +252,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (bool)presentRenderbuffer:(NSUInteger)target {
-    assert!(target == gles11::RENDERBUFFER_OES);
+    // assert!(target == gles11::RENDERBUFFER_OES);
 
     // The presented frame should be displayed ASAP, but the next one must be
     // delayed, so this needs to be checked before returning.
