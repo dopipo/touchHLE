@@ -46,6 +46,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     // TODO
 }
 
++ (())dataWithContentsOfURL:(NSInteger)url options:(bool)_options error:(bool)_error {
+    // TODO
+}
+
 + (id)dataWithBytesNoCopy:(MutVoidPtr)bytes
                    length:(NSUInteger)length {
     let new: id = msg![env; this alloc];
@@ -165,6 +169,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (())initWithContentsOfFile:(NSInteger)file options:(bool)_options error:(bool)_error {
+    // TODO
+}
+
+- (())initWithContentsOfURL:(NSInteger)url options:(bool)_options error:(bool)_error {
     // TODO
 }
 
