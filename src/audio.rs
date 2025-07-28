@@ -161,7 +161,7 @@ impl AudioFile {
                         //
                         // We should expose all of the formats eventually, but
                         // the others haven't been tested yet.
-                        _ => panic!("{:?} not supported yet", format_id),
+                        _ => log!("{:?} not supported yet", format_id),
                     },
                     bytes_per_packet,
                     frames_per_packet,
