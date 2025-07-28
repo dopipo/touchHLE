@@ -6,6 +6,7 @@
 //! `UIScreen`.
 
 use crate::frameworks::core_graphics::{CGPoint, CGRect, CGSize};
+use crate::frameworks::foundation::NSInteger;
 use crate::objc::{id, msg, nil, objc_classes, ClassExports, TrivialHostObject};
 
 #[derive(Default)]
@@ -69,6 +70,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (id)scale {
     nil
+}
+
+- (())displayLinkWithTarget:(NSInteger)target selector:(bool)_selector {
+    // TODO
 }
 
 @end
