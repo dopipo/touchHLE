@@ -482,7 +482,6 @@ impl ObjC {
             class
         })
     }
-}
 
     fn find_template(name: &str) -> Option<&'static ClassTemplate> {
         crate::dyld::search_lists(CLASS_LISTS, name).map(|&(_name, ref template)| template)
@@ -561,7 +560,7 @@ impl ObjC {
             // We don't have a real implementation for this class, use a
             // placeholder.
 
-            class_host_object = Box::new(Unimplemented {
+            class_host_object = Box::new(UnimplementedClass {
                 name: name.to_string(),
                 is_metaclass: false,
             });
@@ -901,3 +900,4 @@ impl ObjC {
             panic!();
         }
     }
+}
