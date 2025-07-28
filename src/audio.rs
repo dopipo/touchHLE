@@ -222,7 +222,7 @@ impl AudioFile {
                 // variable size not implemented
                 u64::from(self.packet_size_fixed()) * self.packet_count()
             }
-            AudioFileInner::InMemory() => todo!()
+            AudioFileInner::InMemory() => todo!(),
             AudioFileInner::Symphonia(symphonia_formats::SymphoniaDecodedToPcm {
                 ref bytes,
                 ..
