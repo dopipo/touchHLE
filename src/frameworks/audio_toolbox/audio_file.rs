@@ -141,6 +141,7 @@ fn audio_file_open_inner(
     );
 
     0 // success
+    {
 }
 
 pub fn AudioFileOpenWithCallbacks(
