@@ -51,6 +51,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
++ (id)version {
+    nil
+}
+
 + (Class)class {
     this
 }
