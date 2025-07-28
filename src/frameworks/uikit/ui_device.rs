@@ -72,6 +72,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (())endGeneratingDeviceOrientationNotifications {
     log!("TODO: endGeneratingDeviceOrientationNotifications");
 }
+- (id)userInterfaceIdiom {
+    nil
+}
+
 - (id)main {
     nil
 }
