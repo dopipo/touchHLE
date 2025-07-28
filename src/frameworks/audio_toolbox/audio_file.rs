@@ -107,7 +107,7 @@ fn audio_file_open_inner(
     out_audio_file: MutPtr<AudioFileID>,
 ) -> OSStatus {
 }
-    let path = to_rust_path(env, in_file_ref);
+    let mut path = to_rust_path(env, in_file_ref);
     let audio_file = match audio::AudioFile::open_for_reading(path, &env.fs) {
         Ok(audio_file) => audio_file,
         Err(error) => {
