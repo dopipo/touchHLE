@@ -5,7 +5,7 @@
  */
 //! `NSURLConnection`.
 
-use crate::frameworks::foundation::NSInteger;
+use crate::frameworks::foundation::{NSInteger, NSUInteger};
 use crate::objc::{autorelease, id, msg, nil, objc_classes, release, ClassExports};
 
 pub const CLASSES: ClassExports = objc_classes! {
@@ -27,6 +27,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 + (id)bytes {
   nil
+}
+
++ (id)canHandleRequest:(NSUInteger)_handle {
+    msg![env; this init]
 }
 
 + (id)canHandleRequest {
