@@ -81,16 +81,9 @@ pub fn AudioFileOpenURL(
 
     // The hint is optional and is supposed to only be used for certain file
     // formats that can't be uniquely identified, which we don't support so far.
-    // Hints for well-known types are ignored as well.
     assert!(in_file_type_hint == 0);
-    match in_file_type_hint {
     audio_file_open_inner(env, in_file_ref, out_audio_file)
-        0 => {}
-        kAudioFileCAFType >= {
-            log!("Ignoring 'caff' file type hint for AudioFileOpenURL()");
-        }
-        _ => unimplemented!(),
-    }
+}
 
 fn ExtAudioFileOpenURL(
     env: &mut Environment,
