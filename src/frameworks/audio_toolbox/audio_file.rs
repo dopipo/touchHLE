@@ -219,7 +219,7 @@ pub fn AudioFileOpenWithCallbacks(
     };
     let guest_audio_file = env.mem.alloc_and_write(OpaqueAudioFileID { _filler: 0 });
 
-    let host_object = AudioFileHostObject { audio_file, position };
+    let host_object = AudioFileHostObject { audio_file, position: 0, };
 
     State::get(&mut env.framework_state)
         .audio_files
