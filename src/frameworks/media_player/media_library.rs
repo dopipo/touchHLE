@@ -23,6 +23,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @implementation MPMoviePlayerViewController: NSObject
 
+- (id)moviePlayer {
+    nil
+}
+
 - (id)initWithContentURL:(NSUInteger)_url {
     msg![env; this init]
 }
