@@ -395,14 +395,6 @@ pub fn AudioFileGetProperty(
                 / (bytes_per_packet as f64 * sample_rate);
             env.mem.write(out_property_data.cast(), estimated_duration);
         }
-        kExtAudioFileProperty_FileLengthFrames => {
-            if host_object.audio_file.audio_description().format != AudioFormat::AppleIma4 {
-                unimplemented!();
-            }
-            // Each packet decodes to 64 samples
-            let sample_count = host_object.audio_file.packet_count() as i64 * 64;
-            env.mem.write(out_property_data.cast(), sample_count);
-        }
         _ => unreachable!(),
     }
 
