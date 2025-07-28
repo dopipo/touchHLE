@@ -18,13 +18,6 @@ mod symphonia_formats;
 pub use ima4::decode_ima4;
 pub use touchHLE_openal_soft_wrapper as openal;
 
-use crate::audio;
-use crate::frameworks::core_audio_types::{
-    kAudioFormatAppleIMA4, kAudioFormatFlagIsBigEndian, kAudioFormatFlagIsFloat,
-    kAudioFormatFlagIsPacked, kAudioFormatFlagIsSignedInteger, kAudioFormatLinearPCM,
-    AudioStreamBasicDescription,
-};
-
 use crate::fs::{Fs, GuestPath};
 use std::io::Cursor;
 
@@ -54,58 +47,6 @@ pub struct AudioDescription {
     pub frames_per_packet: u32,
     pub channels_per_frame: u32,
     pub bits_per_channel: u32,
-}
-
-impl AudioDescription {
-    pub fn into_basic_description(self) -> AudioStreamBasicDescription {
-        let audio::AudioDescription {
-            sample_rate,
-            format,
-            bytes_per_packet,
-            frames_per_packet,
-            channels_per_frame,
-            bits_per_channel,
-        } = self;
-
-        match format {
-            audio::AudioFormat::LinearPcm {
-                is_float,
-                is_little_endian,
-            } => {
-                let is_packed = (bits_per_channel * channels_per_frame * frames_per_packet)
-                    == (bytes_per_packet * 8);
-                let format_flags = (u32::from(is_float) * kAudioFormatFlagIsFloat)
-                    | (u32::from((!is_float) && matches!(bits_per_channel, 16 | 24))
-                        * kAudioFormatFlagIsSignedInteger)
-                    | (u32::from(is_packed) * kAudioFormatFlagIsPacked)
-                    | (u32::from(!is_little_endian) * kAudioFormatFlagIsBigEndian);
-                AudioStreamBasicDescription {
-                    sample_rate,
-                    format_id: kAudioFormatLinearPCM,
-                    format_flags,
-                    bytes_per_packet,
-                    frames_per_packet,
-                    bytes_per_frame: bytes_per_packet / frames_per_packet,
-                    channels_per_frame,
-                    bits_per_channel,
-                    _reserved: 0,
-                }
-            }
-            audio::AudioFormat::AppleIma4 => {
-                AudioStreamBasicDescription {
-                    sample_rate,
-                    format_id: kAudioFormatAppleIMA4,
-                    format_flags: 0,
-                    bytes_per_packet,
-                    frames_per_packet,
-                    bytes_per_frame: 0, // compressed
-                    channels_per_frame,
-                    bits_per_channel,
-                    _reserved: 0,
-                }
-            }
-        }
-    }
 }
 
 pub struct AudioFile(AudioFileInner);
