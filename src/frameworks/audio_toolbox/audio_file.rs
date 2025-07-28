@@ -135,35 +135,6 @@ fn audio_file_open_inner(
 
     0 // success
 }
-    let path = to_rust_path(env, in_file_ref);
-    let Ok(audio_file) = audio::AudioFile::open_for_reading(path, &env.fs) else {
-        log!(
-            "Warning: AudioFileOpenURL() for path {:?} failed",
-            in_file_ref
-        );
-        return kAudioFileFileNotFoundError;
-    };
-
-    let host_object = AudioFileHostObject {
-        audio_file,
-        position: 0,
-    };
-
-    let guest_audio_file = env.mem.alloc_and_write(OpaqueAudioFileID { _filler: 0 });
-    State::get(&mut env.framework_state)
-        .audio_files
-        .insert(guest_audio_file, host_object);
-
-    env.mem.write(out_audio_file, guest_audio_file);
-
-    log_dbg!(
-        "AudioFileOpenURL() opened path {:?}, new audio file handle: {:?}",
-        in_file_ref,
-        guest_audio_file
-    );
-
-    0 // success
-}
 
 pub fn AudioFileOpenWithCallbacks(
     env: &mut Environment,
