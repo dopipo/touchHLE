@@ -20,6 +20,9 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
+@implementation GKSession: NSObject
+@end
+
 };
 
 pub const GKPlayerAuthenticationDidChangeNotificationName: &str =
