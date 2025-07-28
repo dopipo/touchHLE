@@ -97,11 +97,8 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this init]
 }
 
-+ (())addObject:(id)object {
-    let null: id = msg_class![env; NSNull null];
-    let mut host_obj: SetHostObject = std::mem::take(env.objc.borrow_mut(this));
-    host_obj.dict.insert(env, object, null, /* copy_key: */ false);
-    *env.objc.borrow_mut(this) = host_obj;
++ (id)addObject:(NSUInteger)object {
+    msg![env; this init]
 }
 
 // NSCopying implementation
