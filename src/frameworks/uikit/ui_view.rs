@@ -604,6 +604,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: setContentScaleFactor:{}", factor);
 }
 
+- (id)initializeGame {
+    nil
+}
+
 - (bool)isOpaque {
     let layer = env.objc.borrow::<UIViewHostObject>(this).layer;
     msg![env; layer isOpaque]
