@@ -763,18 +763,6 @@ fn CGRectGetMidX(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
 fn ExtAudioFileWrapAudioFileID(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
     arg1.min(arg2)
 }
-fn ExtAudioFileOpenURL(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
-    arg1.min(arg2)
-}
-fn ExtAudioFileGetProperty(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
-    arg1.min(arg2)
-}
-fn ExtAudioFileSetProperty(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
-    arg1.min(arg2)
-}
-fn ExtAudioFileDispose(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
-    arg1.min(arg2)
-}
 fn NSDefaultMallocZone(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
     arg1.min(arg2)
 }
@@ -1507,10 +1495,6 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CGRectIsEmpty(_, _)),
     export_c_func!(CGRectGetMidX(_, _)),
     export_c_func!(ExtAudioFileWrapAudioFileID(_, _)),
-    export_c_func!(ExtAudioFileOpenURL(_, _)),
-    export_c_func!(ExtAudioFileGetProperty(_, _)),
-    export_c_func!(ExtAudioFileSetProperty(_, _)),
-    export_c_func!(ExtAudioFileDispose(_, _)),
     export_c_func!(NSDefaultMallocZone(_, _)),
     export_c_func!(NSZoneMalloc(_, _)),
     export_c_func!(UIApplicationDidReceiveMemoryWarningNotification(_, _)),
