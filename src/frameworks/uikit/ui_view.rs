@@ -367,6 +367,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (id)layoutIfNeeded {
+    nil
+}
+
 - (NSInteger)tag {
     env.objc.borrow::<UIViewHostObject>(this).tag
 }
