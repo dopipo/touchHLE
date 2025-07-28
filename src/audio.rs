@@ -27,7 +27,7 @@ pub enum AudioFileOpenError {
     FileDecodeError,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum AudioFormat {
     LinearPcm {
         is_float: bool,
