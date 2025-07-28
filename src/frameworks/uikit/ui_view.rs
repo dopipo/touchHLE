@@ -363,6 +363,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (id)startAnimation {
+    nil
+}
+
 - (NSInteger)tag {
     env.objc.borrow::<UIViewHostObject>(this).tag
 }
