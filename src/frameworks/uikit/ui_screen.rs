@@ -80,6 +80,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     // TODO
 }
 
+- (())addToRunLoop:(NSInteger)run forMode:(bool)_forMode {
+    // TODO
+}
+
 @end
 
 };
