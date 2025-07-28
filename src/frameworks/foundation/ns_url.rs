@@ -98,7 +98,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     }
 
     // FIXME: this should parse the URL
-    assert!(!to_rust_string(env, url).starts_with("file:")); // TODO
+    // assert!(!to_rust_string(env, url).starts_with("file:")); // TODO
     let url: id = msg![env; url copy];
     *env.objc.borrow_mut(this) = NSURLHostObject::OtherURL { ns_string: url };
     this
