@@ -90,6 +90,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (id)modalViewController {
+    nil
+}
+
 - (())dealloc {
     let &UIViewControllerHostObject { view, nib_name, bundle } = env.objc.borrow(this);
 
