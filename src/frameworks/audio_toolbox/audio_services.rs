@@ -94,7 +94,7 @@ fn AudioServicesCreateSystemSoundID(
     let mut data = vec![0; audio_file.byte_count().try_into().unwrap()];
     let format = audio_file.audio_description().into_basic_description();
     audio_file.read_bytes(0, data.as_mut_slice()).unwrap();
-    let (al_format, al_frequency, data) = decode_buffer(data.as_mut_slice(), &Mem, &format);
+    let (al_format, al_frequency, data) = decode_buffer(/* &Mem */, &Mem, /* Ptr<u8, true> */, /* u32 */);
 
     let state = State::get(&mut env.framework_state);
     let _ctx = state.make_al_context_current();
