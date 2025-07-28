@@ -94,6 +94,7 @@ fn AudioServicesCreateSystemSoundID(
     let mut data = vec![0; audio_file.byte_count().try_into().unwrap()];
     let format = audio_file.audio_description().into_basic_description();
     audio_file.read_bytes(0, data.as_mut_slice()).unwrap();
+    let (al_format, al_frequency, data) = decode_buffer(data.as_mut_slice(), &format);
 
     let state = State::get(&mut env.framework_state);
     let _ctx = state.make_al_context_current();
@@ -111,9 +112,10 @@ fn AudioServicesCreateSystemSoundID(
         al::alGenBuffers(1, &mut al_buffer);
         al::alBufferData(
             al_buffer,
-            format,
+            al_format,
             data.as_ptr() as *const ALvoid,
             data.len().try_into().unwrap(),
+            al_frequency,
         );
         al::alSourcei(al_source, al::AL_BUFFER, al_buffer.try_into().unwrap());
         assert!(al::alGetError() == 0);
@@ -164,7 +166,7 @@ fn AudioServicesPlaySystemSound(env: &mut Environment, sys_sound_id: SystemSound
             assert!(al::alGetError() == 0);
         }
     } else {
-        log!(
+        panic!(
             "Incorrect/unsupported system sound {:x} played!",
             sys_sound_id
         );
