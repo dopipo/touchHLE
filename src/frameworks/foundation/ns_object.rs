@@ -62,8 +62,8 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this init]
 }
 
-+ (bool)instanceMethodSignatureForSelector:(SEL)selector {
-     env.objc.class_has_method(this, selector)
++ (bool)instanceMethodSignatureForSelector:(NSUInteger)selector {
+    msg![env; this init]
 }
 
 + (id)instanceMethodForSelector:(NSUInteger)selector {
