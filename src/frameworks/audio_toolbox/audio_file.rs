@@ -10,7 +10,7 @@ use crate::audio; // Keep this module namespaced to avoid confusion
 use crate::audio::{decode_ima4, AudioFormat, AudioDescription};
 use crate::dyld::{export_c_func, FunctionExports};
 use crate::frameworks::carbon_core::{eofErr, OSStatus};
-use crate::frameworks::core_audio_types::{debug_fourcc, fourcc, AudioStreamBasicDescription};
+use crate::frameworks::core_audio_types::{debug_fourcc, fourcc, AudioBuffer, AudioStreamBasicDescription};
 use crate::frameworks::core_foundation::cf_url::CFURLRef;
 use crate::frameworks::foundation::ns_url::to_rust_path;
 use crate::mem::{guest_size_of, ConstVoidPtr, GuestUSize, MutPtr, MutVoidPtr, SafeRead};
