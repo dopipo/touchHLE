@@ -111,10 +111,9 @@ fn AudioServicesCreateSystemSoundID(
         al::alGenBuffers(1, &mut al_buffer);
         al::alBufferData(
             al_buffer,
-            al_format,
+            format,
             data.as_ptr() as *const ALvoid,
             data.len().try_into().unwrap(),
-            al_frequency,
         );
         al::alSourcei(al_source, al::AL_BUFFER, al_buffer.try_into().unwrap());
         assert!(al::alGetError() == 0);
