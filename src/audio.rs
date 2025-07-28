@@ -223,7 +223,6 @@ impl AudioFile {
                 u64::from(self.packet_size_fixed()) * self.packet_count()
             }
             AudioFileInner::InMemory() => todo!()
-            }
             AudioFileInner::Symphonia(symphonia_formats::SymphoniaDecodedToPcm {
                 ref bytes,
                 ..
@@ -242,7 +241,6 @@ impl AudioFile {
                 caf_reader.get_packet_count().unwrap().try_into().unwrap()
             }
             AudioFileInner::InMemory() => 0
-            }
         }
     }
 
@@ -340,7 +338,6 @@ impl AudioFile {
                 Ok(bytes_to_read)
             }
             AudioFileInner::InMemory() => Ok(0)
-            }
         }
     }
 }
