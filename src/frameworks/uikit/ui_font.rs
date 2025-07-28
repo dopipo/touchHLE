@@ -204,7 +204,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 fn convert_line_break_mode(ui_mode: UILineBreakMode) -> WrapMode {
     match ui_mode {
         UILineBreakModeWordWrap => WrapMode::Word,
-        UILineBreakModeClip => WrapMode::Clip,
+        UILineBreakModeClip => WrapMode::Char,
         UILineBreakModeCharacterWrap => WrapMode::Char,
         // TODO: support this properly; fake support is so that UILabel works,
         // which has this as its default line break mode
