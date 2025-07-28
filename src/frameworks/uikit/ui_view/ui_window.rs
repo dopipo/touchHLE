@@ -77,6 +77,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg_super![env; this dealloc]
 }
 
+- (())setRootViewController:(bool)view {
+    log!("TODO: setRootViewController:{}", view);
+}
+
 - (())setHidden:(bool)is_hidden {
     let was_hidden: bool = msg![env; this isHidden];
     () = msg_super![env; this setHidden:is_hidden];
