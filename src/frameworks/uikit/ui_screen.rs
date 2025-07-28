@@ -72,6 +72,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (())setFrameInterval:(bool)frame {
+    log!("TODO: setFrameInterval:{}", frame);
+}
+
 - (())displayLinkWithTarget:(NSInteger)target selector:(bool)_selector {
     // TODO
 }
