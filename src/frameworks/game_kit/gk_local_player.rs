@@ -27,6 +27,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (id)disconnectFromAllPeers {
+    nil
+}
+
 - (())initWithSessionID:(NSInteger)session displayName:(bool)_name sessionMode:(bool)mode {
     // TODO
 }
