@@ -20,6 +20,9 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
+@implementation MPMoviePlayerViewController: NSObject
+@end 
+
 @implementation MPMediaItem: NSObject
 @end 
 
