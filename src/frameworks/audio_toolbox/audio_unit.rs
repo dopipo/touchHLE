@@ -373,7 +373,7 @@ pub fn render_audio_unit(env: &mut Environment, audio_unit: AudioUnit) {
     );
 
     let (al_format, _sample_rate, processed_data) =
-        decode_buffer(&stream_format, buffer1Data.cast(), buffer_size);
+        decode_buffer(&env.mem, &stream_format, buffer1Data.cast(), buffer_size);
 
     unsafe {
         // Get an unqueued buffer or create a new one
