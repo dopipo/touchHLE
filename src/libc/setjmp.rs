@@ -71,7 +71,7 @@ fn longjmp(env: &mut Environment, jmp_buf: MutPtr<JmpBuf>, status: u32) {
     if cur_stack.last() != other_stack.last()
         && !ALLOWED_FOR_LONGJMP_BYPASS.contains(&env.bundle.bundle_identifier())
     {
-        panic!("longjmp across host stack frames, current {cur_stack:?}, other {other_stack:?}");
+        log!("longjmp across host stack frames, current {cur_stack:?}, other {other_stack:?}");
     }
     let regs = env.cpu.regs_mut();
     regs[0] = status;
