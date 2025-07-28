@@ -30,7 +30,6 @@ pub enum TextAlignment {
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum WrapMode {
     Word,
-    Clip,
     Char,
 }
 
