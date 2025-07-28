@@ -502,12 +502,6 @@ fn glDrawTexiOES(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
 fn abort(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
     arg1.min(arg2)
 }
-fn AudioServicesCreateSystemSoundID(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
-    arg1.min(arg2)
-}
-fn AudioServicesDisposeSystemSoundID(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
-    arg1.min(arg2)
-}
 fn AudioQueueEnqueueBufferWithParameters(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
     arg1.min(arg2)
 }
@@ -1413,8 +1407,6 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(glGetTexEnvxv(_, _)),
     export_c_func!(glDrawTexiOES(_, _)),
     export_c_func!(abort(_, _)),
-    export_c_func!(AudioServicesCreateSystemSoundID(_, _)),
-    export_c_func!(AudioServicesDisposeSystemSoundID(_, _)),
     export_c_func!(AudioQueueEnqueueBufferWithParameters(_, _)),
     export_c_func!(AudioQueueSetProperty(_, _)),
     export_c_func!(asctime(_, _)),
