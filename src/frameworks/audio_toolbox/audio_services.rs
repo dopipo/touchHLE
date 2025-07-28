@@ -17,7 +17,7 @@ use crate::frameworks::carbon_core::OSStatus;
 use crate::frameworks::core_audio_types::fourcc;
 use crate::frameworks::core_foundation::cf_url::CFURLRef;
 use crate::frameworks::foundation::ns_url::to_rust_path;
-use crate::mem::{MutPtr, Men, MutVoidPtr};
+use crate::mem::{MutPtr, MutVoidPtr};
 use crate::{audio, Environment};
 
 use super::audio_queue::decode_buffer;
@@ -94,7 +94,6 @@ fn AudioServicesCreateSystemSoundID(
     let mut data = vec![0; audio_file.byte_count().try_into().unwrap()];
     let format = audio_file.audio_description().into_basic_description();
     audio_file.read_bytes(0, data.as_mut_slice()).unwrap();
-    let (al_format, al_frequency, data) = decode_buffer(/* &Mem */, &Mem, /* Ptr<u8, true> */, /* u32 */);
 
     let state = State::get(&mut env.framework_state);
     let _ctx = state.make_al_context_current();
