@@ -8,7 +8,7 @@
 //! References:
 //! - Apple's [Preferences and Settings Programming Guide](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/UserDefaults/AboutPreferenceDomains/AboutPreferenceDomains.html).
 
-use super::{ns_string, NSInteger};
+use super::{ns_string, NSInteger, NSUInteger};
 use crate::frameworks::foundation::ns_string::to_rust_string;
 use crate::objc::{
     autorelease, id, msg, msg_class, nil, objc_classes, release, Class, ClassExports, HostObject,
@@ -112,6 +112,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     release(env, registration_domain_dict);
 
     env.objc.dealloc_object(this, &mut env.mem);
+}
+
+- (id)persistentDomainForName:(NSUInteger)_name {
+    msg![env; this init]
 }
 
 - (id)dictionaryRepresentation { // NSDictionary *
