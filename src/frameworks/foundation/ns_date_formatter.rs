@@ -83,6 +83,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: setTimeStyle:{}", style);
 }
 
+- (())setTimeZone:(bool)zone {
+    log!("TODO: setTimeZone:{}", zone);
+}
+
 - (())setFormatterBehavior:(bool)behavior {
     log!("TODO: setFormatterBehavior:{}", behavior);
 }
