@@ -214,6 +214,11 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 @implementation NSHTTPCookie: NSObject
+
++ (id)cookieWithProperties:(NSUInteger)_properties {
+    msg![env; this init]
+}
+
 @end
 
 @implementation NSHTTPCookieStorage: NSHTTPCookie
