@@ -644,6 +644,18 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (id)name {
+    nil
+}
+
+- (id)signal {
+    nil
+}
+
+- (id)broadcast {
+    nil
+}
+
 - (id)unlock {
     nil
 }
