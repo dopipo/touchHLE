@@ -440,6 +440,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: [(CALayer*){:?} setBorderColor: {}]", this, color); // TODO
 }
 
+- (())setCornerRadius:(u32)radius {
+    log!("TODO: [(CALayer*){:?} setCornerRadius: {}]", this, radius); // TODO
+}
+
 - (())setZPosition:(u32)position {
     log!("TODO: [(CALayer*){:?} setZPosition: {}]", this, position); // TODO
 }
