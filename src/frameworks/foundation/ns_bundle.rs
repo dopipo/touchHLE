@@ -99,6 +99,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
++ (id)executablePath {
+    nil
+}
+
 + (id)bundleWithPath:(NSUInteger)_path {
     msg![env; this init]
 }
