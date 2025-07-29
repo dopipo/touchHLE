@@ -1345,6 +1345,9 @@ fn objc_getClassList(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn xmlStrEqual(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn objc_getProtocol(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1722,4 +1725,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(xmlReadMemory(_, _)),
     export_c_func!(objc_getClassList(_, _)),
     export_c_func!(xmlStrEqual(_, _)),
+    export_c_func!(objc_getProtocol(_, _)),
 ];
