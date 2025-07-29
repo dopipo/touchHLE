@@ -279,7 +279,7 @@ pub const CONSTANTS: ConstantExports = &[
     ),
     (
         "_UIScreenDidConnectNotification",
-        HostConstant::NSString(UIScreenDidConnectNotification,
+        HostConstant::NSString(UIScreenDidConnectNotification),
     ),
     (
         "_UIScreenDidDisconnectNotification",
