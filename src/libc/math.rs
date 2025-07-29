@@ -1357,6 +1357,9 @@ fn system(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn class_getSuperclass(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn method_getImplementation(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1738,4 +1741,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(object_getClass(_, _)),
     export_c_func!(system(_, _)),
     export_c_func!(class_getSuperclass(_, _)),
+    export_c_func!(method_getImplementation(_, _)),
 ];
