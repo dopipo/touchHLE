@@ -1369,6 +1369,9 @@ fn method_setImplementation(_env: &mut Environment, arg1: f64, arg2: f64) -> f64
 fn OSAtomicCompareAndSwapIntBarrier(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn __assert_rtn(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1754,4 +1757,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(objc_allocateClassPair(_, _)),
     export_c_func!(method_setImplementation(_, _)),
     export_c_func!(OSAtomicCompareAndSwapIntBarrier(_, _)),
+    export_c_func!(__assert_rtn(_, _)),
 ];
