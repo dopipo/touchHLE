@@ -76,7 +76,7 @@ fn CFStringConvertNSStringEncodingToEncoding(
         ns_string::NSUTF8StringEncoding => kCFStringEncodingUTF8,
         ns_string::NSUTF32StringEncoding => kCFStringEncodingUTF32,
         ns_string::NSUTF32BigEndianStringEncoding => kCFStringEncodingUTF32BE,
-        ns_string::NSUTF32LittleEndianStringEncoding => kCFStringEncodingUTF32LE
+        ns_string::NSUTF32LittleEndianStringEncoding => kCFStringEncodingUTF32LE,
         ns_string::NSUTF16StringEncoding => kCFStringEncodingUTF16,
         ns_string::NSUTF16BigEndianStringEncoding => kCFStringEncodingUTF16BE,
         ns_string::NSUTF16LittleEndianStringEncoding => kCFStringEncodingUTF16LE,
