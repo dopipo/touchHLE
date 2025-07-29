@@ -96,6 +96,9 @@ pub const kSecAttrComment: &str = "kSecAttrComment";
 pub const kSecAttrDescription: &str = "kSecAttrDescription";
 pub const kSecAttrGeneric: &str = "kSecAttrGeneric";
 pub const kSecAttrLabel: &str = "kSecAttrLabel";
+pub const kCFBundleExecutableKey: &str = "kCFBundleExecutableKey";
+pub const UIWindowLevelNormal: &str = "UIWindowLevelNormal";
+pub const daylight: &str = "kSecAttrLabel";
 
 pub const CONSTANTS: ConstantExports = &[
     (
@@ -392,6 +395,18 @@ pub const CONSTANTS: ConstantExports = &[
     (
         "_kSecAttrLabel",
         HostConstant::NSString(kSecAttrLabel),
+    ),
+    (
+        "_kCFBundleExecutableKey",
+        HostConstant::NSString(kCFBundleExecutableKey),
+    ),
+    (
+        "_UIWindowLevelNormal",
+        HostConstant::NSString(UIWindowLevelNormal),
+    ),
+    (
+        "_daylight",
+        HostConstant::NSString(daylight),
     ),
 ];
 
