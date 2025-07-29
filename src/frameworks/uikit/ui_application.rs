@@ -217,6 +217,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (id)canOpenURL:(NSUInteger)url {
+    msg![env; this init]
+}
+
 - (())registerForRemoteNotificationTypes:(UIRemoteNotificationType)types {
     log!("TODO: ignoring registerForRemoteNotificationTypes:{}", types);
 }
