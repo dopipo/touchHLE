@@ -432,6 +432,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     release(env, old_contents);
 }
 
+- (())setBorderWidth:(u32)width {
+    log!("TODO: [(CALayer*){:?} setBorderWidth: {}]", this, width); // TODO
+}
+
 - (())setZPosition:(u32)position {
     log!("TODO: [(CALayer*){:?} setZPosition: {}]", this, position); // TODO
 }
