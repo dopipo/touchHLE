@@ -87,6 +87,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     log!("TODO: setTimeZone:{}", zone);
 }
 
+- (())setLocale:(bool)locale {
+    log!("TODO: setLocale:{}", locale);
+}
+
 - (())setFormatterBehavior:(bool)behavior {
     log!("TODO: setFormatterBehavior:{}", behavior);
 }
