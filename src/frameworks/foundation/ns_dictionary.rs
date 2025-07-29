@@ -648,6 +648,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (id)wait {
+    nil
+}
+
 @end
 
 @implementation NSConditionLock: NSObject
