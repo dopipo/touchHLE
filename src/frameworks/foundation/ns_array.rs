@@ -361,6 +361,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this init]
 }
 
+- (())replaceObjectAtIndex:(NSInteger)index withObject:(bool)_object {
+    // TODO
+}
+
 - (())initWithArray:(NSInteger)array copyItems:(bool)_itmes {
     // TODO
 }
