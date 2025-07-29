@@ -39,6 +39,14 @@ pub const CLASSES: ClassExports = objc_classes! {
 @implementation GKPeerPickerController: NSObject
 @end
 
+@implementation MFMessageComposeViewController: UINavigationController
+
+- (id)canSendText {
+    nil
+}
+
+@end
+
 @implementation ABPeoplePickerNavigationController: NSObject
 @end
 
