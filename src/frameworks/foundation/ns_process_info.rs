@@ -6,7 +6,7 @@
 //! `NSProcessInfo`.
 
 use super::{NSTimeInterval, NSUInteger};
-use crate::objc::{id, objc_classes, ClassExports};
+use crate::objc::{id, nil, objc_classes, ClassExports};
 use std::time::Instant;
 
 pub const CLASSES: ClassExports = objc_classes! {
@@ -17,6 +17,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 + (id)processInfo {
     this.cast()
+}
+
++ (id)environment {
+    nil
 }
 
 + (NSTimeInterval)systemUptime {
