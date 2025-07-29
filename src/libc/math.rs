@@ -1327,6 +1327,9 @@ fn pthread_attr_getschedparam(_env: &mut Environment, arg1: f64, arg2: f64) -> f
 fn sched_get_priority_min(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn pthread_attr_setschedparam(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1698,4 +1701,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CATransform3DMakeScale(_, _)),
     export_c_func!(pthread_attr_getschedparam(_, _)),
     export_c_func!(sched_get_priority_min(_, _)),
+    export_c_func!(pthread_attr_setschedparam(_, _)),
 ];
