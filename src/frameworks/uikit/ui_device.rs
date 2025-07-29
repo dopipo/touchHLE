@@ -85,6 +85,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     ns_string::get_static_str(env, "iPhone")
 }
 
+- (id)localizedModel {
+    nil
+}
+
 - (id)name {
     // TODO: Hardcoded to iPhone for now
     ns_string::get_static_str(env, "iPhone")
