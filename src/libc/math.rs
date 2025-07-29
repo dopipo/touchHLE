@@ -1375,6 +1375,9 @@ fn __assert_rtn(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn OSAtomicAdd32(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
     arg1.min(arg2)
 }
+fn AudioServicesRemoveSystemSoundCompletion(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(abs(_)),
@@ -1762,4 +1765,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(OSAtomicCompareAndSwapIntBarrier(_, _)),
     export_c_func!(__assert_rtn(_, _)),
     export_c_func!(OSAtomicAdd32(_, _)),
+    export_c_func!(AudioServicesRemoveSystemSoundCompletion(_, _)),
 ];
