@@ -138,6 +138,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     // TODO
 }
 
+- (id)willChangeValueForKey:(NSUInteger)key {
+    msg![env; this init]
+}
+
 - (id)valueForKey:(NSUInteger)key {
     msg![env; this init]
 }
