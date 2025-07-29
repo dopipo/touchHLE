@@ -46,6 +46,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
++ (id)bytes {
+    nil
+}
+
 + (())dataWithContentsOfFile:(NSInteger)file options:(bool)_options error:(bool)_error {
     // TODO
 }
