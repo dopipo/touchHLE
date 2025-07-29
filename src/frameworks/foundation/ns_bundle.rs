@@ -341,6 +341,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     res
 }
 
+- (())pathForResource:(NSInteger)resource ofType:(bool)_type inDirectory:(bool)_directory forLocalization:(bool)_localization {
+    // TODO
+}
+
 - (id)infoDictionary {
     let &NSBundleHostObject {
         bundle_path,
