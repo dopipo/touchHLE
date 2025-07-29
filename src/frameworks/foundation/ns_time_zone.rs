@@ -40,10 +40,22 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this timeZoneWithName:tz_name]
 }
 
++ (id)systemTimeZone {
+    nil
+}
+
 - (())dealloc {
     let tz_name = env.objc.borrow_mut::<NSTimeZoneHostObject>(this).time_zone;
     release(env, tz_name);
     env.objc.dealloc_object(this, &mut env.mem)
+}
+
+- (id)name {
+    nil
+}
+
+- (id)daylightSavingTimeOffset {
+    nil
 }
 
 - (id)initWithName:(id)tz_name { // NSString *
