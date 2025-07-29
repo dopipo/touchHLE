@@ -211,6 +211,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (id)initWithCapacity:(NSUInteger)capacity {
+    msg![env; this init]
+}
+
 - (id)CGImage {
     nil
 }
