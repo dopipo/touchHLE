@@ -68,6 +68,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; thread setThreadPriority:priority]
 }
 
++ (id)isMainThread {
+    nil
+}
+
 + (id)mainThread {
     nil
 }
