@@ -60,6 +60,10 @@ pub const NSHTTPCookieDomain: &str = "NSHTTPCookieDomain";
 pub const NSMachErrorDomain: &str = "NSMachErrorDomain";
 pub const NSURLErrorDomain: &str = "NSURLErrorDomain";
 pub const NSLocaleIdentifier: &str = "NSLocaleIdentifier";
+pub const kCATransition: &str = "kCATransition";
+pub const kCLLocationAccuracyThreeKilometers: &str = "kCLLocationAccuracyThreeKilometers";
+pub const kCLHeadingFilterNone: &str = "kCLHeadingFilterNone";
+pub const NSCocoaErrorDomain: &str = "NSCocoaErrorDomain";
 
 pub const CONSTANTS: ConstantExports = &[
     (
@@ -216,6 +220,22 @@ pub const CONSTANTS: ConstantExports = &[
     (
         "_kABPersonLastNameProperty",
         HostConstant::NSString(kABPersonLastNameProperty),
+    ),
+    (
+        "_kCLHeadingFilterNone",
+        HostConstant::NSString(kCLHeadingFilterNone),
+    ),
+    (
+        "_kCATransition",
+        HostConstant::NSString(kCATransition),
+    ),
+    (
+        "_kCLLocationAccuracyThreeKilometers",
+        HostConstant::NSString(kCLLocationAccuracyThreeKilometers),
+    ),
+    (
+        "_NSCocoaErrorDomain",
+        HostConstant::NSString(NSCocoaErrorDomain),
     ),
 ];
 
