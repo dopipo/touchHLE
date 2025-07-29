@@ -69,8 +69,6 @@ pub const CATransform3DIdentity: &str = "CATransform3DIdentity";
 pub const UITextViewTextDidChangeNotification: &str = "UITextViewTextDidChangeNotification";
 pub const CGRectZero: &str = "CGRectZero";
 pub const UIDeviceOrientationDidChangeNotification: &str = "UIDeviceOrientationDidChangeNotification";
-pub const NSHTTPCookiePath: &str = "NSHTTPCookiePath";
-pub const NSHTTPCookieDomain: &str = "NSHTTPCookieDomain";
 pub const kEAGLDrawablePropertyColorFormat: &str = "kEAGLDrawablePropertyColorFormat";
 pub const CGAffineTransformIdentity: &str = "CGAffineTransformIdentity";
 pub const kCFRunLoopDefaultMode: &str = "kCFRunLoopDefaultMode";
@@ -268,14 +266,6 @@ pub const CONSTANTS: ConstantExports = &[
     (
         "_UIDeviceOrientationDidChangeNotification",
         HostConstant::NSString(UIDeviceOrientationDidChangeNotification),
-    ),
-    (
-        "_NSHTTPCookiePath",
-        HostConstant::NSString(NSHTTPCookiePath),
-    ),
-    (
-        "_NSHTTPCookieDomain",
-        HostConstant::NSString(NSHTTPCookieDomain),
     ),
     (
         "_kEAGLDrawablePropertyColorFormat",
