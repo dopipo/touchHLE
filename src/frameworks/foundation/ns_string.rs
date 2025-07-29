@@ -1410,6 +1410,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this init]
 }
 
+- (id)localizedCaseInsensitiveCompare:(NSUInteger)_compare {
+    msg![env; this init]
+}
+
 - (id)dataUsingEncoding:(NSStringEncoding)encoding
    allowLossyConversion:(bool)lossy {
     if lossy {
