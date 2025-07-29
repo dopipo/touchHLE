@@ -65,6 +65,37 @@ pub const kCLLocationAccuracyThreeKilometers: &str = "kCLLocationAccuracyThreeKi
 pub const kCLHeadingFilterNone: &str = "kCLHeadingFilterNone";
 pub const NSCocoaErrorDomain: &str = "NSCocoaErrorDomain";
 pub const UIWindowLevelStatusBar: &str = "UIWindowLevelStatusBar";
+pub const UIApplicationWillResignActiveNotification: &str = "UIApplicationWillResignActiveNotification";
+pub const UIScreenDidConnectNotification: &str = "UIScreenDidConnectNotification";
+pub const UIScreenDidDisconnectNotification: &str = "UIScreenDidDisconnectNotification";
+pub const kSecReturnAttributes: &str = "kSecReturnAttributes";
+pub const kCFErrorDomainCFNetwork: &str = "kCFErrorDomainCFNetwork";
+pub const CATransform3DIdentity: &str = "CATransform3DIdentity";
+pub const kCATransitionFromLeft: &str = "kCATransitionFromLeft";
+pub const kCATransitionFromRight: &str = "kCATransitionFromRight";
+pub const CGRectNull: &str = "CGRectNull";
+pub const NSRecoveryAttempterErrorKey: &str = "NSRecoveryAttempterErrorKey";
+pub const NSURLAuthenticationMethodHTTPBasic: &str = "NSURLAuthenticationMethodHTTPBasic";
+pub const NSURLErrorKey: &str = "NSURLErrorKey";
+pub const NSUnderlyingErrorKey: &str = "NSUnderlyingErrorKey";
+pub const kCLDistanceFilterNone: &str = "kCLDistanceFilterNone";
+pub const kCLErrorDomain: &str = "kCLErrorDomain";
+pub const kCFHTTPVersion1_1: &str = "kCFHTTPVersion1_1";
+pub const kCFStreamPropertyHTTPShouldAutoredirect: &str = "kCFStreamPropertyHTTPShouldAutoredirect";
+pub const UIDeviceBatteryStateDidChangeNotification: &str = "UIDeviceBatteryStateDidChangeNotification";
+pub const NSKeyValueChangeNewKey: &str = "NSKeyValueChangeNewKey";
+pub const UIApplicationLaunchOptionsURLKey: &str = "UIApplicationLaunchOptionsURLKey";
+pub const UIBackgroundTaskInvalid: &str = "UIBackgroundTaskInvalid";
+pub const UIApplicationWillEnterForegroundNotification: &str = "UIApplicationWillEnterForegroundNotification";
+pub const UIApplicationWillTerminateNotification: &str = "UIApplicationWillTerminateNotification";
+pub const NSLocalizedFailureReasonErrorKey: &str = "NSLocalizedFailureReasonErrorKey";
+pub const NSLocalizedRecoveryOptionsErrorKey: &str = "NSLocalizedRecoveryOptionsErrorKey";
+pub const NSLocalizedRecoverySuggestionErrorKey: &str = "NSLocalizedRecoverySuggestionErrorKey";
+pub const xmlFree: &str = "xmlFree";
+pub const kSecAttrComment: &str = "kSecAttrComment";
+pub const kSecAttrDescription: &str = "kSecAttrDescription";
+pub const kSecAttrGeneric: &str = "kSecAttrGeneric";
+pub const kSecAttrLabel: &str = "kSecAttrLabel";
 
 pub const CONSTANTS: ConstantExports = &[
     (
@@ -241,6 +272,126 @@ pub const CONSTANTS: ConstantExports = &[
     (
         "_UIWindowLevelStatusBar",
         HostConstant::NSString(UIWindowLevelStatusBar),
+    ),
+    (
+        "_UIApplicationWillResignActiveNotification",
+        HostConstant::NSString(UIApplicationWillResignActiveNotification),
+    ),
+    (
+        "_UIScreenDidConnectNotification",
+        HostConstant::NSString(UIScreenDidConnectNotification,
+    ),
+    (
+        "_UIScreenDidDisconnectNotification",
+        HostConstant::NSString(UIScreenDidDisconnectNotification),
+    ),
+    (
+        "_kSecReturnAttributes",
+        HostConstant::NSString(kSecReturnAttributes),
+    ),
+    (
+        "_kCFErrorDomainCFNetwork",
+        HostConstant::NSString(kCFErrorDomainCFNetwork),
+    ),
+    (
+        "_CATransform3DIdentity",
+        HostConstant::NSString(CATransform3DIdentity),
+    ),
+    (
+        "_kCATransitionFromLeft",
+        HostConstant::NSString(kCATransitionFromLeft),
+    ),
+    (
+        "_kCATransitionFromRight",
+        HostConstant::NSString(kCATransitionFromRight),
+    ),
+    (
+        "_CGRectNull",
+        HostConstant::NSString(CGRectNull),
+    ),
+    (
+        "_NSRecoveryAttempterErrorKey",
+        HostConstant::NSString(NSRecoveryAttempterErrorKey),
+    ),
+    (
+        "_NSURLErrorKey",
+        HostConstant::NSString(NSURLErrorKey),
+    ),
+    (
+        "_NSUnderlyingErrorKey",
+        HostConstant::NSString(NSUnderlyingErrorKey),
+    ),
+    (
+        "_kCLDistanceFilterNone",
+        HostConstant::NSString(kCLDistanceFilterNone),
+    ),
+    (
+        "_kCLErrorDomain",
+        HostConstant::NSString(kCLErrorDomain),
+    ),
+    (
+        "_kCFHTTPVersion1_1",
+        HostConstant::NSString(kCFHTTPVersion1_1),
+    ),
+    (
+        "_kCFStreamPropertyHTTPShouldAutoredirect",
+        HostConstant::NSString(kCFStreamPropertyHTTPShouldAutoredirect),
+    ),
+    (
+        "_UIDeviceBatteryStateDidChangeNotification",
+        HostConstant::NSString(UIDeviceBatteryStateDidChangeNotification),
+    ),
+    (
+        "_NSKeyValueChangeNewKey",
+        HostConstant::NSString(NSKeyValueChangeNewKey),
+    ),
+    (
+        "_UIApplicationLaunchOptionsURLKey",
+        HostConstant::NSString(UIApplicationLaunchOptionsURLKey),
+    ),
+    (
+        "_UIBackgroundTaskInvalid",
+        HostConstant::NSString(UIBackgroundTaskInvalid),
+    ),
+    (
+        "_UIApplicationWillEnterForegroundNotification",
+        HostConstant::NSString(UIApplicationWillEnterForegroundNotification),
+    ),
+    (
+        "_UIApplicationWillTerminateNotification",
+        HostConstant::NSString(UIApplicationWillTerminateNotification),
+    ),
+    (
+        "_NSRecoveryAttempterErrorKey",
+        HostConstant::NSString(NSRecoveryAttempterErrorKey),
+    ),
+    (
+        "_NSLocalizedFailureReasonErrorKey",
+        HostConstant::NSString(NSLocalizedFailureReasonErrorKey),
+    ),
+    (
+        "_NSLocalizedRecoveryOptionsErrorKey",
+        HostConstant::NSString(NSLocalizedRecoveryOptionsErrorKey),
+    ),
+    (
+        "_xmlFree",
+        HostConstant::NSString(xmlFree),
+    ),
+    (
+        "_kSecAttrComment",
+        HostConstant::NSString(kSecAttrComment),
+    ),
+    (
+        "_kSecAttrDescription",
+        HostConstant::NSString(kSecAttrDescription),
+    ),
+    (
+        "_kSecAttrGeneric",
+        HostConstant::NSString(kSecAttrGeneric),
+    ),
+    (
+        "_kSecAttrLabel",
+        HostConstant::NSString(kSecAttrLabel),
     ),
 ];
 
