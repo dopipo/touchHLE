@@ -41,7 +41,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @implementation MFMessageComposeViewController: UINavigationController
 
-- (id)canSendText {
++ (id)canSendText {
     nil
 }
 
