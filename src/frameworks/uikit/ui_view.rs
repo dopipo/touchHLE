@@ -1012,4 +1012,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 @implementation UILocalNotification: NSObject
 @end
 
+@implementation MKMapView: UIView
+@end
+
 };
