@@ -64,6 +64,18 @@ pub const kCATransition: &str = "kCATransition";
 pub const kCLLocationAccuracyThreeKilometers: &str = "kCLLocationAccuracyThreeKilometers";
 pub const kCLHeadingFilterNone: &str = "kCLHeadingFilterNone";
 pub const NSCocoaErrorDomain: &str = "NSCocoaErrorDomain";
+pub const UIWindowLevelStatusBar: &str = "UIWindowLevelStatusBar";
+pub const CATransform3DIdentity: &str = "CATransform3DIdentity";
+pub const UITextViewTextDidChangeNotification: &str = "UITextViewTextDidChangeNotification";
+pub const CGRectZero: &str = "CGRectZero";
+pub const UIDeviceOrientationDidChangeNotification: &str = "UIDeviceOrientationDidChangeNotification";
+pub const NSHTTPCookiePath: &str = "NSHTTPCookiePath";
+pub const NSHTTPCookieDomain: &str = "NSHTTPCookieDomain";
+pub const kEAGLDrawablePropertyColorFormat: &str = "kEAGLDrawablePropertyColorFormat";
+pub const CGAffineTransformIdentity: &str = "CGAffineTransformIdentity";
+pub const kCFRunLoopDefaultMode: &str = "kCFRunLoopDefaultMode";
+pub const kCAMediaTimingFunctionEaseInEaseOut: &str = "kCAMediaTimingFunctionEaseInEaseOut";
+pub const kEAGLColorFormatRGBA8: &str = "kEAGLColorFormatRGBA8";
 
 pub const CONSTANTS: ConstantExports = &[
     (
@@ -236,6 +248,54 @@ pub const CONSTANTS: ConstantExports = &[
     (
         "_NSCocoaErrorDomain",
         HostConstant::NSString(NSCocoaErrorDomain),
+    ),
+    (
+        "_UIWindowLevelStatusBar",
+        HostConstant::NSString(UIWindowLevelStatusBar),
+    ),
+    (
+        "_CATransform3DIdentity",
+        HostConstant::NSString(CATransform3DIdentity),
+    ),
+    (
+        "_UITextViewTextDidChangeNotification",
+        HostConstant::NSString(UITextViewTextDidChangeNotification),
+    ),
+    (
+        "_CGRectZero",
+        HostConstant::NSString(CGRectZero),
+    ),
+    (
+        "_UIDeviceOrientationDidChangeNotification",
+        HostConstant::NSString(UIDeviceOrientationDidChangeNotification),
+    ),
+    (
+        "_NSHTTPCookiePath",
+        HostConstant::NSString(NSHTTPCookiePath),
+    ),
+    (
+        "_NSHTTPCookieDomain",
+        HostConstant::NSString(NSHTTPCookieDomain),
+    ),
+    (
+        "_kEAGLDrawablePropertyColorFormat",
+        HostConstant::NSString(kEAGLDrawablePropertyColorFormat),
+    ),
+    (
+        "_CGAffineTransformIdentity",
+        HostConstant::NSString(CGAffineTransformIdentity),
+    ),
+    (
+        "_kCFRunLoopDefaultMode",
+        HostConstant::NSString(kCFRunLoopDefaultMode),
+    ),
+    (
+        "_kCAMediaTimingFunctionEaseInEaseOut",
+        HostConstant::NSString(kCAMediaTimingFunctionEaseInEaseOut),
+    ),
+    (
+        "_kEAGLColorFormatRGBA8",
+        HostConstant::NSString(kEAGLColorFormatRGBA8),
     ),
 ];
 
