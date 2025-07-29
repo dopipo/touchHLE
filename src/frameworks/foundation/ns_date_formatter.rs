@@ -31,6 +31,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.alloc_object(this, host_object, &mut env.mem)
 }
 
+- (id)dateFormat {
+    nil
+}
+
 - (())setDateFormat:(id)format { // NSString *
     let date_format: id = msg![env; format copy];
     env.objc.borrow_mut::<NSDateFormatterHostObject>(this).date_format = Some(date_format);
