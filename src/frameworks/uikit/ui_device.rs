@@ -135,6 +135,11 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (())setBatteryMonitoringEnabled:(bool)enabled {
     log!("TODO: [(UIDevice*) {:?} setBatteryMonitoringEnabled:{:?}]", this, enabled);
 }
+
+- (())setProximityMonitoringEnabled:(bool)enabled {
+    log!("TODO: [(UIDevice*) {:?} setProximityMonitoringEnabled:{:?}]", this, enabled);
+}
+
 - (f32)batteryLevel {
     let mut pct = 0;
     unsafe { sdl2_sys::SDL_GetPowerInfo(null_mut(), &mut pct); }
