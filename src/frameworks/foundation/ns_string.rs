@@ -772,12 +772,16 @@ pub const CLASSES: ClassExports = objc_classes! {
         NSUTF8StringEncoding => {
             string.as_bytes().to_vec()
         },
+        NSUnicodeStringEncoding => {
+            string.as_bytes().to_vec()
+        },
         NSUTF16LittleEndianStringEncoding => string.encode_utf16().flat_map(u16::to_le_bytes).collect(),
         _ => unimplemented!("{}", encoding),
     };
     let null_size: GuestUSize = match encoding {
         NSUTF8StringEncoding | NSASCIIStringEncoding | NSMacOSRomanStringEncoding | NSISOLatin1StringEncoding | NSWindowsCP1252StringEncoding => 1,
         NSUTF16LittleEndianStringEncoding => 2,
+        NSUnicodeStringEncoding => 10,
         _ => unimplemented!()
     };
     let bytes_size = bytes.len() as GuestUSize;
