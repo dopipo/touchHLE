@@ -357,6 +357,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (id)addObject:(NSUInteger)object {
+    msg![env; this init]
+}
+
 - (())initWithArray:(NSInteger)array copyItems:(bool)_itmes {
     // TODO
 }
