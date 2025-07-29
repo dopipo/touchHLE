@@ -630,6 +630,14 @@ pub const CLASSES: ClassExports = objc_classes! {
 @implementation CMMotionManager: NSObject
 @end
 
+@implementation CLLocationManager: NSObject
+
+- (id)locationServicesEnabled {
+    nil
+}
+
+@end
+
 @implementation NSCondition: NSObject
 @end
 
