@@ -41,7 +41,8 @@ smblite: --landscape-left --y-tilt-offset=24 --button-to-touch=B,470,160 --butto
 com.vgmobile.cnk2: --landscape-left --button-to-touch=A,240,160 --button-to-touch=B,240,310 --button-to-touch=Start,10,310 --button-to-touch=Y,470,310 --button-to-touch=X,446,30
 
 # Mystery Mania
-com.ea.mysterymania.inc: --landscape-left
+com.ea.mysterymania.bv: --landscape-left --force-composition
+
 
 # Fastlane Street Racing
 # A = accelerate, B = brake, X = Camera, Start = Pause
@@ -87,8 +88,7 @@ jp.co.capcom.res4: --landscape-left --stabilize-virtual-cursor=0.1,10 --button-t
 # Earthworm Jim
 # Up/Down/Left/Right = Move, A = Jump, B = Whip, X = Fire
 # Note: "Force composition" flag is needed to fix broken render in the level select screen.
-com.gameloft.Earthworm: --landscape-left --button-to-touch=DPadUp,72,194 --button-to-touch=DPadDown,72,278 --button-to-touch=DPadLeft,30,238 --button-to-touch=DPadRight,110,238 --button-to-touch=A,442,284 --button-to-touch=X,378,248 --button-to-touch=B,442,212 --button-to-touch=Start,448,32 --force-composition
-
+com.gameloft.Earthworm: --landscape-left --button-to-touch=DPadUp,72,194 --button-to-touch=DPadDown,72,278 --button-to-touch=DPadLeft,30,238 --button-to-touch=DPadRight,110,238 --button-to-touch=A,442,284 --button-to-touch=X,378,248 --button-to-touch=B,442,212 --button-to-touch=Start,448,32 
 # TV Show King
 com.gameloft.TVSK: --landscape-right
 
