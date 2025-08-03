@@ -124,7 +124,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: gradle
-        key: gradle-7.3
+        key: gradle-8.11.1
     - if: ${{ steps.cache-gradle.outputs.cache-hit != 'true' }}
       name: Download Gradle
       run: curl -L -o gradle-7.3-bin.zip "https://services.gradle.org/distributions/gradle-7.3-bin.zip"
