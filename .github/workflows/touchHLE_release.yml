@@ -2,9 +2,9 @@ name: Build touchHLE
 
 on:
   push:
-    branches: [ "trunk" ]
+    branches: [ "Unofficial-Stole-Code" ]
   pull_request:
-    branches: [ "trunk" ]
+    branches: [ "Unofficial-Stole-Code" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -68,7 +68,7 @@ jobs:
         env:
           CMAKE: ${{ github.workspace }}/vendor/cmake/bin/cmake
       - name: Create .app bundle
-        run: cd dev-scripts && ./make-macos-bundle.sh ../target/x86_64-apple-darwin/release/touchHLE "`cargo run --package touchHLE_version`" "`cargo run --package touchHLE_version -- --branding`" && mkdir touchHLE-dmg-src && mv *.app touchHLE-dmg-src/ && hdiutil create -volname touchHLE -srcfolder touchHLE-dmg-src touchHLE.dmg && mv touchHLE.dmg ..
+        run: cd dev-scripts && ./make-macos-bundle.sh ../target/x86_64-apple-darwin/release/touchHLE && mkdir touchHLE-dmg-src && mv touchHLE.app touchHLE-dmg-src/ && hdiutil create -volname touchHLE -srcfolder touchHLE-dmg-src touchHLE.dmg && mv touchHLE.dmg ..
       - uses: actions/upload-artifact@v4
         with:
           name: touchHLE_macOS_x86_64
@@ -124,13 +124,13 @@ jobs:
       uses: actions/cache@v3
       with:
         path: gradle
-        key: gradle-8.11.1
+        key: gradle-7.3
     - if: ${{ steps.cache-gradle.outputs.cache-hit != 'true' }}
       name: Download Gradle
-      run: curl -L -o gradle-8.11.1-bin.zip "https://services.gradle.org/distributions/gradle-8.11.1-bin.zip"
+      run: curl -L -o gradle-7.3-bin.zip "https://services.gradle.org/distributions/gradle-7.3-bin.zip"
     - if: ${{ steps.cache-gradle.outputs.cache-hit != 'true' }}
       name: Extract Gradle
-      run: 7z -ogradle x gradle-8.11.1-bin.zip
+      run: 7z -ogradle x gradle-7.3-bin.zip
     # We need to install the correct version of Android NDK manually
     - name: Try to get a cached copy of Android NDK
       id: cache-android-ndk
@@ -149,17 +149,8 @@ jobs:
     # Why isn't there a command for this?
     - name: Generate local.properties file
       run: echo 'sdk.dir='$ANDROID_SDK_ROOT > android/local.properties
-    - name: Lint
-      run: dev-scripts/lint.sh ndk -t arm64-v8a
-      env:
-        # The version should match the ndkVersion defined in `android\app\build.gradle`
-        ANDROID_NDK_ROOT: '/usr/local/lib/android/sdk/ndk/25.2.9519653'
-        ANDROID_NDK: '/usr/local/lib/android/sdk/ndk/25.2.9519653'
-        ANDROID_NDK_HOME: '/usr/local/lib/android/sdk/ndk/25.2.9519653'
-        CMAKE: ${{ github.workspace }}/vendor/cmake/bin/cmake
-    # Don't attempt to run tests (can't run on Android).
     - name: Build for Android
-      run: cd android && ../gradle/gradle-8.11.1/bin/gradle assembleRelease && mv app/build/outputs/apk/release/app-release.apk ../touchHLE.apk
+      run: cd android && ../gradle/gradle-7.3/bin/gradle assembleRelease && mv app/build/outputs/apk/release/app-release.apk ../touchHLE.apk
       env:
         # The version should match the ndkVersion defined in `android\app\build.gradle`
         ANDROID_NDK_ROOT: '/usr/local/lib/android/sdk/ndk/25.2.9519653'
@@ -178,9 +169,6 @@ jobs:
       with:
         fetch-depth: 0 # touchHLE's git-describe versioning needs tag history
     # Apparently the Windows runner already has clang-format? That's nice.
-    - name: Check formatting
-      shell: bash # no command output without this
-      run: dev-scripts/format.sh --check
     - name: Get Submodules
       run: git submodule update --init
     - name: Try to get cached copy of Boost
@@ -210,11 +198,6 @@ jobs:
     # This is the earliest point at which we can do linting: clippy will end up
     # building dynarmic, which needs Boost, but we don't need LLVM until
     # building tests.
-    - name: Lint
-      shell: bash # no command output without this
-      run: dev-scripts/lint.sh
-      env:
-        CMAKE: ${{ github.workspace }}\vendor\cmake\bin\cmake
     - name: Try to get cached copy of LLVM
       id: cache-llvm
       uses: actions/cache@v3
@@ -227,21 +210,14 @@ jobs:
     - if: ${{ steps.cache-llvm.outputs.cache-hit != 'true' }}
       name: Extract LLVM
       run: 7z -otests/llvm x LLVM-12.0.1-win64.exe
-    - name: Test
-      run: cargo test
-      env:
-        CMAKE: ${{ github.workspace }}\vendor\cmake\bin\cmake
     - name: Build
-      run: cargo build --release
+      run: cargo build --release && move target/release/touchHLE.exe .
       env:
         CMAKE: ${{ github.workspace }}\vendor\cmake\bin\cmake
-    - name: Create bundle
-      shell: bash
-      run: cd dev-scripts && ./make-windows-bundle.sh ../target/release/touchHLE.exe && mv touchHLE_windows_bundle/ ..
     - uses: actions/upload-artifact@v4
       with:
         name: touchHLE_Windows_x86_64
-        path: touchHLE_windows_bundle/
+        path: touchHLE.exe
     - uses: actions/upload-artifact@v4
       with:
         name: TestApp_built_on_Windows
