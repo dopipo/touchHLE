@@ -325,41 +325,6 @@ forUndefinedKey:(id)key { // NSString*
     let arg_key: id = get_static_str(env, "arg");
     let dict = dict_from_keys_and_objects(env, &[(sel_key, sel_str), (arg_key, arg)]);
     
-if env.bundle.bundle_identifier().starts_with("jp.co.capcom.residentevil.en") && wait {
-        log!("Applying game-specific hack for RE Degeneration: ignoring performSelectorOnMainThread:SEL({}) waitUntilDone:true", sel.as_str(&env.mem));
-        let old_thread = env.current_thread;
-        if env.current_thread != 0 {
-            env.switch_thread(0);
-        }
-        if sel.as_str(&env.mem).ends_with(':') {
-            () = msg_send(env, (this, sel, arg));
-        } else {
-            assert!(arg.is_null());
-            () = msg_send(env, (this, sel));
-        }
-        if env.current_thread != old_thread {
-            env.switch_thread(old_thread);
-        }
-        return;
-    }
-
-if env.bundle.bundle_identifier().starts_with("jp.co.capcom.residenteviltrial1.en") && wait {
-        log!("Applying game-specific hack for RE Degeneration: ignoring performSelectorOnMainThread:SEL({}) waitUntilDone:true", sel.as_str(&env.mem));
-        let old_thread = env.current_thread;
-        if env.current_thread != 0 {
-            env.switch_thread(0);
-        }
-        if sel.as_str(&env.mem).ends_with(':') {
-            () = msg_send(env, (this, sel, arg));
-        } else {
-            assert!(arg.is_null());
-            () = msg_send(env, (this, sel));
-        }
-        if env.current_thread != old_thread {
-            env.switch_thread(old_thread);
-        }
-        return;
-    }
     // TODO: using timer is not the most efficient implementation, but does work
     // Proper implementation requires a message queue in the run loop
     let selector = env.objc.lookup_selector("_touchHLE_timerFireMethod:").unwrap();
