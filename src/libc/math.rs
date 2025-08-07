@@ -255,6 +255,7 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(OSAtomicCompareAndSwap32(_, _, _)),
     export_c_func!(OSMemoryBarrier()),
     export_c_func!(OSAtomicAdd32Barrier(_, _)),
+    export_c_func!(memset_pattern16(_, _)),
     // Trigonometric functions
     export_c_func!(sin(_)),
     export_c_func!(sinf(_)),
