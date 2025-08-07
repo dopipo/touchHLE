@@ -15,7 +15,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0 # touchHLE's git-describe versioning needs tag history
     # Apparently the Windows runner already has clang-format? That's nice.
@@ -50,11 +50,11 @@ jobs:
       run: 7z -otests/llvm x LLVM-12.0.1-win64.exe
     - name: Build
       run: cargo build --release && move target/release/touchHLE.exe .
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: touchHLE_Windows_x86_64
         path: touchHLE.exe
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: TestApp_built_on_Windows
         path: tests/TestApp.app
