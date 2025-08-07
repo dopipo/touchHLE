@@ -91,7 +91,7 @@ pub const CLASSES: ClassExports = objc_classes! {
             let operation_queue_hf: HostFunction =
                 &(operation_queue_thread_helper as fn(&mut Environment, _) -> _);
             let operation_queue_gf = env.dyld.create_guest_function(
-                env.mem.as_mut(),
+               Box::new(env.mem).as_mut(),
                 "__touchHLE_operation_queue_helper",
                 operation_queue_hf,
             );
