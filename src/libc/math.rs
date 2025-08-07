@@ -246,6 +246,10 @@ fn OSAtomicCompareAndSwap32Barrier(
 fn OSMemoryBarrier(env: &mut Environment) {
 }
 
+fn memset_pattern16(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(OSAtomicCompareAndSwap32Barrier(_, _, _)),
     export_c_func!(OSAtomicCompareAndSwap32(_, _, _)),
