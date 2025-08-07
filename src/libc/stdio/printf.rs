@@ -527,12 +527,29 @@ fn vfprintf(env: &mut Environment, stream: MutPtr<FILE>, format: ConstPtr<u8>, a
     res.len().try_into().unwrap()
 }
 
+fn __sprintf_chk(
+    env: &mut Environment,
+    dest: MutPtr<u8>,
+    _flags: i32,
+    strlen: GuestUSize,
+    format: ConstPtr<u8>,
+    args: DotDotDot,
+) -> i32 {
+    if strlen == 0 {
+        panic!();
+    }
+    // TODO: respect flags level
+    // TODO: full overflow check
+    sprintf(env, dest, format, args)
+}
+
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(sscanf(_, _, _)),
     export_c_func!(snprintf(_, _, _, _)),
     export_c_func!(vprintf(_, _)),
     export_c_func!(vsnprintf(_, _, _, _)),
     export_c_func!(vsprintf(_, _, _)),
+    export_c_func!(__sprintf_chk(_, _, _, _, _)),
     export_c_func!(sprintf(_, _, _)),
     export_c_func!(printf(_, _)),
     export_c_func!(fprintf(_, _, _)),
