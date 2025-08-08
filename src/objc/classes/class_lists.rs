@@ -51,6 +51,7 @@ pub const CLASS_LISTS: &[super::ClassExports] = &[
     av_audio::av_audio_player::CLASSES,
     media_player::movie_player::CLASSES,
     opengles::eagl::CLASSES,
+    store_kit::sk_payment_queue::CLASSES,
     store_kit::sk_product::CLASSES,
     uikit::ui_accelerometer::CLASSES,
     uikit::ui_activity_indicator_view::CLASSES,
