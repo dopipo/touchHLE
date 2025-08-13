@@ -284,6 +284,14 @@ pub const CLASSES: ClassExports = objc_classes! {
     readable
 }
     
+- (bool)isReadableFileAtPath:(id)path { // NSString*
+    let (_, readable, _, _) = {
+        let path = ns_string::to_rust_string(env, path); // TODO: avoid copy
+        env.fs.access(GuestPath::new(&path))
+    };
+    readable
+}
+    
 - (id)contentsAtPath:(id)path { // NSString *
     // TODO: return nil if path is directory
     // TODO: handle non-absolute paths?
