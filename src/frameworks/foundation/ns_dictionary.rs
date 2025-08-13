@@ -902,7 +902,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     *env.objc.borrow_mut(this) = host_obj;
 }
 
- (())removeAllObjects {
+- (())removeAllObjects {
     let mut old_host_obj: DictionaryHostObject = std::mem::take(env.objc.borrow_mut(this));
     old_host_obj.release(env);
 }
