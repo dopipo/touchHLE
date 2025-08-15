@@ -94,6 +94,14 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
+- (bool)tryLock {
+    let host_object = env.objc.borrow::<NSLockHostObject>(this);
+    if env.mutex_state.mutex_is_locked(host_object.mutex_id) {
+        false
+    } else {
+        env.lock_mutex(host_object.mutex_id).is_ok()
+    }
+    
 @end
 
 };
