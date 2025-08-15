@@ -60,14 +60,6 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.borrow_mut::<NSLockHostObject>(this).locked_by = None
 }
 
-- (bool)tryLock {
-    let host_object = env.objc.borrow::<NSLockHostObject>(this);
-    if env.mutex_state.mutex_is_locked(host_object.mutex_id) {
-        false
-    } else {
-        env.lock_mutex(host_object.mutex_id).is_ok()
-    }
-
 - (())setName:(id)name { // NSString *
     // @property(copy), name has to be copied
     env.objc.borrow_mut::<NSLockHostObject>(this).name = msg![env; name copy];
@@ -78,7 +70,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (())dealloc {
     log_dbg!("[(NSLock*){:?} dealloc]", this);
-    let pthread_mutex_ptr = env.objc.borrow::<NSLockHostObject>(this).pthread_mutex_ptr;
+    let pthread_mutex_ptr = env.bjc.borrow::<NSLockHostObject>(this).pthread_mutex_ptr;
     assert!(pthread_mutex_destroy(env, pthread_mutex_ptr) == 0);
     env.objc.dealloc_object(this, &mut env.mem)
 }
@@ -93,14 +85,6 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (id)unlock {
     nil
 }
-
-- (bool)tryLock {
-    let host_object = env.objc.borrow::<NSLockHostObject>(this);
-    if env.mutex_state.mutex_is_locked(host_object.mutex_id) {
-        false
-    } else {
-        env.lock_mutex(host_object.mutex_id).is_ok()
-    }
     
 @end
 
