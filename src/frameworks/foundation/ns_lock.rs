@@ -70,7 +70,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (())dealloc {
     log_dbg!("[(NSLock*){:?} dealloc]", this);
-    let pthread_mutex_ptr = env.bjc.borrow::<NSLockHostObject>(this).pthread_mutex_ptr;
+    let pthread_mutex_ptr = env.objc.borrow::<NSLockHostObject>(this).pthread_mutex_ptr;
     assert!(pthread_mutex_destroy(env, pthread_mutex_ptr) == 0);
     env.objc.dealloc_object(this, &mut env.mem)
 }
