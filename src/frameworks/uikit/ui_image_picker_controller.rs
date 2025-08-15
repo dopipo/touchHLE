@@ -6,7 +6,7 @@
 //! `UIImagePickerController`
 
 use crate::frameworks::foundation::NSInteger;
-use crate::objc::{objc_classes, ClassExports};
+use crate::objc::{id, objc_classes, ClassExports};
 use crate::objc::{id, SEL, nil};
 
 type UIImagePickerControllerSourceType = NSInteger;
@@ -25,6 +25,11 @@ pub const CLASSES: ClassExports = objc_classes! {
     false
 }
 
+- (())setDelegate:(id)_delegate {
+    // TODO
+}
+
+    
 - (())setDelegate:(bool)delegate {
     log!("TODO: setDelegate:{}", delegate);
 }
