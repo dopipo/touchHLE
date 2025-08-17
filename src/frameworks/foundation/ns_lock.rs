@@ -53,8 +53,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     if let Some(locked_by_thread) = host_object.locked_by {
         assert!(locked_by_thread == env.current_thread);
     } else {
-        echo!("*** -[NSLock unlock]: lock (<NSLock: {:?}> '{:?}') unlocked when not locked", t
-              his, host_object.name);
+        echo!("*** -[NSLock unlock]: lock (<NSLock: {:?}> '{:?}') unlocked when not locked", this, host_object.name);
     }
     assert!(pthread_mutex_unlock(env, host_object.pthread_mutex_ptr) == 0);
     env.objc.borrow_mut::<NSLockHostObject>(this).locked_by = None
@@ -85,7 +84,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (id)unlock {
     nil
 }
-    
+
 @end
 
 };
