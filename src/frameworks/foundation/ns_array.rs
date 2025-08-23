@@ -10,7 +10,7 @@ use super::ns_property_list_serialization::deserialize_plist_from_file;
 use super::{ns_keyed_unarchiver, ns_string, ns_url, NSNotFound, NSRange, NSOrderedAscending, NSOrderedDescending, NSOrderedSame, NSInteger, NSUInteger};
 use crate::abi::{CallFromHost, GuestFunction};
 use crate::fs::GuestPath;
-use crate::mem::{MutPtr, MutVoidPtr};
+use crate::mem::{ConstPtr, MutPtr, MutVoidPtr};
 use crate::objc::{
     autorelease, id, msg, msg_class, nil, objc_classes, release, retain, ClassExports, HostObject,
     NSZonePtr, SEL,
@@ -105,7 +105,12 @@ pub const CLASSES: ClassExports = objc_classes! {
     let array = from_vec(env, objects);
     autorelease(env, array)
 }
-
+    + (id)arrayWithObjects:(ConstPtr<id>)objects_ptr count:(NSUInteger)count {
+    let array: id = msg![env; this alloc];
+    let array: id = msg![env; array initWithObjects:objects_ptr count:count];
+    autorelease(env, array)
+        }
+    
 // These probably comes from some category related to plists.
 - (id)initWithContentsOfFile:(id)path { // NSString*
     release(env, this);
@@ -353,6 +358,17 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (id)initWithObjects:(ConstPtr<id>)objects_ptr count:(NSUInteger)count {
+    let mut objects = Vec::new();
+    for i in 0..count {
+        let obj: id = env.mem.read(objects_ptr + i);
+        retain(env, obj);
+        objects.push(obj);
+    }
+    env.objc.borrow_mut::<ArrayHostObject>(this).array = objects;
+    this
+    }
+    
 - (id)pal {
     nil
 }
