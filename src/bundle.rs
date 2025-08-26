@@ -142,6 +142,13 @@ impl Bundle {
         }
     }
 
+    pub fn status_bar_hidden(&self) -> bool {
+        self.plist
+            .get("UIStatusBarHidden")
+            .and_then(|v| v.as_boolean())
+            .unwrap_or(false)
+                    }
+    
     /// Load icon and round off its corners for display.
     pub fn load_icon(&self, fs: &Fs) -> Result<Image, String> {
         let bytes = fs
