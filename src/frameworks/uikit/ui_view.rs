@@ -486,6 +486,27 @@ pub const CLASSES: ClassExports = objc_classes! {
     }
 }
 
+- (())insertSubview:(id)view atIndex:(NSInteger)index {
+    assert!(view != nil);
+    retain(env, view);
+    () = msg![env; view removeFromSuperview];
+
+    let subview_obj = env.objc.borrow_mut::<UIViewHostObject>(view);
+    subview_obj.superview = this;
+    let subview_layer = subview_obj.layer;
+
+    let &mut UIViewHostObject {
+        ref mut subviews,
+        layer: this_layer,
+        ..
+    } = env.objc.borrow_mut(this);
+
+    subviews.insert(index as usize, view);
+
+    assert!(index >= 0);
+    () = msg![env; this_layer insertSublayer:subview_layer atIndex:(index as u32)];
+}
+    
 - (())insertSubview:(id)view belowSubview:(id)sibling {
     retain(env, view);
     () = msg![env; view removeFromSuperview];
