@@ -110,6 +110,12 @@ pub fn CGBitmapContextGetHeight(env: &mut Environment, context: CGContextRef) ->
     bitmap_data.height
 }
 
+fn CGBitmapContextGetBytesPerRow(env: &mut Environment, context: CGContextRef) -> GuestUSize {
+    let host_obj = env.objc.borrow::<CGContextHostObject>(context);
+    let CGContextSubclass::CGBitmapContext(bitmap_data) = host_obj.subclass;
+    bitmap_data.bytes_per_row
+}
+
 pub fn CGBitmapContextCreateImage(env: &mut Environment, context: CGContextRef) -> CGImageRef {
     // TODO: Image::from_pixel_vec() should not exist, and this function should
     // support any bitmap format.
@@ -632,4 +638,5 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CGBitmapContextGetData(_)),
     export_c_func!(CGBitmapContextGetWidth(_)),
     export_c_func!(CGBitmapContextGetHeight(_)),
+    export_c_func!(CGBitmapContextGetBytesPerRow(_)),
 ];
