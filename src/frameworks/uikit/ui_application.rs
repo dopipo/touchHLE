@@ -79,7 +79,9 @@ pub const CLASSES: ClassExports = objc_classes! {
     }
 }
 
-// TODO: statusBarHidden getter
+- (bool)isStatusBarHidden {
+    env.framework_state.uikit.ui_application.status_bar_hidden
+}
 - (())setStatusBarHidden:(bool)hidden {
     env.framework_state.uikit.ui_application.status_bar_hidden = hidden;
 }
