@@ -210,7 +210,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     let windows = ns_array::from_vec(env, visible_windows);
     autorelease(env, windows)
 }
-
+    
 - (id)statusBarFrame {
     nil
 }
@@ -226,7 +226,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (())registerForRemoteNotificationTypes:(UIRemoteNotificationType)types {
     log!("TODO: ignoring registerForRemoteNotificationTypes:{}", types);
 }
-
+    
+- (NSInteger)applicationIconBadgeNumber {
+    0 // default value
+}
 - (())setApplicationIconBadgeNumber:(NSInteger)bn {
     log!("TODO: ignoring setApplicationIconBadgeNumber:{}", bn);
 }
