@@ -83,7 +83,6 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (())setShouldProcessNamespaces:(bool)process {
     log!("TODO: setShouldProcessNamespaces:{}", process);
 }
-
 - (())setShouldReportNamespacePrefixes:(bool)report {
     log!("TODO: setShouldReportNamespacePrefixes:{}", report);
 }
