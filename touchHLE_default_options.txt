@@ -152,5 +152,8 @@ com.konami-europe.mgst: --preferred-languages=ja --landscape-left
 # Fast and Fusion
 com.iplay.ff53d: --force-composition
 
-#Bubble bash
+# Bubble bash
 com.gameloft.BubbleBash: --force-composition
+
+# Driver Free
+com.gameloft.DriverFree: --force-composition
