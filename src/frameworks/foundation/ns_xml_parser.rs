@@ -72,17 +72,11 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (())setShouldResolveExternalEntities:(bool)should {
     log_dbg!("TODO: setShouldResolveExternalEntities:{}", should);
 }
-- (())setShouldProcessNamespaces:(bool)should {
-    log_dbg!("TODO: setShouldProcessNamespaces:{}", should);
-    assert!(!should);
-}
-- (())setShouldReportNamespacePrefixes:(bool)should {
-    log_dbg!("TODO: setShouldReportNamespacePrefixes:{}", should);
-    assert!(!should);
-}
+
 - (())setShouldProcessNamespaces:(bool)process {
     log!("TODO: setShouldProcessNamespaces:{}", process);
 }
+
 - (())setShouldReportNamespacePrefixes:(bool)report {
     log!("TODO: setShouldReportNamespacePrefixes:{}", report);
 }
@@ -105,8 +99,7 @@ pub const CLASSES: ClassExports = objc_classes! {
             Ok(e) => events.push(e.into_owned()), // TODO: avoid copying
             Err(e) => {
                 // TODO: send parser:parseErrorOccurred: to delegate instead,
-                // after (!) other parsing delegate me
-                ssages were sent
+                // after (!) other parsing delegate messages were sent
                 panic!("Error at position {}: {:?}", reader.error_position(), e)
             },
         }
@@ -239,13 +232,6 @@ pub const CLASSES: ClassExports = objc_classes! {
                     let comment = autorelease(env, comment);
                     () = msg![env; delegate parser:this foundComment:comment];
                 }
-            }
-            Event::Decl(_) => {
-                let sel: SEL = env
-                    .objc
-                    .register_host_selector("parser:foundElementDeclarationWithName:model:".to_string(), &mut env.mem);
-                let responds: bool = msg![env; delegate respondsToSelector:sel];
-                assert!(!responds); // TODO
             }
             e => unimplemented!("{:?}", e)
         }
