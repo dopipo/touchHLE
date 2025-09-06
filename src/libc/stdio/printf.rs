@@ -736,6 +736,13 @@ fn sscanf_common(
         let specifier = env.mem.read(format + format_char_idx);
         format_char_idx += 1;
 
+        if ![b'[', b'c', b'n'].contains(&specifier) {
+            // skip whitespaces
+            while isspace(env, src_ptr.cast_const()) {
+                src_ptr += 1;
+            }
+        }
+        
         match specifier {
             b'd' | b'i' => {
                 let base: u32 = if specifier == b'd' {
@@ -875,7 +882,12 @@ fn sscanf_common(
                 let mut dst_ptr: MutPtr<u8> = args.next(env);
                 loop {
                     if !isspace(env, src_ptr.cast_const()) {
-                        env.mem.write(dst_ptr, env.mem.read(src_ptr));
+                        let next = env.mem.read(src_ptr);
+                        if next == b'\0' {
+                            break;
+                        }
+                        env.mem.write(dst_ptr, next);
+                        
                         src_ptr += 1;
                         dst_ptr += 1;
                     } else {
