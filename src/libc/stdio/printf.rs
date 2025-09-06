@@ -887,7 +887,6 @@ fn sscanf_common(
                             break;
                         }
                         env.mem.write(dst_ptr, next);
-                        
                         src_ptr += 1;
                         dst_ptr += 1;
                     } else {
