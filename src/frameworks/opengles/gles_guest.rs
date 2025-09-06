@@ -342,6 +342,16 @@ fn glPolygonOffsetx(env: &mut Environment, factor: GLfixed, units: GLfixed) {
         gles.PolygonOffsetx(factor, units)
     })
 }
+fn glSampleCoverage(env: &mut Environment, value: GLclampf, invert: GLboolean) {
+    with_ctx_and_mem(env, |gles, _mem| unsafe {
+        gles.SampleCoverage(value, invert)
+    })
+}
+fn glSampleCoveragex(env: &mut Environment, value: GLclampx, invert: GLboolean) {
+    with_ctx_and_mem(env, |gles, _mem| unsafe {
+        gles.SampleCoveragex(value, invert)
+    })
+}
 fn glShadeModel(env: &mut Environment, mode: GLenum) {
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.ShadeModel(mode) })
 }
@@ -1436,6 +1446,8 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(glFrontFace(_)),
     export_c_func!(glPolygonOffset(_, _)),
     export_c_func!(glPolygonOffsetx(_, _)),
+    export_c_func!(glSampleCoverage(_, _)),
+    export_c_func!(glSampleCoveragex(_, _)),
     export_c_func!(glShadeModel(_)),
     export_c_func!(glScissor(_, _, _, _)),
     export_c_func!(glViewport(_, _, _, _)),
