@@ -5,7 +5,7 @@
  */
 //! `CFLocale`
 
-use super::cf_allocator::CFAllocatorRef;
+use super::cf_allocator::{kCFAllocatorDefault, CFAllocatorRef};
 use super::cf_array::CFArrayRef;
 use super::cf_string::CFStringRef;
 use super::CFTypeRef;
@@ -16,7 +16,7 @@ use crate::Environment;
 
 type CFLocaleIdentifier = CFStringRef;
 /// `NSLocale` is toll-free bridged with `CFLocaleRef`
-type CFLocaleRef = CFTypeRef;
+pub(super) type CFLocaleRef = CFTypeRef;
 type CFLocaleKey = CFStringRef;
 
 pub const kCFLocaleCountryCode: &str = "kCFLocaleCountryCodeKey";
@@ -36,12 +36,22 @@ fn CFLocaleCopyPreferredLanguages(env: &mut Environment) -> CFArrayRef {
     msg![env; arr copy]
 }
 
+fn CFLocaleCreate(
+    env: &mut Environment,
+    allocator: CFAllocatorRef,
+    locale_identifier: CFLocaleIdentifier,
+) -> CFLocaleRef {
+    assert_eq!(allocator, kCFAllocatorDefault); // unimplemented
+    let new: id = msg_class![env; NSLocale alloc];
+    msg![env; new initWithLocaleIdentifier:locale_identifier]
+}
+
 fn CFLocaleCreateCanonicalLocaleIdentifierFromString(
     env: &mut Environment,
     allocator: CFAllocatorRef,
     locale_identifier: CFStringRef,
 ) -> CFLocaleIdentifier {
-    assert!(allocator.is_null());
+    assert_eq!(allocator, kCFAllocatorDefault); // unimplemented
     let len: NSUInteger = msg![env; locale_identifier length];
     // TODO: support arbitrary locale identification strings
     assert_eq!(len, 2);
@@ -60,6 +70,7 @@ fn CFLocaleGetValue(env: &mut Environment, locale: CFLocaleRef, key: CFLocaleKey
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CFLocaleCopyCurrent()),
     export_c_func!(CFLocaleCopyPreferredLanguages()),
+    export_c_func!(CFLocaleCreate(_, _)),
     export_c_func!(CFLocaleCreateCanonicalLocaleIdentifierFromString(_, _)),
     export_c_func!(CFLocaleGetSystem()),
     export_c_func!(CFLocaleGetValue(_, _)),
