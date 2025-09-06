@@ -1164,7 +1164,8 @@ pub const CLASSES: ClassExports = objc_classes! {
 
     let string = to_rust_string(env, this);
     let c_string = env.mem.alloc_and_write_cstr(string.as_bytes());
-    let length: NSUInteger = (string.len() + 1).try_into().unwrap();
+    // This should not include a NULL terminator!
+    let length: NSUInteger = string.len().try_into().unwrap();
     // NSData will handle releasing the string (it is autoreleased)
     let data: id = msg_class![env; NSData dataWithBytesNoCopy:(c_string.cast_void())
                                                     length:length];
