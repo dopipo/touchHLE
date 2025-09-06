@@ -890,6 +890,12 @@ impl GLES for GLES1OnGL2 {
     unsafe fn PolygonOffsetx(&mut self, factor: GLfixed, units: GLfixed) {
         gl21::PolygonOffset(fixed_to_float(factor), fixed_to_float(units))
     }
+    unsafe fn SampleCoverage(&mut self, value: GLclampf, invert: GLboolean) {
+        gl21::SampleCoverage(value, invert)
+    }
+    unsafe fn SampleCoveragex(&mut self, value: GLclampx, invert: GLboolean) {
+        gl21::SampleCoverage(fixed_to_float(value), invert)
+    }
     unsafe fn ShadeModel(&mut self, mode: GLenum) {
         assert!(mode == gl21::FLAT || mode == gl21::SMOOTH);
         gl21::ShadeModel(mode);
