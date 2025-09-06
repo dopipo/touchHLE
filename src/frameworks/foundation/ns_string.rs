@@ -744,6 +744,13 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, array)
 }
 
+- (())getCharacters:(MutPtr<unichar>)buffer
+              range:(NSRange)range {
+    // TODO: avoid copying
+    let ranged = msg![env; this substringWithRange:range];
+    msg![env; ranged getCharacters:buffer]
+}
+    
 - (())getCharacters:(MutPtr<unichar>)buffer {
     let host_object = env.objc.borrow_mut::<StringHostObject>(this);
 
@@ -1244,18 +1251,16 @@ pub const CLASSES: ClassExports = objc_classes! {
     () = msg![env; this setString:new];
 }
 
-- (())appendFormat:(id)format, // NSString*
-                   ...args {
-    assert_ne!(format, nil);
-    let res = with_format(env, format, args.start());
-    *env.objc.borrow_mut(this) = StringHostObject::Utf8(format!("{}{}", to_rust_string(env, this), res).into());
-}
-
-- (())setString:(id)a_string { // NSString*
-    assert_ne!(a_string, nil);
-    let str = to_rust_string(env, a_string);
-    let host_object = StringHostObject::Utf8(str);
-    *env.objc.borrow_mut(this) = host_object;
+- (())deleteCharactersInRange:(NSRange)range {
+    // Below implementation handles a trivial case -
+    // whole string is deleted!
+    let location = range.location;
+    assert_eq!(location, 0); // TODO
+    let len: NSUInteger = msg![env; this length];
+    let length = range.length;
+    assert_eq!(len, length); // TODO
+    let empty = get_static_str(env, "");
+    () = msg![env; this setString:empty];
 }
 
 @end
@@ -1580,6 +1585,20 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this init]
 }
 
+- (())appendFormat:(id)format, // NSString*
+                   ...args {
+    assert_ne!(format, nil);
+    let res = with_format(env, format, args.start());
+    *env.objc.borrow_mut(this) = StringHostObject::Utf8(format!("{}{}", to_rust_string(env, this), res).into());
+}
+
+- (())setString:(id)a_string { // NSString*
+    assert_ne!(a_string, nil);
+    let str = to_rust_string(env, a_string);
+    let host_object = StringHostObject::Utf8(str);
+    *env.objc.borrow_mut(this) = host_object;
+}
+    
 - (id)initWithString:(id)string { // NSString *
     // TODO: optimize for more common cases (or maybe just call copy?)
     let mut code_units = Vec::new();
