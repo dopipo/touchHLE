@@ -160,6 +160,12 @@ impl GLES for GLES1Native {
     unsafe fn PolygonOffsetx(&mut self, factor: GLfixed, units: GLfixed) {
         gles11::PolygonOffsetx(factor, units)
     }
+    unsafe fn SampleCoverage(&mut self, value: GLclampf, invert: GLboolean) {
+        gles11::SampleCoverage(value, invert)
+    }
+    unsafe fn SampleCoveragex(&mut self, value: GLclampx, invert: GLboolean) {
+        gles11::SampleCoveragex(value, invert)
+    }
     unsafe fn ShadeModel(&mut self, mode: GLenum) {
         gles11::ShadeModel(mode)
     }
