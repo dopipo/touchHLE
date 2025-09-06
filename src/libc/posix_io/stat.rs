@@ -8,7 +8,7 @@
 use super::{close, off_t, open_direct, FileDescriptor};
 use crate::dyld::{export_c_func, FunctionExports};
 use crate::fs::{FsError, GuestFile, GuestPath};
-use crate::libc::errno::{set_errno, EEXIST};
+use crate::libc::errno::{set_errno, EEXIST, ENOENT};
 use crate::libc::time::timespec;
 use crate::mem::{ConstPtr, MutPtr, SafeRead};
 use crate::Environment;
@@ -80,9 +80,8 @@ fn mkdir(env: &mut Environment, path: ConstPtr<u8>, mode: mode_t) -> i32 {
                 err
             );
             match err {
-                FsError::AlreadyExist => {
-                    set_errno(env, EEXIST);
-                }
+                FsError::AlreadyExist => set_errno(env, EEXIST),
+                FsError::NonexistentParentDir => set_errno(env, ENOENT),
                 _ => unimplemented!(),
             }
             -1
