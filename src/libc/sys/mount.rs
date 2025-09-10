@@ -45,10 +45,10 @@ unsafe impl SafeRead for statfs {}
 
 fn statfs(env: &mut Environment, path: ConstPtr<u8>, buf: MutPtr<statfs>) -> i32 {
     // FIXME does directory matter?
-    assert_eq!(
-        env.mem.cstr_at_utf8(path).unwrap(),
-        env.fs.home_directory().join("Documents").as_str()
-    );
+    assert!(env
+        .mem
+        .cstr_at_utf8(path)
+        .is_ok_and(|path| path.starts_with(env.fs.home_directory().join("Documents").as_str())));
     // Values are taken from a test run of iOS 4.3 Simulator
     let mut statfs = statfs {
         f_bsize: 4096,
