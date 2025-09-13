@@ -400,6 +400,11 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.dealloc_object(this, &mut env.mem)
 }
 
+// NSMutableCopying implementation
+- (id)mutableCopyWithZone:(NSZonePtr)_zone {
+    mutable_copy_inner(env, this)
+}
+    
 - (id)objectEnumerator { // NSEnumerator*
     object_enumerator_inner(env, this)
 }
@@ -491,13 +496,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 // NSMutableCopying implementation
 - (id)mutableCopyWithZone:(NSZonePtr)_zone {
-    let mut_arr: id = msg_class![env; NSMutableArray alloc];
-    let array = env.objc.borrow::<ArrayHostObject>(this).array.clone();
-    for &object in &array {
-        retain(env, object);
-    }
-    env.objc.borrow_mut::<ArrayHostObject>(this).array = array;
-    mut_arr
+    mutable_copy_inner(env, this)
 }
 
 - (())dealloc {
@@ -800,4 +799,14 @@ fn object_enumerator_inner_helper(env: &mut Environment, arr: id, vec: Vec<id>) 
         .get_known_class("_touchHLE_NSArray_ObjectEnumerator", &mut env.mem);
     let enumerator = env.objc.alloc_object(class, host_object, &mut env.mem);
     autorelease(env, enumerator)
+}
+
+fn mutable_copy_inner(env: &mut Environment, arr: id) -> id {
+    let mut_arr: id = msg_class![env; NSMutableArray alloc];
+    let array = env.objc.borrow::<ArrayHostObject>(arr).array.clone();
+    for &object in &array {
+        retain(env, object);
+    }
+    env.objc.borrow_mut::<ArrayHostObject>(mut_arr).array = array;
+    mut_arr
 }
