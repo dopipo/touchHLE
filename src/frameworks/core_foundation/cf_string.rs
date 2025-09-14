@@ -69,7 +69,7 @@ fn CFStringAppendFormat(
     msg![env; string appendString:to_append]
 }
 
-fn CFStringConvertEncodingToNSStringEncoding(
+pub fn CFStringConvertEncodingToNSStringEncoding(
     _env: &mut Environment,
     encoding: CFStringEncoding,
 ) -> ns_string::NSStringEncoding {
