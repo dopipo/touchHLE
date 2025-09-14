@@ -87,6 +87,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     // FIXME: this does not resolve relative paths to be absolute!
     // TODO: this does not strip the file:/// prefix!
     assert!(!to_rust_string(env, path).starts_with("file:"));
+    let path = msg![env; path stringByExpandingTildeInPath];
     let path: id = msg![env; path copy];
     *env.objc.borrow_mut(this) = NSURLHostObject::FileURL { ns_string: path, working_directory: env.fs.working_directory().into() };
     this
