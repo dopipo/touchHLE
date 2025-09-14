@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 #define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_JPEG
 #define STB_ONLY_PNG
 #define STB_NO_STDIO
 #include "../../../vendor/stb/stb_image.h"
