@@ -113,6 +113,24 @@ fn CGImageCreateWithPNGDataProvider(
     from_image(env, image)
 }
 
+fn CGImageCreateWithJPEGDataProvider(
+    env: &mut Environment,
+    source: CGDataProviderRef,
+    decode: ConstPtr<CGFloat>,
+    _should_interpolate: bool, // TODO
+    _intent: i32,              // TODO (should be CGColorRenderingIntent)
+) -> CGImageRef {
+    assert!(decode.is_null());
+
+    let bytes = cg_data_provider::borrow_bytes(env, source);
+    let Ok(image) = Image::from_bytes(bytes) else {
+        // Docs don't say what happens on failure, but this would make sense.
+        return nil;
+    };
+
+    from_image(env, image)
+}
+
 fn CGImageGetAlphaInfo(_env: &mut Environment, _image: CGImageRef) -> CGImageAlphaInfo {
     // our Image type always returns premultiplied RGBA
     // (the premultiplied part must match what the real UIImage does, but
@@ -177,6 +195,7 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CGImageRelease(_)),
     export_c_func!(CGImageRetain(_)),
     export_c_func!(CGImageCreateWithPNGDataProvider(_, _, _, _)),
+    export_c_func!(CGImageCreateWithJPEGDataProvider(_, _, _, _)),
     export_c_func!(CGImageGetAlphaInfo(_)),
     export_c_func!(CGImageGetColorSpace(_)),
     export_c_func!(CGImageGetWidth(_)),
