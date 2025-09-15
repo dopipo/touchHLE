@@ -27,6 +27,8 @@ enum PixelStore {
     Vec(Vec<u8>),
 }
 
+const PNG_MAGIC_NUMBER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
+
 impl Image {
     pub fn from_bytes(bytes: &[u8]) -> Result<Image, String> {
         let len: c_int = bytes.len().try_into().unwrap();
@@ -68,13 +70,15 @@ impl Image {
         {
             let len = width as usize * height as usize * 4;
             let pixels = unsafe { std::slice::from_raw_parts_mut(pixels, len) };
-            let mut i = 0;
-            while i < pixels.len() {
-                let a = pixels[i + 3] as f32 / 255.0;
-                pixels[i] = (pixels[i] as f32 * a) as u8;
-                pixels[i + 1] = (pixels[i + 1] as f32 * a) as u8;
-                pixels[i + 2] = (pixels[i + 2] as f32 * a) as u8;
-                i += 4;
+            if pixels.starts_with(&PNG_MAGIC_NUMBER) {
+                let mut i = 0;
+                while i < pixels.len() {
+                    let a = pixels[i + 3] as f32 / 255.0;
+                    pixels[i] = (pixels[i] as f32 * a) as u8;
+                    pixels[i + 1] = (pixels[i + 1] as f32 * a) as u8;
+                    pixels[i + 2] = (pixels[i + 2] as f32 * a) as u8;
+                    i += 4;
+                }
             }
         }
 
