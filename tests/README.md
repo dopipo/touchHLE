@@ -8,7 +8,7 @@ Building
 
 ### Setup
 
-Upstream LLVM is needed for building the ARMv6 test binary. 32-bit iOS support is broken in version 13 onwards, so 12.0.1 is the newest supported version you can use. Downloads:
+Upstream LLVM is needed for building the ARMv6 test binary. 32-bit iOS support is broken in version 13 onwards, so 12.0.1 is the newest supported version yjnnou can use. Downloads:
 
 * [LLVM 12.0.1 Windows x64 release binaries](https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/LLVM-12.0.1-win64.exe) (extract it with 7-zip)
 * [LLVM 12.0.0 macOS x64 release binaries](https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/clang+llvm-12.0.0-x86_64-apple-darwin.tar.xz) (extract it with `tar -xf`)
