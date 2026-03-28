@@ -364,7 +364,7 @@ const TEX_ENV_PARAMS: ParamTable = ParamTable(&[
     (gl21::OPERAND2_ALPHA, ParamType::Int, 1),
     (gl21::RGB_SCALE, ParamType::Float, 1),
     (gl21::ALPHA_SCALE, ParamType::Float, 1),
-    (gl21::COORD_REPLACE_OES, ParamType::Boolean, 1),
+    (gl21::COORD_REPLACE, ParamType::Boolean, 1),
 ]);
 
 const TEX_PARAMETER_PARAMS: ParamTable = ParamTable(&[
@@ -420,6 +420,9 @@ impl GLES1OnGL2 {
         }
     }
 }
+
+/// Type alias so that `gles.rs` can import `GLES1OnGL2Context` as expected.
+pub type GLES1OnGL2Context = GLES1OnGL2;
 
 impl GLES for GLES1OnGL2 {
     unsafe fn AlphaFunc(&mut self, func: GLenum, ref_: GLclampf) {
@@ -1069,4 +1072,5 @@ impl GLES for GLES1OnGL2 {
         gl21::GenBuffers(n, buffers)
     }
 }
+
 
