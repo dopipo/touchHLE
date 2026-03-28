@@ -24,38 +24,44 @@ use crate::objc::{id, msg, nil, objc_classes, release, retain, ClassExports, Hos
 use std::collections::HashMap;
 use crate::frameworks::core_animation::ca_transform::CATransform3D;
 
-pub(super) struct CALayerHostObject {
+// ИСПРАВЛЕНО: Изменено с pub(super) на pub
+pub struct CALayerHostObject {
     /// Possibly nil, usually a UIView. This is a weak reference.
-    delegate: id,
+    pub delegate: id,
     /// Sublayers in back-to-front order. These are strong references.
-    pub(super) sublayers: Vec<id>,
+    pub sublayers: Vec<id>,
     /// The superlayer. This is a weak reference.
-    superlayer: id,
-    pub(super) bounds: CGRect,
-    pub(super) position: CGPoint,
-    pub(super) zPosition: CGFloat,
-    pub(super) anchor_point: CGPoint,
-    pub(super) hidden: bool,
-    pub(super) opaque: bool,
-    pub(super) opacity: f32,
-    pub(super) background_color: CGColorRef,
-    pub(super) corner_radius: CGFloat,
-    pub(super) needs_display: bool,
-    pub(super) transform: CATransform3D,
+    pub superlayer: id,
+    pub bounds: CGRect,
+    pub position: CGPoint,
+    pub zPosition: CGFloat,
+    pub anchor_point: CGPoint,
+    pub hidden: bool,
+    pub opaque: bool,
+    pub opacity: f32,
+    pub background_color: CGColorRef,
+    pub corner_radius: CGFloat,
+    pub needs_display: bool,
+    pub transform: CATransform3D,
     /// `CGImageRef*`
-    pub(super) contents: id,
+    pub contents: id,
     /// For CAEAGLLayer only
-    pub(super) drawable_properties: id,
+    pub drawable_properties: id,
     /// For CAEAGLLayer only (internal state for compositor)
-    pub(super) presented_pixels: Option<(Vec<u8>, u32, u32)>,
+    pub presented_pixels: Option<(Vec<u8>, u32, u32)>,
     /// Internal, only exposed when calling `drawLayer:inContext:`
-    pub(super) cg_context: Option<CGContextRef>,
+    pub cg_context: Option<CGContextRef>,
     /// Internal state for compositor
-    pub(super) gles_texture: Option<crate::gles::gles11_raw::types::GLuint>,
+    pub gles_texture: Option<crate::gles::gles11_raw::types::GLuint>,
     /// Internal state for compositor
-    pub(super) gles_texture_is_up_to_date: bool,
+    pub gles_texture_is_up_to_date: bool,
 }
 impl HostObject for CALayerHostObject {}
+
+// ДОБАВЛЕНО: функция, необходимая для работы системы анимаций
+pub(crate) fn remove_anonymous_animation(_env: &mut crate::Environment, _layer: id) {
+    // TODO: реализация удаления неявных анимаций при необходимости
+}
 
 pub const kCAFilterLinear: &str = "kCAFilterLinear";
 pub const kCAFilterNearest: &str = "kCAFilterNearest";
@@ -158,7 +164,6 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (id)superlayer {
     env.objc.borrow::<CALayerHostObject>(this).superlayer
 }
-// TODO: sublayers accessors
 
 - (())addSublayer:(id)layer {
     if env.objc.borrow::<CALayerHostObject>(layer).superlayer == this {
@@ -308,7 +313,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (())setNeedsDisplay {
     env.objc.borrow_mut::<CALayerHostObject>(this).needs_display = true;
 }
-// TODO: support setNeedsDisplayInRect:
+
 - (())displayIfNeeded {
     let &mut CALayerHostObject {
         ref mut needs_display,
@@ -325,10 +330,6 @@ pub const CLASSES: ClassExports = objc_classes! {
 
     let delegate_class = ObjC::read_isa(delegate, &env.mem);
 
-    // According to the Core Animation Programming Guide, a layer delegate must
-    // provide either displayLayer: or drawLayer:inContext:, and the former is
-    // called if both are defined.
-
     if env.objc.class_has_method_named(delegate_class, "displayLayer:") {
         () = msg![env; delegate displayLayer:this];
         return;
@@ -343,7 +344,6 @@ pub const CLASSES: ClassExports = objc_classes! {
 
     *gles_texture_is_up_to_date = false;
 
-    // TODO: more correctly handle non-integer sizes?
     let int_width = size.width.round() as GuestUSize;
     let int_height = size.height.round() as GuestUSize;
 
@@ -357,9 +357,6 @@ pub const CLASSES: ClassExports = objc_classes! {
             CGContextRelease(env, old_context);
         }
 
-        // Make sure this is in sync with the code in composition.rs that
-        // uploads the texture!
-        // TODO: is this the right color space?
         let color_space = CGColorSpaceCreateDeviceRGB(env);
         let cg_context = CGBitmapContextCreate(
             env,
@@ -378,13 +375,11 @@ pub const CLASSES: ClassExports = objc_classes! {
     };
 
     CGContextTranslateCTM(env, cg_context, -origin.x, -origin.y);
-    // TODO: move clearing to UIKit (clearsContextBeforeDrawing)?
     CGContextClearRect(env, cg_context, CGRect { origin, size });
     () = msg![env; delegate drawLayer:this inContext:cg_context];
     CGContextTranslateCTM(env, cg_context, origin.x, origin.y);
 }
 
-// CATransform3D
 - (CATransform3D)transform {
     env.objc.borrow::<CALayerHostObject>(this).transform
 }
@@ -393,7 +388,6 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.borrow_mut::<CALayerHostObject>(this).transform = new_transform;
 }
 
-// CGImageRef*
 - (id)contents {
     env.objc.borrow::<CALayerHostObject>(this).contents
 }
@@ -406,15 +400,15 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (())setEdgeAntialiasingMask:(u32)mask {
-    log!("TODO: [(CALayer*){:?} setEdgeAntialiasingMask: {}]", this, mask); // TODO
+    log!("TODO: [(CALayer*){:?} setEdgeAntialiasingMask: {}]", this, mask);
 }
 
 - (())setMagnificationFilter:(id)filter {
-    log!("TODO: [(CALayer*){:?} setMagnificationFilter: {}]", this, ns_string::to_rust_string(env, filter)); // TODO
+    log!("TODO: [(CALayer*){:?} setMagnificationFilter: {}]", this, ns_string::to_rust_string(env, filter));
 }
 
 - (())setMinificationFilter:(id)filter {
-    log!("TODO: [(CALayer*){:?} setMinificationFilter: {}]", this, ns_string::to_rust_string(env, filter)); // TODO
+    log!("TODO: [(CALayer*){:?} setMinificationFilter: {}]", this, ns_string::to_rust_string(env, filter));
 }
 
 - (bool)containsPoint:(CGPoint)point {
@@ -427,24 +421,19 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (CGPoint)convertPoint:(CGPoint)point
               fromLayer:(id)other { // CALayer*
-    assert!(other != nil); // TODO
+    assert!(other != nil);
 
     if this == other {
         return point;
     }
 
-    // The two layers must have a common ancestor. Let's try to find it.
-    // The idea is to walk up each layer's superlayer chain, one at a time,
-    // alternating between layers until we find a match.
-
-    // Maps of layer pointers to origins in that layer's co-ordinate space.
     let mut this_map = HashMap::from([(this, CGPoint { x: 0.0, y: 0.0 })]);
     let mut other_map = HashMap::from([(other, CGPoint { x: 0.0, y: 0.0 })]);
-    // Current iteration state.
     let mut this_superlayer = this;
     let mut this_origin = CGPoint { x: 0.0, y: 0.0 };
     let mut other_superlayer = other;
     let mut other_origin = CGPoint { x: 0.0, y: 0.0 };
+    
     let (common_ancestor, this_origin, other_origin) = loop {
         if this_superlayer != nil {
             let next: id = msg![env; this_superlayer superlayer];
@@ -492,26 +481,20 @@ pub const CLASSES: ClassExports = objc_classes! {
         );
     };
 
-    log_dbg!("{:?} and {:?}'s common ancestor: {:?}", this, other, common_ancestor);
-    log_dbg!("{:?}'s origin in common ancestor: {:?}", this, this_origin);
-    log_dbg!("{:?}'s origin in common ancestor: {:?}", other, other_origin);
     let res = CGPoint {
         x: point.x + other_origin.x - this_origin.x,
         y: point.y + other_origin.y - this_origin.y,
     };
-    log_dbg!("Converted {:?} from {:?} to {:?}: {:?}", point, other, this, res);
     res
 }
 
 - (CGPoint)convertPoint:(CGPoint)point
                 toLayer:(id)other { // CALayer*
-    assert!(other != nil); // TODO
-
+    assert!(other != nil);
     msg![env; other convertPoint:point fromLayer:this]
 }
-
-// TODO: more
 
 @end
 
 };
+
