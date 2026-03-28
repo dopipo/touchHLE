@@ -12,8 +12,6 @@ use crate::abi::GuestFunction;
 use crate::dyld::{export_c_func, FunctionExports};
 use crate::mem::MutVoidPtr;
 use crate::Environment;
-
-use lazy_static::lazy_static;
 use std::sync::Mutex;
 
 lazy_static::lazy_static! {
