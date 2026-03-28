@@ -32,6 +32,7 @@ mod selectors;
 mod synchronization;
 
 pub use classes::{objc_classes, Class, ClassExports, ClassTemplate};
+pub use properties::todo_objc_setter;
 pub use messages::{
     autorelease, msg, msg_class, msg_send, msg_send_super2, msg_super, objc_super, release, retain,
 };

@@ -57,6 +57,9 @@ fn main() {
         // Some dependencies of OpenAL Soft.
         if os.eq_ignore_ascii_case("linux") {
             // OpenAL on Linux depends on sndio, needs to be dynamically linked
+            // Add default Linux library search paths to help lld find libsndio
+            println!("cargo:rustc-link-search=native=/usr/lib/x86_64-linux-gnu");
+            println!("cargo:rustc-link-search=native=/lib/x86_64-linux-gnu");
             println!("cargo:rustc-link-lib=dylib=sndio");
         }
         if os.eq_ignore_ascii_case("android") {
