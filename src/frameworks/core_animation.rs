@@ -15,8 +15,8 @@ pub mod ca_layer;
 pub mod ca_media_timing_function;
 pub mod ca_transaction;
 
-mod animation;
-mod composition;
+pub mod animation; // Сделано public для доступа к логике анимаций
+pub mod composition; // Сделано public для доступа к композитору
 
 pub use composition::recomposite_if_necessary;
 
@@ -30,7 +30,7 @@ pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
     // in a binary called QuartzCore, which does not contain anything else of
     // interest in iPhone OS 2 and 3. (iOS 5 adds Core Image to QuartzCore.)
     path: "/System/Library/Frameworks/QuartzCore.framework/QuartzCore",
-    aliases: &[],
+    aliases: &["/System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore"],
     class_exports: &[
         ca_animation::CLASSES,
         ca_display_link::CLASSES,
@@ -50,19 +50,21 @@ pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
 
 #[derive(Default)]
 pub struct State {
-    ca_media_timing_function: ca_media_timing_function::State,
-    ca_transaction: ca_transaction::State,
-    composition: composition::State,
+    // ИСПРАВЛЕНО: поля сделаны публичными для доступа из Environment/FrameworkState
+    pub ca_media_timing_function: ca_media_timing_function::State,
+    pub ca_transaction: ca_transaction::State,
+    pub composition: composition::State,
 }
 
-// This function should call mach_absolute_time() and convert the result into
-// seconds. Since in our implementation, mach_absolute_time() returns, in
-// nanoseconds, Instant::now, we can just do the same in seconds and save
-// the calls to the guest functions.
+/// Returns the current host time in seconds, relative to the application startup.
+/// 
+/// This is the implementation of the `CACurrentMediaTime()` C function.
 pub fn CACurrentMediaTime(env: &mut Environment) -> CFTimeInterval {
     Instant::now()
         .duration_since(env.startup_time)
         .as_secs_f64()
 }
 
-pub const FUNCTIONS: FunctionExports = &[export_c_func!(CACurrentMediaTime())];
+pub const FUNCTIONS: FunctionExports = &[
+    export_c_func!(CACurrentMediaTime(env)),
+];
