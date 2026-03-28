@@ -7,8 +7,20 @@
 
 use crate::frameworks::core_graphics::{CGRect, cg_color};
 use crate::objc::{id, msg, msg_class, nil, objc_classes, release, retain, ClassExports, HostObject};
-use crate::frameworks::quartz_core::ca_layer::CALayerHostObject;
+// ИСПРАВЛЕНО: путь quartz_core заменен на core_animation
+use crate::frameworks::core_animation::ca_layer::CALayerHostObject;
 use crate::Environment;
+
+// ИСПРАВЛЕНО: Добавлена структура State для соответствия core_animation.rs
+#[derive(Default)]
+pub(super) struct State {
+    // Здесь можно хранить глобальное состояние композиции слоев, если потребуется
+}
+
+// ИСПРАВЛЕНО: Добавлена функция, которую ожидает core_animation.rs
+pub fn recomposite_if_necessary(_env: &mut Environment) {
+    // TODO: логика перерисовки или композиции слоев
+}
 
 pub struct UIViewHostObject {
     pub layer: id,
@@ -95,7 +107,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     let layer = msg![env; this layer];
     let subview_layer = msg![env; view layer];
     
-    // Добавляем слой сабвью в иерархию слоев
+    // Добавляем слой сабвью в иерахию слоев
     msg![env; layer addSublayer:subview_layer];
     
     let host_obj = env.objc.borrow_mut::<UIViewHostObject>(this);
@@ -116,4 +128,3 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 };
-
