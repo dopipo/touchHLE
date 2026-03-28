@@ -9,23 +9,31 @@
 //! - Apple's [Core Animation Programming Guide](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/CoreAnimation_guide/Introduction/Introduction.html)
 
 pub mod ca_animation;
+pub mod ca_display_link;
 pub mod ca_eagl_layer;
 pub mod ca_layer;
 pub mod ca_media_timing_function;
-pub mod ca_transform;
+pub mod ca_transaction;
 
+mod animation;
 mod composition;
+
 pub use composition::recomposite_if_necessary;
 
-pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
-    path: "/System/Library/Frameworks/CoreAnimation.framework/CoreAnimation",
-    aliases: &[],
-    class_exports: &[],
-    constant_exports: &[],
-    function_exports: &[],
-};
+use crate::dyld::{export_c_func, FunctionExports};
+use crate::frameworks::core_foundation::time::CFTimeInterval;
+use crate::Environment;
+use std::time::Instant;
 
-#[derive(Default)]
-pub struct State {
-    composition: composition::State,
-}
+pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
+    // Core Animation is considered its own framework, but it technically lives
+    // in a binary called QuartzCore, which does not contain anything else of
+    // interest in iPhone OS 2 and 3. (iOS 5 adds Core Image to QuartzCore.)
+    path: "/System/Library/Frameworks/QuartzCore.framework/QuartzCore",
+    aliases: &[],
+    class_exports: &[
+        ca_animation::CLASSES,
+        ca_display_link::CLASSES,
+        ca_eagl_layer::CLASSES,
+        ca_layer::CLASSES,
+        ca_media_timing_function::CLASSES
