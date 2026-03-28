@@ -26,7 +26,6 @@ use super::util::{
     fixed_to_float, matrix_fixed_to_float, try_decode_pvrtc, PalettedTextureFormat, ParamTable,
     ParamType,
 };
-use super::GLESContext;
 use crate::window::{GLContext, GLVersion, Window};
 use std::collections::HashSet;
 use std::ffi::CStr;
@@ -377,7 +376,6 @@ const TEX_PARAMETER_PARAMS: ParamTable = ParamTable(&[
 ]);
 
 pub struct GLES1OnGL2 {
-    context: GLESContext,
     pub(super) window: Window,
     gl: GLContext,
 }
@@ -414,7 +412,6 @@ impl GLES1OnGL2 {
         }
 
         Self {
-            context: GLESContext::new(),
             window,
             gl,
         }
@@ -1070,6 +1067,107 @@ impl GLES for GLES1OnGL2 {
     }
     unsafe fn GenBuffers(&mut self, n: GLsizei, buffers: *mut GLuint) {
         gl21::GenBuffers(n, buffers)
+    }
+
+    // ── Methods missing from original impl ──────────────────────────────────
+
+    unsafe fn driver_description(&self) -> String {
+        let vendor = gl21::GetString(gl21::VENDOR);
+        let renderer = gl21::GetString(gl21::RENDERER);
+        let version = gl21::GetString(gl21::VERSION);
+        let v = |p: *const u8| {
+            if p.is_null() { "<null>".to_string() }
+            else { std::ffi::CStr::from_ptr(p as *const i8).to_string_lossy().into_owned() }
+        };
+        format!("OpenGL 2.1 compat ({} {} {})", v(vendor), v(renderer), v(version))
+    }
+
+    unsafe fn IsEnabled(&mut self, cap: GLenum) -> GLboolean {
+        gl21::IsEnabled(cap)
+    }
+
+    unsafe fn GetBooleanv(&mut self, pname: GLenum, params: *mut GLboolean) {
+        gl21::GetBooleanv(pname, params)
+    }
+
+    unsafe fn GetFloatv(&mut self, pname: GLenum, params: *mut GLfloat) {
+        gl21::GetFloatv(pname, params)
+    }
+
+    unsafe fn GetTexEnviv(&mut self, target: GLenum, pname: GLenum, params: *mut GLint) {
+        gl21::GetTexEnviv(target, pname, params)
+    }
+
+    unsafe fn GetTexEnvfv(&mut self, target: GLenum, pname: GLenum, params: *mut GLfloat) {
+        gl21::GetTexEnvfv(target, pname, params)
+    }
+
+    unsafe fn GetPointerv(&mut self, pname: GLenum, params: *mut *const GLvoid) {
+        gl21::GetPointerv(pname, params as *mut *mut GLvoid)
+    }
+
+    unsafe fn ActiveTexture(&mut self, texture: GLenum) {
+        gl21::ActiveTexture(texture)
+    }
+
+    unsafe fn BlendEquationOES(&mut self, mode: GLenum) {
+        gl21::BlendEquation(mode)
+    }
+
+    unsafe fn ClipPlanef(&mut self, plane: GLenum, equation: *const GLfloat) {
+        let eq = std::slice::from_raw_parts(equation, 4);
+        let eq64: [f64; 4] = [eq[0] as f64, eq[1] as f64, eq[2] as f64, eq[3] as f64];
+        gl21::ClipPlane(plane, eq64.as_ptr())
+    }
+
+    unsafe fn ClipPlanex(&mut self, plane: GLenum, equation: *const GLfixed) {
+        let eq = std::slice::from_raw_parts(equation, 4);
+        let eq64: [f64; 4] = [
+            fixed_to_float(eq[0]) as f64,
+            fixed_to_float(eq[1]) as f64,
+            fixed_to_float(eq[2]) as f64,
+            fixed_to_float(eq[3]) as f64,
+        ];
+        gl21::ClipPlane(plane, eq64.as_ptr())
+    }
+
+    unsafe fn CompressedTexImage2D(
+        &mut self,
+        target: GLenum,
+        level: GLint,
+        internalformat: GLenum,
+        width: GLsizei,
+        height: GLsizei,
+        border: GLint,
+        image_size: GLsizei,
+        data: *const GLvoid,
+    ) {
+        if let Some(format) = PalettedTextureFormat::from_gles(internalformat as _) {
+            let (w, h, decoded) = try_decode_pvrtc(width as _, height as _, format, data);
+            gl21::TexImage2D(
+                target,
+                level,
+                gl21::RGBA8 as _,
+                w as _,
+                h as _,
+                border,
+                gl21::RGBA,
+                gl21::UNSIGNED_BYTE,
+                decoded.as_ptr() as *const _,
+            );
+        } else {
+            gl21::CompressedTexImage2D(
+                target, level, internalformat, width, height, border, image_size, data,
+            )
+        }
+    }
+
+    unsafe fn MapBufferOES(&mut self, target: GLenum, access: GLenum) -> *mut GLvoid {
+        gl21::MapBuffer(target, access)
+    }
+
+    unsafe fn UnmapBufferOES(&mut self, target: GLenum) -> GLboolean {
+        gl21::UnmapBuffer(target)
     }
 }
 
