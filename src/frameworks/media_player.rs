@@ -5,11 +5,11 @@
  */
 //! The Media Player framework.
 
-mod media_library;
-mod media_picker_controller;
-mod media_query;
-mod movie_player;
-mod music_player;
+pub mod media_library;
+pub mod media_picker_controller;
+pub mod media_query;
+pub mod movie_player;
+pub mod music_player;
 
 pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
     path: "/System/Library/Frameworks/MediaPlayer.framework/MediaPlayer",

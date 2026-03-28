@@ -186,7 +186,7 @@ where
 }
 
 /// Helper for working with [ClassExports]/[ConstantExports]/[FunctionExports].
-fn search_lists<T>(
+pub fn search_lists<T>(
     lists: &'static [&'static [(&'static str, T)]],
     symbol: &str,
 ) -> Option<&'static (&'static str, T)> {

@@ -5,7 +5,8 @@
  */
 //! `UIPickerView`.
 
-use crate::objc::{id, objc_classes, todo_objc_setter, ClassExports};
+use crate::todo_objc_setter;
+use crate::objc::{id, objc_classes, ClassExports};
 
 // TODO: rendering
 

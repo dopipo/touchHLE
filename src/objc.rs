@@ -126,3 +126,11 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(sel_registerName(_)),
     export_c_func!(_Block_object_dispose(_, _)),
 ];
+
+pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
+    path: "/usr/lib/libobjc.A.dylib",
+    aliases: &["/usr/lib/libobjc.dylib"],
+    class_exports: &[],
+    constant_exports: &[],
+    function_exports: &[FUNCTIONS],
+};

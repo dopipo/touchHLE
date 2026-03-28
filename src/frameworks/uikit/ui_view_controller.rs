@@ -15,10 +15,9 @@ use crate::frameworks::uikit::ui_application::{
     UIInterfaceOrientation, UIInterfaceOrientationPortrait,
 };
 use crate::frameworks::uikit::ui_view::set_view_controller;
-use crate::objc::{
-    id, msg, msg_class, nil, objc_classes, release, retain, todo_objc_setter, Class, ClassExports,
-    HostObject, NSZonePtr,
-};
+use crate::todo_objc_setter;
+use crate::objc::{id, msg, msg_class, nil, objc_classes, release, retain, Class, ClassExports,
+    HostObject, NSZonePtr};
 use crate::Environment;
 
 pub mod ui_navigation_controller;

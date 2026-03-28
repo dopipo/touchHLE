@@ -30,7 +30,13 @@ struct UIApplicationHostObject {
 }
 impl HostObject for UIApplicationHostObject {}
 
-type UIInterfaceOrientation = UIDeviceOrientation;
+pub type UIInterfaceOrientation = UIDeviceOrientation;
+
+pub const UIInterfaceOrientationPortrait: UIInterfaceOrientation = UIDeviceOrientationPortrait;
+pub const UIInterfaceOrientationPortraitUpsideDown: UIInterfaceOrientation = UIDeviceOrientationPortraitUpsideDown;
+pub const UIInterfaceOrientationLandscapeLeft: UIInterfaceOrientation = UIDeviceOrientationLandscapeLeft;
+pub const UIInterfaceOrientationLandscapeRight: UIInterfaceOrientation = UIDeviceOrientationLandscapeRight;
+
 type UIRemoteNotificationType = NSUInteger;
 
 pub const CLASSES: ClassExports = objc_classes! {

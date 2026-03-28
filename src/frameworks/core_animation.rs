@@ -17,6 +17,14 @@ pub mod ca_transform;
 mod composition;
 pub use composition::recomposite_if_necessary;
 
+pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
+    path: "/System/Library/Frameworks/CoreAnimation.framework/CoreAnimation",
+    aliases: &[],
+    class_exports: &[],
+    constant_exports: &[],
+    function_exports: &[],
+};
+
 #[derive(Default)]
 pub struct State {
     composition: composition::State,

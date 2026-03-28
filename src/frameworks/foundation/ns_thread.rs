@@ -13,6 +13,7 @@ use crate::libc::pthread::thread::{
     pthread_t, PTHREAD_CREATE_DETACHED,
 };
 use crate::mem::{guest_size_of, MutPtr};
+use crate::dyld::ConstantExports;
 use crate::objc::{
     autorelease, id, msg_send, nil, objc_classes, release, retain, Class, ClassExports, HostObject, NSZonePtr,
     SEL,
@@ -308,3 +309,4 @@ pub fn _touchHLE_NSThreadInvocationHelper(env: &mut Environment, ns_thread_obj: 
 
     // TODO: NSThread exit
 }
+pub const CONSTANTS: ConstantExports = &[];

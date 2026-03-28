@@ -26,7 +26,7 @@ pub const DYLIB: HostDylib = HostDylib {
 
 type CLLocationAccuracy = f64;
 
-const CLASSES: ClassExports = objc_classes! {
+pub const CLASSES: ClassExports = objc_classes! {
 
 (env, this, _cmd);
 

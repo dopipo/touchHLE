@@ -8,7 +8,8 @@
 use crate::dyld::ConstantExports;
 use crate::dyld::HostConstant;
 use crate::frameworks::foundation::{ns_string, NSInteger};
-use crate::objc::{id, msg, objc_classes, todo_objc_setter, ClassExports, TrivialHostObject};
+use crate::todo_objc_setter;
+use crate::objc::{id, msg, objc_classes, ClassExports, TrivialHostObject};
 use crate::window::{get_battery_status, BatteryState, DeviceOrientation};
 
 pub const UIDeviceOrientationDidChangeNotification: &str =

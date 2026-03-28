@@ -6,6 +6,7 @@
 //! `NSTimeZone`.
 
 use crate::frameworks::foundation::{ns_string, NSInteger, NSUInteger};
+use crate::dyld::ConstantExports;
 use crate::objc::{autorelease, id, nil, release, retain, ClassExports, HostObject, NSZonePtr};
 use crate::{msg, objc_classes};
 
@@ -85,3 +86,4 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 };
+pub const CONSTANTS: ConstantExports = &[];

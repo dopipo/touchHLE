@@ -151,6 +151,14 @@ struct AppPickerDelegateHostObject {
 }
 impl HostObject for AppPickerDelegateHostObject {}
 
+pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
+    path: "/System/Library/PrivateFrameworks/AppPicker.framework/AppPicker",
+    aliases: &[],
+    class_exports: &[CLASSES],
+    constant_exports: &[],
+    function_exports: &[],
+};
+
 /// Be careful! These classes go in the normal class list, just like everything
 /// else, so an app could try to instantiate them. Don't give them special
 /// powers that could be exploited!

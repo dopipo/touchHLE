@@ -9,14 +9,14 @@ use crate::dyld::FunctionExports;
 use crate::mem::{ConstVoidPtr, MutPtr};
 use crate::{export_c_func, Environment};
 use digest::Digest;
-use md5::Md5;
+use md5::{compute as md5_compute, Context as Md5Context};
 use sha1::Sha1;
 
 fn CC_MD5(env: &mut Environment, data: ConstVoidPtr, len: u32, md: MutPtr<u8>) -> MutPtr<u8> {
-    let mut hasher = Md5::new();
-    hasher.update(env.mem.bytes_at(data.cast(), len));
-    let digest = hasher.finalize();
-    env.mem.bytes_at_mut(md, 16).copy_from_slice(&digest[..]);
+    let mut hasher = Md5Context::new();
+    hasher.consume(env.mem.bytes_at(data.cast(), len));
+    let digest = hasher.compute();
+    env.mem.bytes_at_mut(md, 16).copy_from_slice(&digest.0);
     md
 }
 

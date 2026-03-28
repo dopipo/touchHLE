@@ -16,11 +16,16 @@ pub const ENOENT: i32 = 2;
 pub const ESRCH: i32 = 3;
 pub const EINTR: i32 = 4;
 pub const EIO: i32 = 5;
+pub const EACCES: i32 = 13;
 pub const EBADF: i32 = 9;
+pub const ECHILD: i32 = 10;
 pub const EDEADLK: i32 = 11;
+pub const ENOEXEC: i32 = 8;
 pub const EBUSY: i32 = 16;
 pub const EEXIST: i32 = 17;
 pub const EINVAL: i32 = 22;
+pub const EISDIR: i32 = 21;
+pub const EROFS: i32 = 30;
 pub const ESPIPE: i32 = 29;
 pub const EAGAIN: i32 = 35;
 #[allow(dead_code)]

@@ -18,10 +18,9 @@ use crate::frameworks::uikit::ui_view::ui_window::{
     UIKeyboardWillShowNotification,
 };
 use crate::impl_HostObject_with_superclass;
-use crate::objc::{
-    id, msg, msg_class, msg_super, nil, objc_classes, release, todo_objc_setter, ClassExports,
-    NSZonePtr, SEL,
-};
+use crate::todo_objc_setter;
+use crate::objc::{id, msg, msg_class, msg_super, nil, objc_classes, release, ClassExports,
+    NSZonePtr, SEL};
 use crate::Environment;
 
 type UIKeyboardAppearance = NSInteger;
