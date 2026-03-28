@@ -9,7 +9,6 @@ use owned_ttf_parser::GlyphId;
 use super::cg_affine_transform::CGAffineTransform;
 use super::cg_image::CGImageRef;
 use super::{cg_bitmap_context, CGFloat, CGPoint, CGRect, CGSize};
-use crate::abi::GuestArg;
 use crate::dyld::{export_c_func, FunctionExports};
 use crate::frameworks::core_foundation::{CFRelease, CFRetain, CFTypeRef};
 use crate::frameworks::core_graphics::cg_bitmap_context::{
