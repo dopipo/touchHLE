@@ -51,7 +51,6 @@ pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
 #[derive(Default)]
 pub struct State {
     // ИСПРАВЛЕНО: поля сделаны публичными для доступа из Environment/FrameworkState
-    pub ca_media_timing_function: ca_media_timing_function::State,
     pub ca_transaction: ca_transaction::State,
     pub composition: composition::State,
 }
@@ -66,5 +65,5 @@ pub fn CACurrentMediaTime(env: &mut Environment) -> CFTimeInterval {
 }
 
 pub const FUNCTIONS: FunctionExports = &[
-    export_c_func!(CACurrentMediaTime(env)),
+    export_c_func!(CACurrentMediaTime()),
 ];
