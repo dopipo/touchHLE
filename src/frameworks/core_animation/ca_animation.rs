@@ -9,8 +9,9 @@ use crate::dyld::{ConstantExports, HostConstant};
 use crate::frameworks::core_animation::ca_media_timing_function::kCAMediaTimingFunctionDefault;
 use crate::frameworks::core_foundation::time::CFTimeInterval;
 use crate::frameworks::foundation::ns_string::{get_static_str, to_rust_string};
+use crate::todo_objc_setter; // Исправлено: макрос импортируется из корня
 use crate::objc::{
-    autorelease, id, msg, nil, objc_classes, release, retain, todo_objc_setter, ClassExports,
+    autorelease, id, msg, nil, objc_classes, release, retain, ClassExports,
     HostObject, NSZonePtr,
 };
 use crate::Environment;
@@ -310,4 +311,4 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 pub fn get_animation_start_time(env: &mut Environment, animation: id) -> Option<CFTimeInterval> {
     env.objc.borrow::<CAAnimationHostObject>(animation).started_at
-    }
+}
