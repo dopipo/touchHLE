@@ -87,11 +87,10 @@ pub fn UIGraphicsGetImageFromCurrentImageContext(_env: &mut Environment) -> UIIm
 }
 
 pub const FUNCTIONS: FunctionExports = &[
-    // ИСПРАВЛЕНО: Добавлен проброс env в макросе
-    export_c_func!(UIGraphicsPushContext(env, _)),
-    export_c_func!(UIGraphicsPopContext(env)),
-    export_c_func!(UIGraphicsGetCurrentContext(env)),
-    export_c_func!(UIGraphicsBeginImageContext(env, _)),
-    export_c_func!(UIGraphicsEndImageContext(env)),
-    export_c_func!(UIGraphicsGetImageFromCurrentImageContext(env)),
+    export_c_func!(UIGraphicsPushContext(_)),
+    export_c_func!(UIGraphicsPopContext()),
+    export_c_func!(UIGraphicsGetCurrentContext()),
+    export_c_func!(UIGraphicsBeginImageContext(_)),
+    export_c_func!(UIGraphicsEndImageContext()),
+    export_c_func!(UIGraphicsGetImageFromCurrentImageContext()),
 ];
