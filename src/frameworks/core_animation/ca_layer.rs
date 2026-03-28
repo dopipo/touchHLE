@@ -22,7 +22,25 @@ use crate::frameworks::foundation::ns_string;
 use crate::mem::{GuestUSize, Ptr};
 use crate::objc::{id, msg, nil, objc_classes, release, retain, ClassExports, HostObject, ObjC};
 use std::collections::HashMap;
-use crate::frameworks::core_animation::ca_transform::CATransform3D;
+
+/// Core Animation 4x4 transform matrix (column-major, same layout as iOS).
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct CATransform3D {
+    pub m11: f32, pub m12: f32, pub m13: f32, pub m14: f32,
+    pub m21: f32, pub m22: f32, pub m23: f32, pub m24: f32,
+    pub m31: f32, pub m32: f32, pub m33: f32, pub m34: f32,
+    pub m41: f32, pub m42: f32, pub m43: f32, pub m44: f32,
+}
+impl CATransform3D {
+    pub fn identity() -> Self {
+        Self {
+            m11: 1.0, m12: 0.0, m13: 0.0, m14: 0.0,
+            m21: 0.0, m22: 1.0, m23: 0.0, m24: 0.0,
+            m31: 0.0, m32: 0.0, m33: 1.0, m34: 0.0,
+            m41: 0.0, m42: 0.0, m43: 0.0, m44: 1.0,
+        }
+    }
+}
 
 // ИСПРАВЛЕНО: Изменено с pub(super) на pub
 pub struct CALayerHostObject {
