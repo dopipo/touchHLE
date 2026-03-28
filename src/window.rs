@@ -37,6 +37,7 @@ pub enum DeviceOrientation {
     LandscapeRight,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum DeviceFamily {
     iPhone,
