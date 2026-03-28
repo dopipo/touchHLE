@@ -19,7 +19,6 @@ pub const CLASSES: ClassExports = objc_classes! {
 // EAGLDrawable implementation (the only one)
 
 - (id)drawableProperties {
-    // FIXME: do we need to return an empty dictionary rather than nil?
     env.objc.borrow::<CALayerHostObject>(this).drawable_properties
 }
 
@@ -31,9 +30,9 @@ pub const CLASSES: ClassExports = objc_classes! {
     nil
 }
 
-- (())setDrawableProperties:(id)props { // NSDictionary<NSString*, id>*
-    let props: id = msg![env; props copy];
-    env.objc.borrow_mut::<CALayerHostObject>(this).drawable_properties = props;
+- (())setDrawableProperties:(id)props {
+    let props_copy: id = msg![env; props copy];
+    env.objc.borrow_mut::<CALayerHostObject>(this).drawable_properties = props_copy;
 }
 
 - (())setContentsScale:(bool)scale {
@@ -44,18 +43,17 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 };
 
-/// Если существует непрозрачный `CAEAGLLayer`, который занимает весь экран,
-/// функция возвращает указатель на него. В противном случае — [nil].
 pub fn find_fullscreen_eagl_layer(env: &mut Environment) -> id {
     let ui_window_class = msg_class![env; UIWindow class];
     let mut layer = nil;
 
-    // Ищем основное окно
-    for window in &env.framework_state.uikit.ui_window.windows {
-        if !msg![env; *window isKindOfClass:ui_window_class] {
+    // Ищем основное окно. Извлекаем id из вектора, чтобы избежать разыменования внутри msg!
+    let windows = env.framework_state.uikit.ui_window.windows.clone();
+    for window in windows {
+        if !msg![env; window isKindOfClass:ui_window_class] {
             continue;
         }
-        layer = msg![env; *window layer];
+        layer = msg![env; window layer];
         break;
     }
 
@@ -63,11 +61,9 @@ pub fn find_fullscreen_eagl_layer(env: &mut Environment) -> id {
         return nil;
     }
 
-    // Спускаемся по иерархии слоев до самого глубокого
     loop {
         let layer_host_obj = env.objc.borrow::<CALayerHostObject>(layer);
         
-        // Проверяем, что слой не трансформирован (должен быть identity)
         if !layer_host_obj.affine_transform.is_identity() {
             return nil;
         }
@@ -79,12 +75,10 @@ pub fn find_fullscreen_eagl_layer(env: &mut Environment) -> id {
         }
     }
 
-    // Проверяем непрозрачность
     if !env.objc.borrow::<CALayerHostObject>(layer).opaque {
         return nil;
     }
 
-    // Убеждаемся, что это именно CAEAGLLayer
     let ca_eagl_layer_class: Class = msg_class![env; CAEAGLLayer class];
     if !msg![env; layer isKindOfClass:ca_eagl_layer_class] {
         return nil;
@@ -93,7 +87,6 @@ pub fn find_fullscreen_eagl_layer(env: &mut Environment) -> id {
     layer
 }
 
-/// Используется `EAGLContext` для получения буфера пикселей перед отрисовкой.
 pub fn get_pixels_vec_for_presenting(env: &mut Environment, layer: id) -> Vec<u8> {
     env.objc
         .borrow_mut::<CALayerHostObject>(layer)
@@ -103,7 +96,6 @@ pub fn get_pixels_vec_for_presenting(env: &mut Environment, layer: id) -> Vec<u8
         .unwrap_or_default()
 }
 
-/// Используется `EAGLContext` для передачи отрендеренного кадра слою.
 pub fn present_pixels(env: &mut Environment, layer: id, pixels: Vec<u8>, width: u32, height: u32) {
     env.objc
         .borrow_mut::<CALayerHostObject>(layer)
