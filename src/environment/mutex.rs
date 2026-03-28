@@ -102,6 +102,22 @@ impl MutexState {
             .get(&mutex_id)
             .is_some_and(|mutex| mutex.locked.is_some())
     }
+
+    pub fn mutex_is_recursive(&self, mutex_id: MutexId) -> bool {
+        self.mutexes
+            .get(&mutex_id)
+            .is_some_and(|mutex| mutex.type_ == MutexType::PTHREAD_MUTEX_RECURSIVE)
+    }
+
+    pub fn mutex_is_locked_by(&self, mutex_id: MutexId, thread: ThreadId) -> bool {
+        self.mutexes.get(&mutex_id).is_some_and(|mutex| {
+            if let Some((lock_thread, _)) = mutex.locked {
+                lock_thread == thread
+            } else {
+                false
+            }
+        })
+    }
 }
 
 impl Environment {
@@ -210,9 +226,10 @@ impl Environment {
         if locking_thread != current_thread {
             match mutex.type_ {
                 MutexType::PTHREAD_MUTEX_NORMAL => {
-                    // This case is undefined, we may as well panic.
-                    panic!(
-                        "Attempted to unlock non-error-checking mutex #{mutex_id} for thread {current_thread}, locked by different thread {locking_thread}!",
+                    // This case is undefined,
+                    // but tests on macOS/iOS shows it is allowed!
+                    log!(
+                        "Warning: Allowing to unlock non-error-checking mutex #{mutex_id} for thread {current_thread}, locked by different thread {locking_thread}!",
                     );
                 }
                 MutexType::PTHREAD_MUTEX_ERRORCHECK | MutexType::PTHREAD_MUTEX_RECURSIVE => {

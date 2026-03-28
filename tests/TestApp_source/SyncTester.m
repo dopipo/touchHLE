@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 #import "SyncTester.h"
-#import "system_headers_objc.h"
+#import "system_headers.h"
 
 @implementation SyncTester : NSObject {
 }

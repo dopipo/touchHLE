@@ -18,6 +18,33 @@ pub mod cg_geometry;
 pub mod cg_image;
 pub mod cg_font;
 
+pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
+    path: "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics",
+    aliases: &[],
+    class_exports: &[
+        cg_data_provider::CLASSES,
+        cg_color::CLASSES,
+        cg_color_space::CLASSES,
+        cg_context::CLASSES,
+        cg_image::CLASSES,
+    ],
+    constant_exports: &[
+        cg_affine_transform::CONSTANTS,
+        cg_color_space::CONSTANTS,
+        cg_geometry::CONSTANTS,
+    ],
+    function_exports: &[
+        cg_affine_transform::FUNCTIONS,
+        cg_bitmap_context::FUNCTIONS,
+        cg_color::FUNCTIONS,
+        cg_color_space::FUNCTIONS,
+        cg_context::FUNCTIONS,
+        cg_data_provider::FUNCTIONS,
+        cg_geometry::FUNCTIONS,
+        cg_image::FUNCTIONS,
+    ],
+};
+
 pub type CGFloat = f32;
 
 pub use cg_geometry::{CGPoint, CGRect, CGSize};

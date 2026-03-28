@@ -30,6 +30,17 @@ View options:
 
         This is a natural number that is at least 1.
 
+Device options:
+    --device-family=...
+        Specifies which device family should be emulated: iPhone or iPad.
+        This only work if running app does support selected family
+        (or the option will be ignored).
+
+        If omitted, suitable device family would be deduced from application
+        bundle itself, falling back to iPhone if needed.
+
+        Accepted values are "iphone" and "ipad" respectively.
+
 Game controller options:
     --deadzone=...
         Configures the size of the \"dead zone\" for analog stick inputs.
@@ -94,7 +105,7 @@ Game controller options:
         symbol. It may be negative.
 
     --button-to-touch=...
-        Maps a button on your game controller to a point on the simulated touch
+        Maps a button on a game controller to a point on the simulated touch
         screen of the device. Pressing the button will behave like touching that
         part of the screen.
 
@@ -107,6 +118,46 @@ Game controller options:
 
         For example, --button-to-touch=A,470,310 will make the A button simulate
         tapping in the bottom-right corner of the screen, for a landscape game.
+
+        Except where specified in touchHLE_default_options.txt, this is not used
+        by default. There is however a virtual cursor that is controlled by the
+        right analog stick (tap/hold by pressing the stick or right shoulder
+        button).
+
+    --dpad-to-touch=...
+        Maps a D-pad on a game controller to simulated finger movement within a
+        region of the simulated touch screen of the device. This is useful for
+        games where diagonals are used.
+
+        This is four parts separated by commas: x,y,w,h. The co-ordinates
+        are floating-point (decimal) numbers. 0,0 is the top-left corner. The
+        bottom-right corner is 320,480 if the app is in portrait, and 480,320
+        if the app is in landscape.
+
+        For example, --dpad-to-touch=10,10,50,50 will simulate an 8-directional
+        D-pad within a 50x50 pixel region starting at (10,10) on the screen.
+
+        Note that this option takes precedence over any D-pad buttons defined
+        with --button-to-touch.
+
+        Except where specified in touchHLE_default_options.txt, this is not used
+        by default. There is however a virtual cursor that is controlled by the
+        right analog stick (tap/hold by pressing the stick or right shoulder
+        button).
+
+    --stick-to-touch=...
+        Maps the left analog stick to simulated finger movement within a region
+        of the simulated touch screen of the device. This is useful for games
+        which use analog movement controls.
+
+        This is four parts separated by commas: x,y,w,h. The co-ordinates
+        are floating-point (decimal) numbers. 0,0 is the top-left corner. The
+        bottom-right corner is 320,480 if the app is in portrait, and 480,320
+        if the app is in landscape.
+
+        For example, --stick-to-touch=10,10,100,100 will map the left analog
+        stick to control a touch within a 100x100 pixel region starting at
+        (10,10) on the screen.
 
         Except where specified in touchHLE_default_options.txt, this is not used
         by default. There is however a virtual cursor that is controlled by the
@@ -194,6 +245,11 @@ Other options:
         Run in headless mode. touchHLE will not create a window, so there will
         be no graphical output and no input. Only useful for command-line apps.
         Implies --no-error-popup.
+
+    --args
+        All arguments following this option will be passed to the app (via C's
+        argc/argv) rather than processed by touchHLE. This option can't be used
+        via touchHLE_options.txt or touchHLE_default_options.txt.
 
     --print-fps
         Logs the current framerate (FPS) to the console once per second.

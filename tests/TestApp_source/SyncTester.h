@@ -7,7 +7,7 @@
 //  SyncTester.h
 //  TestApp
 //
-#import "system_headers_objc.h"
+#import "system_headers.h"
 
 @interface SyncTester : NSObject {
 }

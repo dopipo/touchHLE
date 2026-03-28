@@ -63,23 +63,6 @@ fn make_path_and_check(
     buf
 }
 
-fn generate_libc_stub<'a, F: std::io::Write, S: AsRef<str>, I: Iterator<Item = S>>(
-    output: &mut F,
-    symbols: &mut I,
-) -> Result<(), Box<dyn Error>> {
-    for symbol in symbols {
-        // Need to strip off leading underscore
-        let symbol = &symbol.as_ref().trim();
-        assert!(
-            symbol.chars().nth(0).unwrap() == '_',
-            "symbol {} does not start with '_'",
-            symbol
-        );
-        writeln!(output, "void {}() {{}}", &symbol[1..])?;
-    }
-    Ok(())
-}
-
 fn build_object<I: Iterator<Item = P>, P: AsRef<OsStr>>(
     tests_dir: &Path,
     output_name: &Path,
@@ -114,11 +97,13 @@ fn build_object<I: Iterator<Item = P>, P: AsRef<OsStr>>(
         // Target iPhone OS 2
         .arg("--target=arm-apple-ios")
         .arg("-miphoneos-version-min=2.0")
-        .args(["-arch", "armv7"])
+        .args(["-arch", "armv6", "-arch", "armv7"])
         // If enabled, the stack protection causes a null pointer crash in some
         // functions. This is probably because ___stack_chk_guard isn't linked.
         .arg("-fno-stack-protector")
         .arg("-DPRODUCT_iPhone")
+        // This prevents clang from attempting to link clang_rt on macOS.
+        .arg("-nodefaultlibs")
         .arg(linker_arg)
         .arg(sdk_arg)
         .args(extra_compile_args)
@@ -144,21 +129,28 @@ fn build_object<I: Iterator<Item = P>, P: AsRef<OsStr>>(
 fn run_test_app(
     tests_dir: &Path,
     test_app_name: &str,
-    sources: &[&Path],
     extra_compile_args: &[&str],
     extra_run_args: &[&str],
 ) -> Result<(), Box<dyn Error>> {
     let test_app_path = tests_dir.join(format!("{}.app", test_app_name));
+
+    let source_path = tests_dir.join(format!("{}_source", test_app_name));
+    let sources = std::fs::read_dir(&source_path)
+        .unwrap()
+        .map(|entry| PathBuf::from(entry.unwrap().file_name()))
+        .filter(|filename| {
+            filename
+                .extension()
+                .is_some_and(|ext| ext == "m" || ext == "c")
+        })
+        .map(|entry| source_path.join(entry));
+
     build_object(
         &tests_dir,
         &tests_dir
             .join(format!("{}.app", test_app_name))
             .join(test_app_name),
-        sources.iter().map(|file| {
-            tests_dir
-                .join(format!("{}_source", test_app_name))
-                .join(file)
-        }),
+        sources,
         extra_compile_args,
     )?;
     let binary_name = "touchHLE";
@@ -170,6 +162,9 @@ fn run_test_app(
         // testing, and works in CI.
         .arg("--headless")
         .args(extra_run_args)
+        // Run the automated CLI tests, rather than the manual UIKit tests.
+        .arg("--args")
+        .arg("--cli-tests")
         .output()
         .expect("failed to execute touchHLE process");
     std::io::stdout().write_all(&output.stdout).unwrap();
@@ -189,17 +184,47 @@ fn run_test_app(
     Ok(())
 }
 
+/// Recursively copy a directory's content to a destination skipping symlinks
+fn copy_dir_all(source: PathBuf, destination: PathBuf) -> std::io::Result<()> {
+    std::fs::create_dir_all(&destination)?;
+    for entry in std::fs::read_dir(source)? {
+        let entry = entry?;
+        let entry_type = entry.file_type()?;
+
+        if entry_type.is_file() {
+            std::fs::copy(entry.path(), destination.join(entry.file_name()))?;
+        } else if entry_type.is_dir() {
+            copy_dir_all(entry.path(), destination.join(entry.file_name()))?;
+        }
+    }
+    Ok(())
+}
+
 #[test]
 fn test_app() -> Result<(), Box<dyn Error>> {
     let tests_dir = current_dir()?.join("tests");
-    let sdk_libs_dir = "-L".to_owned() + current_dir()?.join("touchHLE_dylibs").to_str().unwrap();
-    let libc_stub_dir = "-L".to_owned() + tests_dir.join("libc_stub").to_str().unwrap();
-    let extra_compile_args = [
+    let stubs_dir = tests_dir.join("stubs");
+    let stubs_src_dir = stubs_dir.join("src");
+    let stubs_lib_dir = stubs_dir.join("lib");
+    let stubs_frameworks_dir = stubs_dir.join("Frameworks");
+
+    // Wipe the stubs dir to ensure it is clean.
+    let _ = std::fs::remove_dir_all(&stubs_dir);
+    // Create the stubs dir
+    std::fs::create_dir(&stubs_dir).unwrap();
+
+    let bundled_libs_search_arg =
+        "-L".to_owned() + current_dir()?.join("touchHLE_dylibs").to_str().unwrap();
+    let stubs_lib_search_arg = "-L".to_owned() + stubs_lib_dir.to_str().unwrap();
+    let stubs_frameworks_search_arg = "-F".to_owned() + stubs_frameworks_dir.to_str().unwrap();
+    let mut extra_linker_args = Vec::<String>::new();
+    let mut extra_compile_args = vec![
         "-mlinker-version=253",
         "-Wno-expansion-to-defined",
         "-Wno-literal-range",
-        sdk_libs_dir.as_str(),
-        libc_stub_dir.as_str(),
+        bundled_libs_search_arg.as_str(),
+        stubs_lib_search_arg.as_str(),
+        stubs_frameworks_search_arg.as_str(),
         "-ObjC",
         "-fno-objc-exceptions",
         // ARC is not available until IOS 5, so it can't be used.
@@ -207,8 +232,9 @@ fn test_app() -> Result<(), Box<dyn Error>> {
         "-fno-objc-arc-exceptions",
     ];
 
-    // Generate symbols.
-    let symbols_path = tests_dir.join("SYMBOLS.txt");
+    // Generate symbol stubs.
+
+    let symbols_path = stubs_dir.join("SYMBOLS.txt");
     let dump_file_option = format!("--dump-file={}", symbols_path.to_str().unwrap());
     let dump_run_args = ["--dump=symbols", dump_file_option.as_str(), "--headless"];
     let binary_name = "touchHLE";
@@ -220,38 +246,99 @@ fn test_app() -> Result<(), Box<dyn Error>> {
         .expect("failed to execute touchHLE process");
     assert!(output.status.success());
 
-    let symbols_file = BufReader::new(File::open(symbols_path).unwrap());
-    let mut output_file =
-        BufWriter::new(File::create(tests_dir.join("libc_stub").join("libc_stub.c")).unwrap());
-    generate_libc_stub(
-        &mut output_file,
-        &mut symbols_file.lines().map(|s| s.unwrap()),
-    )
-    .unwrap();
-    // Close the file so it gets flushed
-    std::mem::drop(output_file);
-    let libc_compile_args = [
-        "-mlinker-version=253",
-        "-fno-builtin",
-        "-nostdlib",
-        &format!(
-            "-Wl,-install_name,{}",
-            Path::new("usr")
-                .join("lib")
-                .join("libSystem.B.dylib")
-                .to_str()
-                .unwrap()
-        ),
-        "-Wl,-dylib",
-    ];
-    build_object(
-        &tests_dir,
-        &tests_dir.join("libc_stub").join("libSystem.dylib"),
-        [tests_dir.join("libc_stub").join("libc_stub.c")].iter(),
-        &libc_compile_args,
-    )
-    .unwrap();
+    // Split SYMBOLS.txt into individual source files.
 
-    let sources = ["main.m", "SyncTester.m"].map(|file| Path::new(file));
-    run_test_app(&tests_dir, "TestApp", &sources, &extra_compile_args, &[])
+    std::fs::create_dir(&stubs_src_dir).unwrap();
+    let mut files_to_compile = Vec::<(String, PathBuf)>::new();
+    {
+        let mut in_body = false;
+        let mut current_file = None::<BufWriter<File>>;
+        for line in BufReader::new(File::open(symbols_path).unwrap()).lines() {
+            let line = line.unwrap();
+            if let Some(dylib_path) = line.strip_prefix("// ") {
+                // First comment after a series of non-comment lines, or first
+                // comment in the file: this is the canonical name of the dylib.
+                if in_body || current_file.is_none() {
+                    let dylib_name = dylib_path.rsplit_once("/").unwrap().1;
+                    let stub_src_path = stubs_src_dir.join(format!("{}.m", dylib_name));
+                    current_file = Some(BufWriter::new(File::create(&stub_src_path).unwrap()));
+                    files_to_compile.push((dylib_path.to_string(), stub_src_path));
+                    in_body = false;
+                }
+                // Ignore the non-canonical dylib names for now.
+            } else if let Some(ref mut current_file) = current_file {
+                in_body = true;
+                writeln!(current_file, "{}", line).unwrap();
+            }
+        }
+        // current_file dropping out of scope here flushes it.
+    }
+
+    // Build the stub libraries and ensure TestApp will link to them.
+
+    for (dylib_path, stub_src_path) in files_to_compile {
+        if dylib_path.starts_with("/.touchHLE") {
+            // skip the fake app picker library
+            continue;
+        }
+        let compile_args = [
+            "-mlinker-version=253",
+            "-fno-builtin",
+            "-nostdlib",
+            &format!("-Wl,-install_name,{}", dylib_path),
+            "-Wno-objc-root-class", // silence clang warning about inheritance
+            "-Wl,-dylib",
+            stubs_lib_search_arg.as_str(),
+            "-lobjc.A",
+        ];
+        let dylib_name = dylib_path.rsplit_once("/").unwrap().1;
+        // - The only non-framework libs should be libSystem and libobjc, which
+        //   we expect to appear in the list before all the frameworks, and need
+        //   to be compiled first.
+        // - The frameworks have bare filenames, and usually need libobjc.
+        let (compile_args, out_path) =
+            if let Some(framework_path) = dylib_path.strip_prefix("/System/Library/Frameworks/") {
+                extra_linker_args.push(format!("-framework"));
+                extra_linker_args.push(dylib_name.to_string());
+                (&compile_args[..], stubs_frameworks_dir.join(framework_path))
+            } else {
+                extra_linker_args.push(format!(
+                    "-l{}",
+                    dylib_name
+                        .strip_prefix("lib")
+                        .unwrap()
+                        .strip_suffix(".dylib")
+                        .unwrap()
+                ));
+                (
+                    // skip "-Ltests/stubs/lib/" and "-lobjc.A"
+                    &compile_args[..compile_args.len() - 2],
+                    stubs_lib_dir.join(dylib_name),
+                )
+            };
+        // Ensure that stubs/Frameworks/FooBarKit/ or stubs/lib/ exists
+        std::fs::create_dir_all(out_path.parent().unwrap()).unwrap();
+
+        // Ideally one could provide two framework search paths.
+        // In reality only the first matching path is used, so the stub
+        // framework needs to provide headers copied from the sdk.
+        if dylib_path.starts_with("/System/Library/Frameworks") {
+            let stub_headers = out_path.parent().unwrap().join("Headers");
+            let framework_dir = dylib_path.rsplit_once("/").unwrap().0;
+            let source_headers = tests_dir.join(format!("common-3.0.sdk/{framework_dir}/Headers"));
+
+            if source_headers.exists() {
+                copy_dir_all(source_headers, stub_headers)?;
+            }
+        }
+        build_object(&tests_dir, &out_path, [stub_src_path].iter(), &compile_args).unwrap();
+    }
+
+    // Vec<String> -> &[&str] ownership shenanigans
+    for arg in &extra_linker_args {
+        extra_compile_args.push(&arg);
+    }
+
+    // Finally, build TestApp itself.
+    run_test_app(&tests_dir, "TestApp", &extra_compile_args, &[])
 }

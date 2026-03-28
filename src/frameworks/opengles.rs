@@ -9,13 +9,20 @@
 //! surface. See [crate::gles] for other uses and a discussion of the broader
 //! topic.
 
-pub mod eagl;
+mod eagl;
 mod gles_guest;
 
-pub use gles_guest::FUNCTIONS;
 use touchHLE_gl_bindings::gles11::types::GLenum;
 
 use crate::mem::ConstPtr;
+
+pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
+    path: "/System/Library/Frameworks/OpenGLES.framework/OpenGLES",
+    aliases: &[],
+    class_exports: &[eagl::CLASSES],
+    constant_exports: &[eagl::CONSTANTS],
+    function_exports: &[gles_guest::FUNCTIONS],
+};
 
 #[derive(Default)]
 pub struct State {

@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-//! DNS Service Discovery C
+//! DNS Service Discovery (`dns_sd.h`)
 
 use crate::dyld::FunctionExports;
 use crate::export_c_func;
@@ -11,6 +11,7 @@ use crate::mem::{ConstPtr, ConstVoidPtr, MutVoidPtr};
 use crate::Environment;
 
 type DNSServiceErrorType = i32;
+#[allow(non_upper_case_globals)]
 const kDNSServiceErr_Unsupported: DNSServiceErrorType = -65544;
 
 #[allow(clippy::too_many_arguments)]

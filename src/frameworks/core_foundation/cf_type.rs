@@ -13,6 +13,7 @@ use crate::{msg, objc};
 use crate::{msg_class, Environment};
 
 pub type CFTypeRef = objc::id;
+pub type CFTypeID = CFIndex;
 
 pub fn CFRetain(env: &mut Environment, object: CFTypeRef) -> CFTypeRef {
     // assert!(!object.is_null()); // not allowed, unlike for normal objc objects
@@ -27,7 +28,11 @@ pub fn CFGetRetainCount(env: &mut Environment, object: CFTypeRef) -> CFIndex {
     count as CFIndex
 }
 
-pub fn CFEqual(env: &mut Environment, object1: CFTypeRef, object2: CFTypeRef) -> bool {
+pub fn CFEqual(
+    env: &mut Environment,
+    object1: CFTypeRef,
+    object2: CFTypeRef,
+) -> bool {
     if object1 == object2 {
         return true;
     }
@@ -45,10 +50,69 @@ pub fn CFHash(env: &mut Environment, object: CFTypeRef) -> CFHashCode {
     msg![env; object hash]
 }
 
+/// Returns the type ID for a CF object. touchHLE uses the class pointer as a
+/// stable unique-per-class value so that CFGetTypeID(x) == CFStringGetTypeID()
+/// works correctly when x is an NSString/CFString.
+pub fn CFGetTypeID(env: &mut Environment, cf: CFTypeRef) -> CFTypeID {
+    if cf.is_null() {
+        log_dbg!("CFGetTypeID: called with null, returning 0");
+        return 0;
+    }
+    let class: Class = msg![env; cf class];
+    class.to_bits() as CFTypeID
+}
+
+// --- Per-type ID functions ---
+// Each returns the class pointer of the corresponding ObjC class so that
+// comparisons with CFGetTypeID() are consistent.
+
+pub fn CFStringGetTypeID(env: &mut Environment) -> CFTypeID {
+    let class: Class = msg_class![env; NSString class];
+    class.to_bits() as CFTypeID
+}
+
+pub fn CFDictionaryGetTypeID(env: &mut Environment) -> CFTypeID {
+    let class: Class = msg_class![env; NSDictionary class];
+    class.to_bits() as CFTypeID
+}
+
+pub fn CFArrayGetTypeID(env: &mut Environment) -> CFTypeID {
+    let class: Class = msg_class![env; NSArray class];
+    class.to_bits() as CFTypeID
+}
+
+pub fn CFNumberGetTypeID(env: &mut Environment) -> CFTypeID {
+    let class: Class = msg_class![env; NSNumber class];
+    class.to_bits() as CFTypeID
+}
+
+pub fn CFBooleanGetTypeID(env: &mut Environment) -> CFTypeID {
+    let class: Class = msg_class![env; NSNumber class];
+    class.to_bits() as CFTypeID
+}
+
+pub fn CFDataGetTypeID(env: &mut Environment) -> CFTypeID {
+    let class: Class = msg_class![env; NSData class];
+    class.to_bits() as CFTypeID
+}
+
+pub fn CFURLGetTypeID(env: &mut Environment) -> CFTypeID {
+    let class: Class = msg_class![env; NSURL class];
+    class.to_bits() as CFTypeID
+}
+
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CFRetain(_)),
     export_c_func!(CFRelease(_)),
     export_c_func!(CFGetRetainCount(_)),
     export_c_func!(CFEqual(_, _)),
     export_c_func!(CFHash(_)),
+    export_c_func!(CFGetTypeID(_)),
+    export_c_func!(CFStringGetTypeID()),
+    export_c_func!(CFDictionaryGetTypeID()),
+    export_c_func!(CFArrayGetTypeID()),
+    export_c_func!(CFNumberGetTypeID()),
+    export_c_func!(CFBooleanGetTypeID()),
+    export_c_func!(CFDataGetTypeID()),
+    export_c_func!(CFURLGetTypeID()),
 ];

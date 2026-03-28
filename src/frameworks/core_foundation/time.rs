@@ -39,6 +39,20 @@ pub struct CFGregorianDate {
 unsafe impl SafeRead for CFGregorianDate {}
 impl_GuestRet_for_large_struct!(CFGregorianDate);
 
+// Добавляем структуру Units (она отличается типами полей от Date)
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[repr(C, packed)]
+pub struct CFGregorianUnits {
+    pub years: i32,
+    pub months: i32,
+    pub days: i32,
+    pub hours: i32,
+    pub minutes: i32,
+    pub seconds: f64,
+}
+unsafe impl SafeRead for CFGregorianUnits {}
+impl_GuestRet_for_large_struct!(CFGregorianUnits);
+
 /// Absolute time is measured in seconds relative to the absolute reference date
 /// of Jan 1 2001 00:00:00 GMT.
 fn CFAbsoluteTimeGetCurrent(_env: &mut Environment) -> CFAbsoluteTime {
@@ -83,9 +97,55 @@ fn CFAbsoluteTimeGetDayOfWeek(env: &mut Environment, at: CFAbsoluteTime, tz: CFT
     CFAbsoluteTimeGetGregorianDate(env, at, tz).day.into()
 }
 
+// Реализация недостающей функции
+fn CFAbsoluteTimeGetDifferenceAsGregorianUnits(
+    _env: &mut Environment,
+    at1: CFAbsoluteTime,
+    at2: CFAbsoluteTime,
+    _tz: CFTimeZoneRef,
+    _flags: u32,
+) -> CFGregorianUnits {
+    let mut diff = at1 - at2;
+    let mut units = CFGregorianUnits {
+        years: 0,
+        months: 0,
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        seconds: 0.0,
+    };
+
+    // Упрощенный расчет интервалов (средние значения для игр обычно достаточно)
+    if diff.abs() >= 31536000.0 {
+        units.years = (diff / 31536000.0) as i32;
+        diff -= units.years as f64 * 31536000.0;
+    }
+    if diff.abs() >= 2592000.0 {
+        units.months = (diff / 2592000.0) as i32;
+        diff -= units.months as f64 * 2592000.0;
+    }
+    if diff.abs() >= 86400.0 {
+        units.days = (diff / 86400.0) as i32;
+        diff -= units.days as f64 * 86400.0;
+    }
+    if diff.abs() >= 3600.0 {
+        units.hours = (diff / 3600.0) as i32;
+        diff -= units.hours as f64 * 3600.0;
+    }
+    if diff.abs() >= 60.0 {
+        units.minutes = (diff / 60.0) as i32;
+        diff -= units.minutes as f64 * 60.0;
+    }
+    units.seconds = diff;
+
+    units
+}
+
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CFAbsoluteTimeGetCurrent()),
     export_c_func!(CFTimeZoneCopySystem()),
     export_c_func!(CFAbsoluteTimeGetGregorianDate(_, _)),
     export_c_func!(CFAbsoluteTimeGetDayOfWeek(_, _)),
+    // Регистрируем новую функцию здесь
+    export_c_func!(CFAbsoluteTimeGetDifferenceAsGregorianUnits(_, _, _, _)),
 ];

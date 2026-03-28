@@ -6,7 +6,7 @@
 //! Parsing and management of user-configurable options, e.g. for input methods.
 
 use crate::gles::GLESImplementation;
-use crate::window::DeviceOrientation;
+use crate::window::{DeviceFamily, DeviceOrientation};
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read};
 use std::net::{SocketAddr, ToSocketAddrs};
@@ -35,6 +35,7 @@ pub enum Button {
 #[derive(Clone)]
 pub struct Options {
     pub fullscreen: bool,
+    pub device_family: Option<DeviceFamily>,
     pub initial_orientation: DeviceOrientation,
     pub scale_hack: NonZeroU32,
     pub deadzone: f32,
@@ -44,6 +45,8 @@ pub struct Options {
     pub x_tilt_offset: f32,
     pub y_tilt_offset: f32,
     pub button_to_touch: HashMap<Button, (f32, f32)>,
+    pub dpad_to_touch: Option<(f32, f32, f32, f32)>,
+    pub stick_to_touch: Option<(f32, f32, f32, f32)>,
     pub stabilize_virtual_cursor: Option<(f32, f32)>,
     pub gles1_implementation: Option<GLESImplementation>,
     pub direct_memory_access: bool,
@@ -64,6 +67,7 @@ impl Default for Options {
     fn default() -> Self {
         Options {
             fullscreen: false,
+            device_family: None,
             initial_orientation: DeviceOrientation::Portrait,
             scale_hack: NonZeroU32::new(1).unwrap(),
             analog_stick_tilt_controls: true,
@@ -73,6 +77,8 @@ impl Default for Options {
             x_tilt_offset: 0.0,
             y_tilt_offset: 0.0,
             button_to_touch: HashMap::new(),
+            dpad_to_touch: None,
+            stick_to_touch: None,
             stabilize_virtual_cursor: None,
             gles1_implementation: None,
             direct_memory_access: true,
@@ -112,6 +118,10 @@ impl Options {
             self.initial_orientation = DeviceOrientation::LandscapeLeft;
         } else if arg == "--landscape-right" {
             self.initial_orientation = DeviceOrientation::LandscapeRight;
+        } else if let Some(value) = arg.strip_prefix("--device-family=") {
+            let parsed =
+                DeviceFamily::try_from(value).map_err(|_| "Invalid device family".to_string())?;
+            self.device_family = Some(parsed);
         } else if let Some(value) = arg.strip_prefix("--scale-hack=") {
             self.scale_hack = value
                 .parse()
@@ -155,6 +165,26 @@ impl Options {
                 .parse()
                 .map_err(|_| "Invalid Y co-ordinate for --button-to-touch=".to_string())?;
             self.button_to_touch.insert(button, (x, y));
+        } else if let Some(values) = arg.strip_prefix("--stick-to-touch=") {
+            let nums: [f32; 4] = values
+                .split(',')
+                .map(|s| s.parse::<f32>())
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|_| "invalid --stick-to-touch".to_string())?
+                .try_into()
+                .map_err(|_| "--stick-to-touch= requires four values".to_string())?;
+
+            self.stick_to_touch = Some((nums[0], nums[1], nums[2], nums[3]));
+        } else if let Some(values) = arg.strip_prefix("--dpad-to-touch=") {
+            let nums: [f32; 4] = values
+                .split(',')
+                .map(|s| s.parse::<f32>())
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|_| "invalid --dpad-to-touch".to_string())?
+                .try_into()
+                .map_err(|_| "--dpad-to-touch= requires four values".to_string())?;
+
+            self.dpad_to_touch = Some((nums[0], nums[1], nums[2], nums[3]));
         } else if let Some(value) = arg.strip_prefix("--stabilize-virtual-cursor=") {
             let (smoothing_strength, sticky_radius) = value
                 .split_once(',')

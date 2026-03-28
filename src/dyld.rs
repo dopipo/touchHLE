@@ -9,32 +9,63 @@
 //!
 //! This is where the magic of "high-level emulation" can begin to happen.
 //! The guest app will reference various functions, constants, classes etc from
-//! iPhone OS's system frameworks (i.e. dynamically-linked libraries), but
+//! iPhone OS's system frameworks and other dynamically-linked libraries, but
 //! instead of actually loading and linking the original framework binaries,
 //! this "dynamic linker" will generate appropriate stubs for calling into
 //! touchHLE's own implementations of the frameworks, which are "host code"
 //! (i.e. not themselves running under emulation).
 //!
-//! This also does normal dynamic linking for libgcc and libstdc++. It might
-//! eventually support linking other things too.
+//! This also does normal dynamic linking for libgcc, libstdc++, etc.
 //!
 //! See [crate::mach_o] for resources.
 
-mod constant_lists;
-mod function_lists;
+mod dylib_list;
 
 use crate::abi::{CallFromGuest, GuestFunction};
 use crate::cpu::Cpu;
 use crate::frameworks::foundation::ns_string;
 use crate::mach_o::{MachO, SectionType};
 use crate::mem::{ConstVoidPtr, GuestUSize, Mem, MutPtr, Ptr};
-use crate::objc::{nil, ObjC};
+use crate::objc::{nil, ClassExports, ObjC};
 use crate::Environment;
 use std::collections::HashMap;
 
+pub use dylib_list::DYLIB_LIST;
+
+/// Struct used to expose a host implementation of a dynamic library (usually a
+/// framework) to the linker.
+///
+/// Each module that wants to expose a library to guest code should export a
+/// constant using this type, which collects all the relevant [ClassExports],
+/// [ConstantExports] and [FunctionExports] for the library. For example:
+///
+/// ```ignore
+/// pub const DYLIB: HostDylib = HostDylib {
+///     path: "/System/Library/Frameworks/FooBarKit.framework/FooBarKit",
+///     aliases: &[],
+///     class_exports: &[baz::CLASSES],
+///     constant_exports: &[qux::CONSTANTS],
+///     function_exports: &[qux::FUNCTIONS, baz::FUNCTIONS],
+/// };
+/// ```
+///
+/// The `path` should be the canonical notional filesystem path that the library
+/// is referenced by on the real OS, for example `"/usr/lib/libobjc.A.dylib"`
+/// or `"/System/Library/Frameworks/Foundation.framework/Foundation"`. For
+/// libraries that have several symlinked paths, non-canonical alternate
+/// paths can be listed under `aliases`, for example `"/usr/lib/libobjc.dylib"`.
+pub struct HostDylib {
+    pub path: &'static str,
+    pub aliases: &'static [&'static str],
+    pub class_exports: &'static [ClassExports],
+    pub constant_exports: &'static [ConstantExports],
+    pub function_exports: &'static [FunctionExports],
+}
+
 pub type HostFunction = &'static dyn CallFromGuest;
 
-/// Type for lists of functions exported by host implementations of frameworks.
+/// Type for lists of functions exported by host implementations of dynamic
+/// libraries (usually frameworks).
 ///
 /// Each module that wants to expose functions to guest code should export a
 /// constant using this type, e.g.:
@@ -46,6 +77,8 @@ pub type HostFunction = &'static dyn CallFromGuest;
 ///    /* ... */
 /// ];
 /// ```
+///
+/// All the constants like this can then be collected into a [HostDylib].
 ///
 /// The strings are the mangled symbol names. For C functions, this is just the
 /// name prefixed with an underscore.
@@ -59,7 +92,7 @@ pub type HostFunction = &'static dyn CallFromGuest;
 /// ];
 /// ```
 ///
-/// See also [ConstantExports] and [crate::objc::ClassExports].
+/// See also [ConstantExports] and [ClassExports].
 pub type FunctionExports = &'static [(&'static str, HostFunction)];
 
 /// Macro for exporting a function with C-style name mangling. See
@@ -112,7 +145,8 @@ pub enum HostConstant {
     Custom(fn(&mut Environment) -> ConstVoidPtr),
 }
 
-/// Type for lists of constants exported by host implementations of frameworks.
+/// Type for lists of constants exported by host implementations of  dynamic
+/// libraries (usually frameworks).
 ///
 /// Each module that wants to expose functions to guest code should export a
 /// constant using this type, e.g.:
@@ -124,14 +158,35 @@ pub enum HostConstant {
 /// ];
 /// ```
 ///
+/// All the constants like this can then be collected into a [HostDylib].
+///
 /// The strings are the mangled symbol names. For C constants, this is just the
 /// name prefixed with an underscore.
 ///
-/// See also [FunctionExports], [crate::objc::ClassExports].
+/// See also [FunctionExports], [ClassExports].
 pub type ConstantExports = &'static [(&'static str, HostConstant)];
 
-/// Helper for working with symbol lists in the style of [FunctionExports].
-pub fn search_lists<T>(
+/// Search the list of [HostDylib]s for a class/constant/function by its symbol.
+///
+/// Example usage: `search_host_dylibs(|dylib| dylib.function_exports, "_foo")`
+pub fn search_host_dylibs<T, F>(get_exports: F, symbol: &str) -> Option<&'static (&'static str, T)>
+where
+    F: Fn(&HostDylib) -> &'static [&'static [(&'static str, T)]],
+{
+    // TODO: In general, we should rarely if ever need to search the full set
+    //       of dylibs for a symbol. Now that we know which symbols belong to
+    //       which libraries, we should at least only search libraries that are
+    //       referenced by the app and currently "loaded". We probably should
+    //       also implement the Mach-O two-level symbol namespacing eventually.
+    DYLIB_LIST
+        .iter()
+        .copied()
+        .map(get_exports)
+        .find_map(|lists| search_lists(lists, symbol))
+}
+
+/// Helper for working with [ClassExports]/[ConstantExports]/[FunctionExports].
+fn search_lists<T>(
     lists: &'static [&'static [(&'static str, T)]],
     symbol: &str,
 ) -> Option<&'static (&'static str, T)> {
@@ -286,7 +341,7 @@ impl Dyld {
                 ","
             };
             let symbol = symbol.as_ref().unwrap();
-            if let Some(&(_, _)) = search_lists(function_lists::FUNCTION_LISTS, symbol) {
+            if let Some(&(_, _)) = search_host_dylibs(|dylib| dylib.function_exports, symbol) {
                 writeln!(
                     file,
                     "        {{ \"symbol\": \"{symbol}\", \"linked_to\": \"host\"}}{comma}"
@@ -309,13 +364,34 @@ impl Dyld {
     }
 
     /// Dumps all non-objc symbols provided by touchHLE.
-    pub fn dump_dyld_host_symbols(file: &mut std::fs::File) -> Result<(), std::io::Error> {
+    ///
+    /// The dump format is Objective-C code (with meaningless types) that can be
+    /// compiled to generate stub libraries that can be linked against, with
+    /// comments providing the paths each library would be installed to.
+    /// This is used for building the integration tests.
+    pub fn dump_host_symbols(file: &mut std::fs::File) -> Result<(), std::io::Error> {
         use std::io::Write;
-        for (symbol, _) in function_lists::FUNCTION_LISTS.iter().flat_map(|&n| n) {
-            writeln!(file, "{symbol}")?;
-        }
-        for (symbol, _) in constant_lists::CONSTANT_LISTS.iter().flat_map(|&n| n) {
-            writeln!(file, "{symbol}")?;
+        for dylib in DYLIB_LIST {
+            writeln!(file, "// {}", dylib.path)?;
+            for alias in dylib.aliases {
+                writeln!(file, "// {alias}")?;
+            }
+            for (class_name, _) in dylib.class_exports.iter().copied().flatten() {
+                writeln!(file, "@interface {class_name}")?;
+                writeln!(file, "@end")?;
+                writeln!(file, "@implementation {class_name}")?;
+                writeln!(file, "@end")?;
+            }
+            for (constant_symbol, _) in dylib.constant_exports.iter().copied().flatten() {
+                writeln!(file, "int {};", constant_symbol.strip_prefix("_").unwrap())?;
+            }
+            for (function_symbol, _) in dylib.function_exports.iter().copied().flatten() {
+                writeln!(
+                    file,
+                    "void {}() {{}}",
+                    function_symbol.strip_prefix("_").unwrap()
+                )?;
+            }
         }
         Ok(())
     }
@@ -416,9 +492,6 @@ impl Dyld {
             } else if name == "___CFConstantStringClassReference" {
                 // See ns_string::register_constant_strings
                 nil.cast().cast_const()
-            } else if name == "__objc_empty_vtable" || name == "__objc_empty_cache" {
-                // Our Objective-C runtime doesn't use these
-                Ptr::null()
             } else if let Some(&external_addr) = bins
                 .iter()
                 .flat_map(|other_bin| other_bin.exported_symbols.get(name))
@@ -426,7 +499,9 @@ impl Dyld {
             {
                 // Often used for C++ RTTI
                 Ptr::from_bits(external_addr)
-            } else if let Some((symbol, _)) = search_lists(function_lists::FUNCTION_LISTS, name) {
+            } else if let Some((symbol, _)) =
+                search_host_dylibs(|dylib| dylib.function_exports, name)
+            {
                 // We want the same symbol name to always point to the same
                 // function.
                 let trampoline_ptr = self
@@ -439,7 +514,7 @@ impl Dyld {
                     trampoline_ptr
                 );
                 trampoline_ptr
-            } else if search_lists(constant_lists::CONSTANT_LISTS, name).is_some() {
+            } else if search_host_dylibs(|dylib| dylib.constant_exports, name).is_some() {
                 // Skip the constants from DYLD_INFO because we already
                 // handle the consts when reading the __nl_symbol_ptr section
                 continue;
@@ -495,7 +570,7 @@ impl Dyld {
                 }
             }
 
-            if let Some((symbol, _)) = search_lists(function_lists::FUNCTION_LISTS, symbol) {
+            if let Some((symbol, _)) = search_host_dylibs(|dylib| dylib.function_exports, symbol) {
                 // We want the same symbol name to always point to the same
                 // function. It could point to a specific stub entry, but it's
                 // easier to just create a new function and point all the stub
@@ -513,7 +588,8 @@ impl Dyld {
                 log_dbg!("{:?}", self.non_lazy_host_functions);
                 continue;
             }
-            if let Some((_, template)) = search_lists(constant_lists::CONSTANT_LISTS, symbol) {
+            if let Some((_, template)) = search_host_dylibs(|dylib| dylib.constant_exports, symbol)
+            {
                 // Delay linking of constant until we have a `&mut Environment`,
                 // that makes it much easier to build NSString objects etc.
                 self.constants_to_link_later.push((ptr_ptr, template));
@@ -659,7 +735,7 @@ impl Dyld {
         let info = stubs.dyld_indirect_symbol_info.as_ref().unwrap();
 
         let offset = svc_pc - stubs.addr;
-        assert!(offset % info.entry_size == 0);
+        assert!(offset.is_multiple_of(info.entry_size));
         let idx = (offset / info.entry_size) as usize;
 
         let symbol = info.indirect_undef_symbols[idx].as_deref().unwrap();
@@ -687,7 +763,7 @@ impl Dyld {
             return None;
         }
 
-        if let Some(&(symbol, f)) = search_lists(function_lists::FUNCTION_LISTS, symbol) {
+        if let Some(&(symbol, f)) = search_host_dylibs(|dylib| dylib.function_exports, symbol) {
             // Allocate an SVC ID for this host function
             let idx: u32 = self.linked_host_functions.len().try_into().unwrap();
             let mut svc = idx + Self::SVC_LINKED_FUNCTIONS_BASE;
@@ -765,7 +841,7 @@ impl Dyld {
         mem: &mut Mem,
         symbol: &str,
     ) -> Result<GuestFunction, ()> {
-        let &(symbol, f) = search_lists(function_lists::FUNCTION_LISTS, symbol).ok_or(())?;
+        let &(symbol, f) = search_host_dylibs(|dylib| dylib.function_exports, symbol).ok_or(())?;
         if let Some(&cached_fn) = self.non_lazy_host_functions.get(symbol) {
             return Ok(cached_fn);
         }
@@ -793,4 +869,4 @@ impl Dyld {
 
         GuestFunction::from_addr_with_thumb_bit(function_ptr.to_bits())
     }
-}
+        }

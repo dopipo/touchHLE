@@ -7,10 +7,11 @@
 
 use crate::frameworks::core_graphics::cg_image::CGImageRef;
 use crate::frameworks::core_graphics::{CGPoint, CGRect, CGSize};
-use crate::frameworks::foundation::NSTimeInterval;
+use crate::frameworks::foundation::ns_string::get_static_str;
+use crate::frameworks::foundation::{NSInteger, NSTimeInterval};
 use crate::objc::{
     id, impl_HostObject_with_superclass, msg, msg_super, objc_classes, release, retain,
-    ClassExports, NSZonePtr,
+    todo_objc_setter, ClassExports, NSZonePtr,
 };
 
 #[derive(Default)]
@@ -51,7 +52,17 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg_super![env; this dealloc]
 }
 
-// TODO: initWithCoder:
+// NSCoding implementation
+- (id)initWithCoder:(id)coder {
+    let this: id = msg_super![env; this initWithCoder:coder];
+
+    let key_ns_string = get_static_str(env, "UIImage");
+    let image: id = msg![env; coder decodeObjectForKey:key_ns_string];
+
+    () = msg![env; this setImage:image];
+
+    this
+}
 
 - (id)initWithImage:(id)image { // UIImage*
     let size: CGSize = msg![env; image size];
@@ -83,14 +94,22 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (())setAnimationImages:(id)images { // NSArray<UIImage *>*
-    log!("TODO: [(UIImageView*) {:?} setAnimationImages:{:?}]", this, images);
+    todo_objc_setter!(this, images);
     // TODO: Use all images in the array instead of just the first one
     let first_image: id = msg![env; images objectAtIndex:0u32];
     () = msg![env; this setImage:first_image];
 }
 
-- (())setAnimationDuration:(NSTimeInterval)duration { // NSArray<UIImage *>*
-    log!("TODO: [(UIImageView*) {:?} setAnimationDuration:{}]", this, duration);
+- (())setAnimationDuration:(NSTimeInterval)duration {
+    todo_objc_setter!(this, duration);
+}
+
+- (())setAnimationRepeatCount:(NSInteger)repeat_count {
+    todo_objc_setter!(this, repeat_count);
+}
+
+- (NSInteger)animationRepeatCount {
+    0
 }
 
 - (())startAnimating {
@@ -104,3 +123,4 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 };
+

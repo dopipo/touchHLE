@@ -18,6 +18,7 @@ pub mod ctype;
 pub mod cxxabi;
 pub mod dirent;
 pub mod dlfcn;
+pub mod dns_sd;
 pub mod errno;
 pub mod ifaddrs;
 pub mod keymgr;
@@ -41,6 +42,63 @@ pub mod sysctl;
 pub mod time;
 pub mod unistd;
 pub mod wchar;
+
+pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
+    path: "/usr/lib/libSystem.B.dylib",
+    aliases: &["/usr/lib/libSystem.dylib"],
+    class_exports: &[],
+    constant_exports: &[ctype::CONSTANTS, stdio::CONSTANTS, mach::init::CONSTANTS],
+    function_exports: &[
+        arpa::inet::FUNCTIONS,
+        clocale::FUNCTIONS,
+        ctype::FUNCTIONS,
+        cxxabi::FUNCTIONS,
+        crypto::FUNCTIONS,
+        dirent::FUNCTIONS,
+        dlfcn::FUNCTIONS,
+        dns_sd::FUNCTIONS,
+        errno::FUNCTIONS,
+        ifaddrs::FUNCTIONS,
+        keymgr::FUNCTIONS,
+        libkern::os_atomic::FUNCTIONS,
+        mach::host::FUNCTIONS,
+        mach::init::FUNCTIONS,
+        mach::semaphore::FUNCTIONS,
+        mach::thread_info::FUNCTIONS,
+        mach::time::FUNCTIONS,
+        math::FUNCTIONS,
+        mmap::FUNCTIONS,
+        net::if_::FUNCTIONS,
+        netdb::FUNCTIONS,
+        posix_io::FUNCTIONS,
+        posix_io::stat::FUNCTIONS,
+        posix_io::statvfs::FUNCTIONS,
+        pthread::cond::FUNCTIONS,
+        pthread::key::FUNCTIONS,
+        pthread::mutex::FUNCTIONS,
+        pthread::once::FUNCTIONS,
+        pthread::thread::FUNCTIONS,
+        sched::FUNCTIONS,
+        semaphore::FUNCTIONS,
+        setjmp::FUNCTIONS,
+        signal::FUNCTIONS,
+        stdio::FUNCTIONS,
+        stdio::printf::FUNCTIONS,
+        stdlib::FUNCTIONS,
+        stdlib::qsort::FUNCTIONS,
+        string::FUNCTIONS,
+        sys::mount::FUNCTIONS,
+        sys::ptrace::FUNCTIONS,
+        sys::timeb::FUNCTIONS,
+        sys::socket::FUNCTIONS,
+        sys::utsname::FUNCTIONS,
+        sys::wait::FUNCTIONS,
+        sysctl::FUNCTIONS,
+        time::FUNCTIONS,
+        unistd::FUNCTIONS,
+        wchar::FUNCTIONS,
+    ],
+};
 
 /// Container for state of various child modules
 #[derive(Default)]

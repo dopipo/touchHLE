@@ -19,7 +19,7 @@ use crate::frameworks::foundation::ns_string::{
     get_static_str, to_rust_string, NSUTF8StringEncoding,
 };
 use crate::frameworks::foundation::NSUInteger;
-use crate::mem::{ConstPtr, MutPtr};
+use crate::mem::{ConstPtr, MutPtr, Ptr};
 use crate::objc::{id, msg, msg_class, release};
 use crate::Environment;
 
@@ -92,6 +92,10 @@ fn CFURLCreateWithBytes(
     let encoding = CFStringConvertEncodingToNSStringEncoding(env, encoding);
     let length: NSUInteger = length.try_into().unwrap();
 
+    if length == 0 {
+        return Ptr::null();
+    }
+
     let string: id = msg_class![env; NSString alloc];
     let string: id = msg![env; string initWithBytes:url_bytes
                                              length:length
@@ -159,6 +163,8 @@ fn CFURLCreateCopyDeletingLastPathComponent(
 }
 
 fn CFURLHasDirectoryPath(env: &mut Environment, url: CFURLRef) -> bool {
+    assert!(!url.is_null());
+
     let path = msg![env; url path];
     if msg![env; path isEqual:(get_static_str(env, "//"))] {
         // Special case

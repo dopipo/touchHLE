@@ -126,6 +126,7 @@ pub trait GLES {
     unsafe fn StencilFunc(&mut self, func: GLenum, ref_: GLint, mask: GLuint);
     unsafe fn StencilOp(&mut self, sfail: GLenum, dpfail: GLenum, dppass: GLenum);
     unsafe fn StencilMask(&mut self, mask: GLuint);
+    unsafe fn LogicOp(&mut self, opcode: GLenum);
 
     // Points
     unsafe fn PointSize(&mut self, size: GLfloat);
@@ -320,6 +321,23 @@ pub trait GLES {
     unsafe fn TexEnvfv(&mut self, target: GLenum, pname: GLenum, params: *const GLfloat);
     unsafe fn TexEnvxv(&mut self, target: GLenum, pname: GLenum, params: *const GLfixed);
     unsafe fn TexEnviv(&mut self, target: GLenum, pname: GLenum, params: *const GLint);
+
+    unsafe fn MultiTexCoord4f(
+        &mut self,
+        target: GLenum,
+        s: GLfloat,
+        t: GLfloat,
+        r: GLfloat,
+        q: GLfloat,
+    );
+    unsafe fn MultiTexCoord4x(
+        &mut self,
+        target: GLenum,
+        s: GLfixed,
+        t: GLfixed,
+        r: GLfixed,
+        q: GLfixed,
+    );
 
     // Matrix stack operations
     unsafe fn MatrixMode(&mut self, mode: GLenum);

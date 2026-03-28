@@ -15,7 +15,7 @@ use crate::libc::stdio::{fwrite, getc, ungetc, EOF, FILE};
 use crate::libc::stdlib::{atof_inner_generic, str_to_int_inner_generic};
 use crate::libc::string::strlen;
 use crate::libc::wchar::wchar_t;
-use crate::mem::{ConstPtr, GuestUSize, Mem, MutPtr, MutVoidPtr, Ptr};
+use crate::mem::{guest_size_of, ConstPtr, GuestUSize, Mem, MutPtr, MutVoidPtr, Ptr};
 use crate::objc::{id, msg, nil};
 use crate::Environment;
 use std::collections::HashSet;
@@ -517,6 +517,34 @@ fn snprintf(
     log_dbg!("snprintf() implemented as a wrapper of vsnprintf()");
 
     vsnprintf(env, dest, n, format, args.start())
+}
+
+fn vasprintf(
+    env: &mut Environment,
+    ret: MutPtr<MutPtr<u8>>,
+    format: ConstPtr<u8>,
+    arg: VaList,
+) -> i32 {
+    log_dbg!(
+        "vasprintf({:?}, {:?} ({:?}), ...)",
+        ret,
+        format,
+        env.mem.cstr_at_utf8(format)
+    );
+
+    let res = printf_inner::<false, _>(env, |mem, idx| mem.read(format + idx), arg);
+    let count: GuestUSize = (res.len() + 1).try_into().unwrap();
+
+    let dest: MutPtr<u8> = env.mem.alloc(count * guest_size_of::<u8>()).cast();
+
+    let dest_slice = env.mem.bytes_at_mut(dest, count);
+    for (i, &byte) in res.iter().chain(b"\0".iter()).enumerate() {
+        dest_slice[i] = byte;
+    }
+
+    env.mem.write(ret, dest);
+
+    res.len().try_into().unwrap()
 }
 
 fn vprintf(env: &mut Environment, format: ConstPtr<u8>, arg: VaList) -> i32 {
@@ -1266,6 +1294,7 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(vsscanf(_, _, _)),
     export_c_func!(fscanf(_, _, _)),
     export_c_func!(snprintf(_, _, _, _)),
+    export_c_func!(vasprintf(_, _, _)),
     export_c_func!(vprintf(_, _)),
     export_c_func!(vsnprintf(_, _, _, _)),
     export_c_func!(vsprintf(_, _, _)),
@@ -1285,7 +1314,7 @@ pub fn isspace(env: &mut Environment, src: ConstPtr<u8>) -> bool {
     let c = env.mem.read(src);
     isspace_inner(c)
 }
-fn isspace_inner(c: u8) -> bool {
+pub fn isspace_inner(c: u8) -> bool {
     // Rust's definition of whitespace excludes vertical tab, unlike C's
     c.is_ascii_whitespace() || c == b'\x0b'
 }

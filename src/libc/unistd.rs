@@ -7,17 +7,24 @@
 
 use crate::dyld::{export_c_func, FunctionExports};
 use crate::fs::GuestPath;
-use crate::libc::errno::set_errno;
+use crate::libc::errno::{set_errno, EACCES, EINVAL, ENOENT, EROFS};
 use crate::libc::posix_io::{FileDescriptor, STDERR_FILENO, STDIN_FILENO, STDOUT_FILENO};
-use crate::mem::{ConstPtr, GuestUSize, MutPtr, PAGE_SIZE};
+use crate::mem::{ConstPtr, GuestISize, GuestUSize, MutPtr, PAGE_SIZE};
 use crate::Environment;
 use std::time::Duration;
 
 #[allow(non_camel_case_types)]
 type useconds_t = u32;
 
-const F_OK: i32 = 0;
-const R_OK: i32 = 4;
+const F_OK: i32 = 0; // file existence
+const X_OK: i32 = 1; // execute/search permission
+const W_OK: i32 = 2; // write permission
+const R_OK: i32 = 4; // read permission
+
+/// SycConf name type. This alias is for readability, POSIX just uses `int`.
+type SysConfName = i32;
+const _SC_PAGESIZE: SysConfName = 29;
+const _SC_NPROCESSORS_ONLN: SysConfName = 58;
 
 fn sleep(env: &mut Environment, seconds: u32) -> u32 {
     env.sleep(Duration::from_secs(seconds.into()));
@@ -40,7 +47,7 @@ pub type pid_t = i32;
 #[allow(non_camel_case_types)]
 type gid_t = u32;
 
-fn getpid(_env: &mut Environment) -> pid_t {
+pub fn getpid(_env: &mut Environment) -> pid_t {
     // Not a real value, since touchHLE only simulates a single process.
     // PID 0 would be init, which is a bit unrealistic, so let's go with 1.
     1
@@ -71,20 +78,39 @@ fn access(env: &mut Environment, path: ConstPtr<u8>, mode: i32) -> i32 {
 
     let binding = env.mem.cstr_at_utf8(path).unwrap();
     let guest_path = GuestPath::new(&binding);
-    let (exists, r, _, _) = env.fs.access(guest_path);
-    // TODO: set errno
+    let (exists, read, write, execute) = env.fs.access(guest_path);
+    // TODO: support ORing
     match mode {
         F_OK => {
             if exists {
                 0
             } else {
+                set_errno(env, ENOENT);
+                -1
+            }
+        }
+        X_OK => {
+            if execute {
+                0
+            } else {
+                set_errno(env, EACCES);
+                -1
+            }
+        }
+        W_OK => {
+            if write {
+                0
+            } else {
+                set_errno(env, EROFS);
                 -1
             }
         }
         R_OK => {
-            if r {
+            if read {
                 0
             } else {
+                // TODO: is it the correct error?
+                set_errno(env, EACCES);
                 -1
             }
         }
@@ -130,6 +156,39 @@ fn getpagesize(_env: &mut Environment) -> i32 {
     PAGE_SIZE.try_into().unwrap()
 }
 
+fn readlink(
+    env: &mut Environment,
+    path: ConstPtr<u8>,
+    buf: MutPtr<u8>,
+    buf_size: GuestISize,
+) -> GuestISize {
+    log!(
+        "TODO: readlink({:?} '{}', {:?}, {}) -> -1",
+        path,
+        env.mem.cstr_at_utf8(path).unwrap(),
+        buf,
+        buf_size,
+    );
+    // Current implementation of guest's file system doesn't
+    // support symbolic links, so the call should unconditionally fail.
+    set_errno(env, EINVAL);
+    -1
+}
+
+fn getdtablesize(_env: &mut Environment) -> i32 {
+    // Both macOS 15.7.4 and iOS 4.0.1 reports same dtable size.
+    // TODO: Issue an error on `open` if table is full.
+    256
+}
+
+fn sysconf(_env: &mut Environment, name: i32) -> i32 {
+    match name {
+        _SC_PAGESIZE => PAGE_SIZE.try_into().unwrap(),
+        _SC_NPROCESSORS_ONLN => 1,
+        _ => unimplemented!("TODO: sysconf(name: {})", name),
+    }
+}
+
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(sleep(_)),
     export_c_func!(usleep(_)),
@@ -141,4 +200,7 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(gethostname(_, _)),
     export_c_func!(getpagesize()),
     export_c_func!(getgid()),
+    export_c_func!(readlink(_, _, _)),
+    export_c_func!(getdtablesize()),
+    export_c_func!(sysconf(_)),
 ];

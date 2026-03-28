@@ -9,3 +9,4 @@ pub mod ptrace;
 pub mod socket;
 pub mod timeb;
 pub mod utsname;
+pub mod wait;

@@ -213,6 +213,13 @@ fn glGetIntegerv(env: &mut Environment, pname: GLenum, params: MutPtr<GLint>) {
                 // but we return 1 to match the real device.
                 mem.write(params, 1 as _);
             }
+            // MAX_SAMPLES or MAX_SAMPLES_ANGLE
+            0x8d57 => {
+                // TODO: handle GetBooleanv and GetFloatv as well
+                // 1 is an initial value
+                // TODO: This is an OpenGL ES 2.0 extension, not supported yet
+                mem.write(params, 1 as _);
+            }
             _ => {
                 let params = mem.ptr_at_mut(params, 16 /* upper bound */);
                 unsafe { gles.GetIntegerv(pname, params) };
@@ -406,6 +413,9 @@ fn glStencilOp(env: &mut Environment, sfail: GLenum, dpfail: GLenum, dppass: GLe
 }
 fn glStencilMask(env: &mut Environment, mask: GLuint) {
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.StencilMask(mask) });
+}
+fn glLogicOp(env: &mut Environment, opcode: GLenum) {
+    with_ctx_and_mem(env, |gles, _mem| unsafe { gles.LogicOp(opcode) });
 }
 // Points
 fn glPointSize(env: &mut Environment, size: GLfloat) {
@@ -1185,6 +1195,31 @@ fn glTexEnviv(env: &mut Environment, target: GLenum, pname: GLenum, params: Cons
     })
 }
 
+fn glMultiTexCoord4f(
+    env: &mut Environment,
+    target: GLenum,
+    s: GLfloat,
+    t: GLfloat,
+    r: GLfloat,
+    q: GLfloat,
+) {
+    with_ctx_and_mem(env, |gles, _mem| unsafe {
+        gles.MultiTexCoord4f(target, s, t, r, q)
+    })
+}
+fn glMultiTexCoord4x(
+    env: &mut Environment,
+    target: GLenum,
+    s: GLfixed,
+    t: GLfixed,
+    r: GLfixed,
+    q: GLfixed,
+) {
+    with_ctx_and_mem(env, |gles, _mem| unsafe {
+        gles.MultiTexCoord4x(target, s, t, r, q)
+    })
+}
+
 // OES_framebuffer_object
 fn glGenFramebuffersOES(env: &mut Environment, n: GLsizei, framebuffers: MutPtr<GLuint>) {
     with_ctx_and_mem(env, |gles, mem| {
@@ -1477,6 +1512,7 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(glStencilFunc(_, _, _)),
     export_c_func!(glStencilOp(_, _, _)),
     export_c_func!(glStencilMask(_)),
+    export_c_func!(glLogicOp(_)),
     // Points
     export_c_func!(glPointSize(_)),
     export_c_func!(glPointSizex(_)),
@@ -1573,6 +1609,8 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(glTexEnvfv(_, _, _)),
     export_c_func!(glTexEnvxv(_, _, _)),
     export_c_func!(glTexEnviv(_, _, _)),
+    export_c_func!(glMultiTexCoord4f(_, _, _, _, _)),
+    export_c_func!(glMultiTexCoord4x(_, _, _, _, _)),
     // OES_framebuffer_object
     export_c_func!(glGenFramebuffersOES(_, _)),
     export_c_func!(glGenRenderbuffersOES(_, _)),
@@ -1613,4 +1651,4 @@ fn _get_buffer_size(env: &mut Environment, target: GLenum) -> GLint {
         unsafe { gles.GetBufferParameteriv(target, gles11::BUFFER_SIZE, &mut buffer_size) }
         buffer_size
     })
-}
+    }

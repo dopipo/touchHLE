@@ -234,6 +234,9 @@ impl GLES for GLES1Native<'_> {
     unsafe fn StencilMask(&mut self, mask: GLuint) {
         gles11::StencilMask(mask);
     }
+    unsafe fn LogicOp(&mut self, opcode: GLenum) {
+        gles11::LogicOp(opcode);
+    }
 
     // Points
     unsafe fn PointSize(&mut self, size: GLfloat) {
@@ -567,7 +570,8 @@ impl GLES for GLES1Native<'_> {
         // OES_compressed_paletted_texture is in the common profile of OpenGL ES
         // 1.1, so we can reasonably assume it's supported.
         if PalettedTextureFormat::get_info(internalformat).is_none() {
-            unimplemented!("CompressedTexImage2D internalformat: {:#x}", internalformat);
+            log_dbg!("Unsupported CompressedTexImage2D internalformat: {:#x}", internalformat);
+            return;
         }
         log_dbg!("Directly supported texture format: {:#x}", internalformat);
         gles11::CompressedTexImage2D(
@@ -637,6 +641,27 @@ impl GLES for GLES1Native<'_> {
     }
     unsafe fn TexEnviv(&mut self, target: GLenum, pname: GLenum, params: *const GLint) {
         gles11::TexEnviv(target, pname, params)
+    }
+
+    unsafe fn MultiTexCoord4f(
+        &mut self,
+        target: GLenum,
+        s: GLfloat,
+        t: GLfloat,
+        r: GLfloat,
+        q: GLfloat,
+    ) {
+        gles11::MultiTexCoord4f(target, s, t, r, q)
+    }
+    unsafe fn MultiTexCoord4x(
+        &mut self,
+        target: GLenum,
+        s: GLfixed,
+        t: GLfixed,
+        r: GLfixed,
+        q: GLfixed,
+    ) {
+        gles11::MultiTexCoord4x(target, s, t, r, q)
     }
 
     // Matrix stack operations
@@ -812,4 +837,4 @@ impl GLES for GLES1Native<'_> {
     unsafe fn UnmapBufferOES(&mut self, target: GLenum) -> GLboolean {
         gles11::UnmapBufferOES(target)
     }
-}
+            }

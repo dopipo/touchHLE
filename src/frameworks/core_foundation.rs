@@ -32,6 +32,40 @@ pub mod cf_type;
 pub mod cf_url;
 pub mod time;
 
+pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
+    path: "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation",
+    aliases: &[],
+    class_exports: &[
+        cf_run_loop_timer::CLASSES, // Special internal classes.
+    ],
+    constant_exports: &[
+        cf_allocator::CONSTANTS,
+        cf_bundle::CONSTANTS,
+        cf_dictionary::CONSTANTS,
+        cf_locale::CONSTANTS,
+        cf_number::CONSTANTS,
+        cf_preferences::CONSTANTS,
+        cf_run_loop::CONSTANTS,
+    ],
+    function_exports: &[
+        FUNCTIONS,
+        cf_array::FUNCTIONS,
+        cf_dictionary::FUNCTIONS,
+        cf_bundle::FUNCTIONS,
+        cf_socket::FUNCTIONS,
+        cf_data::FUNCTIONS,
+        cf_locale::FUNCTIONS,
+        cf_number::FUNCTIONS,
+        cf_preferences::FUNCTIONS,
+        cf_run_loop::FUNCTIONS,
+        cf_run_loop_timer::FUNCTIONS,
+        cf_string::FUNCTIONS,
+        cf_type::FUNCTIONS,
+        cf_url::FUNCTIONS,
+        time::FUNCTIONS,
+    ],
+};
+
 pub use cf_type::{CFRelease, CFRetain, CFTypeRef};
 
 pub type CFHashCode = u32;
@@ -40,8 +74,12 @@ pub type CFOptionFlags = u32;
 pub type CFComparisonResult = CFIndex;
 
 use crate::abi::GuestArg;
-use crate::impl_GuestRet_for_large_struct;
+use crate::dyld::FunctionExports;
+use crate::environment::Environment;
+use crate::frameworks::foundation::ns_string::to_rust_string;
 use crate::mem::SafeRead;
+use crate::objc::id;
+use crate::{export_c_func, impl_GuestRet_for_large_struct, msg};
 
 pub const kCFNotFound: CFIndex = -1;
 
@@ -68,3 +106,15 @@ impl GuestArg for CFRange {
         self.length.to_regs(&mut regs[1..2]);
     }
 }
+
+fn CFShow(env: &mut Environment, obj: CFTypeRef) {
+    // TODO: support opaque types
+    // TODO: use description callbacks if defined
+    let description: id = msg![env; obj description];
+    // The output should be printed to stderr without any prefix,
+    // but CFShow() is meant to be used for debugging purposes,
+    // so just logging with CF module prefix should be fine too.
+    log!("{}", to_rust_string(env, description));
+}
+
+const FUNCTIONS: FunctionExports = &[export_c_func!(CFShow(_))];

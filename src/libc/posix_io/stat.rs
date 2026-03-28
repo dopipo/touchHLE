@@ -8,7 +8,7 @@
 use super::{close, off_t, open_direct, FileDescriptor};
 use crate::dyld::{export_c_func, FunctionExports};
 use crate::fs::{FsError, GuestFile, GuestPath};
-use crate::libc::errno::{set_errno, EBADF, EEXIST, ENOENT};
+use crate::libc::errno::{set_errno, EACCES, EBADF, EEXIST, ENOENT};
 use crate::libc::time::timespec;
 use crate::mem::{ConstPtr, MutPtr, SafeRead};
 use crate::Environment;
@@ -81,6 +81,7 @@ fn mkdir(env: &mut Environment, path: ConstPtr<u8>, mode: mode_t) -> i32 {
             match err {
                 FsError::AlreadyExist => set_errno(env, EEXIST),
                 FsError::NonexistentParentDir => set_errno(env, ENOENT),
+                FsError::ReadonlyParentDir => set_errno(env, EACCES),
                 _ => unimplemented!(),
             }
             -1
@@ -166,8 +167,14 @@ fn stat(env: &mut Environment, path: ConstPtr<u8>, buf: MutPtr<stat>) -> i32 {
     result
 }
 
+fn lstat(env: &mut Environment, path: ConstPtr<u8>, buf: MutPtr<stat>) -> i32 {
+    log_once!("Warning: lstat() is implemented as stat() (symbolic links are unsupported for now)");
+    stat(env, path, buf)
+}
+
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(mkdir(_, _)),
     export_c_func!(fstat(_, _)),
     export_c_func!(stat(_, _)),
+    export_c_func!(lstat(_, _)),
 ];

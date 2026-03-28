@@ -8,6 +8,7 @@
 use crate::frameworks::core_graphics::cg_context::CGContextSetRGBFillColor;
 use crate::frameworks::core_graphics::cg_geometry::CGPointZero;
 use crate::frameworks::core_graphics::{CGFloat, CGPoint, CGRect, CGSize};
+use crate::frameworks::foundation::{NSInteger, NSUInteger};
 use crate::frameworks::uikit::ui_color;
 use crate::frameworks::uikit::ui_font::{
     UILineBreakModeTailTruncation, UITextAlignment, UITextAlignmentLeft,
@@ -16,9 +17,15 @@ use crate::frameworks::uikit::ui_graphics::UIGraphicsGetCurrentContext;
 use crate::frameworks::uikit::ui_view::ui_control::ui_text_field::UIReturnKeyType;
 use crate::objc::{
     id, impl_HostObject_with_superclass, msg, msg_class, msg_super, nil, objc_classes, release,
-    retain, ClassExports, NSZonePtr,
+    retain, todo_objc_setter, ClassExports, NSZonePtr,
 };
 use crate::Environment;
+
+type UIDataDetectorTypes = NSUInteger;
+type UIKeyboardType = NSInteger;
+type UIKeyboardAppearance = NSInteger;
+type UITextAutocapitalizationType = NSInteger;
+type UITextAutocorrectionType = NSInteger;
 
 pub struct UITextViewHostObject {
     superclass: super::UIScrollViewHostObject,
@@ -180,7 +187,27 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (())setReturnKeyType:(UIReturnKeyType)type_ {
-    log!("TODO: setReturnKeyType:{}", type_);
+    todo_objc_setter!(this, type_);
+}
+
+- (())setKeyboardType:(UIKeyboardType)type_ {
+    todo_objc_setter!(this, type_);
+}
+
+- (())setKeyboardAppearance:(UIKeyboardAppearance)appearance {
+    todo_objc_setter!(this, appearance);
+}
+
+- (())setAutocapitalizationType:(UITextAutocapitalizationType)type_ {
+    todo_objc_setter!(this, type_);
+}
+
+- (())setAutocorrectionType:(UITextAutocorrectionType)type_ {
+    todo_objc_setter!(this, type_);
+}
+
+- (())setDataDetectorTypes:(UIDataDetectorTypes)types {
+    todo_objc_setter!(this, types);
 }
 
 - (())drawRect:(CGRect)_rect {
@@ -220,3 +247,4 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 };
+

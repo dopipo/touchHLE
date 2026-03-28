@@ -4,4 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-pub mod av_audio_player;
+#include "system_headers.h"
+
+@interface GUITestsCALayerTestsView : UIView
+@end

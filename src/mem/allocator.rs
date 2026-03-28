@@ -128,12 +128,6 @@ mod collections {
             Some(self.remove_with_base(chunk.base).unwrap())
         }
         #[inline(always)]
-        pub fn drain(self) -> impl Iterator<Item = Chunk> {
-            self.chunks
-                .into_iter()
-                .map(|(base, size)| Chunk { base, size })
-        }
-        #[inline(always)]
         pub fn get_size_with_base(&self, base: VAddr) -> Option<NonZeroU32> {
             self.chunks.get(&base).copied()
         }
@@ -334,7 +328,7 @@ impl Allocator {
     }
 
     fn align(size: GuestUSize, align: GuestUSize) -> GuestUSize {
-        if size % align != 0 {
+        if !size.is_multiple_of(align) {
             size + align - (size % align)
         } else {
             size
@@ -382,11 +376,5 @@ impl Allocator {
         }
 
         freed.size.get()
-    }
-
-    pub(super) fn reset_and_drain_used_chunks(&mut self) -> impl Iterator<Item = Chunk> {
-        let chunks = std::mem::take(&mut self.used_chunks);
-        *self = Allocator::new();
-        chunks.drain()
     }
 }

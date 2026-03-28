@@ -62,23 +62,38 @@ impl TryFrom<Matrix<3>> for CGAffineTransform {
     fn try_from(value: Matrix<3>) -> Result<CGAffineTransform, ()> {
         let columns = value.columns();
         if columns[0][2] == 0.0 && columns[1][2] == 0.0 && columns[2][2] == 1.0 {
-            Ok(CGAffineTransform {
-                a: columns[0][0],
-                b: columns[0][1],
-                c: columns[1][0],
-                d: columns[1][1],
-                tx: columns[2][0],
-                ty: columns[2][1],
-            })
+            Ok(affine_transform_from_matrix_unchecked(value))
         } else {
             Err(())
         }
+    }
+}
+fn affine_transform_from_matrix_unchecked(matrix: Matrix<3>) -> CGAffineTransform {
+    let columns = matrix.columns();
+    CGAffineTransform {
+        a: columns[0][0],
+        b: columns[0][1],
+        c: columns[1][0],
+        d: columns[1][1],
+        tx: columns[2][0],
+        ty: columns[2][1],
     }
 }
 impl From<CGAffineTransform> for Matrix<3> {
     fn from(value: CGAffineTransform) -> Matrix<3> {
         let CGAffineTransform { a, b, c, d, tx, ty } = value;
         Matrix::<3>::from_columns([[a, b, 0.0], [c, d, 0.0], [tx, ty, 1.0]])
+    }
+}
+impl From<CGAffineTransform> for Matrix<4> {
+    fn from(value: CGAffineTransform) -> Matrix<4> {
+        let CGAffineTransform { a, b, c, d, tx, ty } = value;
+        Matrix::<4>::from_columns([
+            [a, b, 0.0, 0.0],
+            [c, d, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [tx, ty, 0.0, 1.0],
+        ])
     }
 }
 
@@ -135,8 +150,14 @@ impl CGAffineTransform {
         Self::make_translation(x, y).concat(self)
     }
     pub fn invert(self) -> Self {
-        if let Some(inverse) = Matrix::<3>::from(&self.into()).inverse() {
-            inverse.try_into().unwrap()
+        let self_3x3: Matrix<3> = self.into();
+        if let Some(inverse) = Matrix::<3>::from(&self_3x3).inverse() {
+            // Matrix inversion sometimes produces values in the last column
+            // that are slightly off due to accumulated floating-point error.
+            // The TryFrom check causes crashes in that case, and it is a waste
+            // of energy to begin with as the result of inverting an affine
+            // transformation matrix will also be affine.
+            affine_transform_from_matrix_unchecked(inverse)
         } else {
             self
         }
