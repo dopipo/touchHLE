@@ -10,8 +10,6 @@ use crate::frameworks::carbon_core::OSStatus;
 use crate::frameworks::core_audio_types::fourcc;
 use crate::mem::{MutPtr, MutVoidPtr};
 use crate::Environment;
-use crate::frameworks::core_foundation::cf_run_loop::CFRunLoopRef;
-use crate::frameworks::core_foundation::cf_string::CFStringRef;
 use crate::frameworks::core_foundation::cf_url::CFURLRef;
 
 /// Usually a FourCC.
@@ -30,8 +28,6 @@ fn AudioServicesGetProperty(
     _io_property_data_size: MutPtr<u32>,
     _out_property_data: MutVoidPtr,
 ) -> OSStatus {
-    // Crash Bandicoot Nitro Kart 3D tries to use this property ID, which does
-    // not seem to be documented anywhere? Assuming this is a bug.
     if in_property_id == 0xfff {
         kAudioServicesUnsupportedPropertyError
     } else {
@@ -40,25 +36,19 @@ fn AudioServicesGetProperty(
 }
 
 fn AudioServicesPlaySystemSound(_env: &mut Environment, in_system_sound_id: SystemSoundID) {
-    // assert_eq!(in_system_sound_id, kSystemSoundID_Vibrate);
     log!("TODO: vibration (AudioServicesPlaySystemSound)");
-    // TODO: implement other system sounds
 }
 
 fn AudioServicesDisposeSystemSoundID(_env: &mut Environment, in_system_sound_id: SystemSoundID) {
-    // assert_eq!(in_system_sound_id, kSystemSoundID_Vibrate);
     log_dbg!("TODO: vibration (AudioServicesDisposeSystemSoundID)");
-    // TODO: implement other system sounds
 }
 
 fn AudioServicesRemoveSystemSoundCompletion(_env: &mut Environment, in_system_sound_id: SystemSoundID) {
-    // assert_eq!(in_system_sound_id, kSystemSoundID_Vibrate);
     log_dbg!("TODO: vibration (AudioServicesRemoveSystemSoundCompletion)");
-    // TODO: implement other system sounds
 }
 
 fn AudioServicesCreateSystemSoundID(
-    env: &mut Environment,
+    _env: &mut Environment,
     _in_file_url: CFURLRef,
     _in_system_sound_id: SystemSoundID
 ) -> OSStatus {
@@ -66,7 +56,7 @@ fn AudioServicesCreateSystemSoundID(
 }
 
 fn AudioServicesAddSystemSoundCompletion(
-    env: &mut Environment,
+    _env: &mut Environment,
     _in_file_url: CFURLRef,
     _in_system_sound_id: SystemSoundID
 ) -> OSStatus {
