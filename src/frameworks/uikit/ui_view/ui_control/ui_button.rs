@@ -10,10 +10,9 @@ use crate::frameworks::core_graphics::{CGFloat, CGPoint, CGRect};
 use crate::frameworks::foundation::ns_string::{from_rust_string, get_static_str, to_rust_string};
 use crate::frameworks::foundation::NSInteger;
 use crate::frameworks::uikit::ui_font::UITextAlignmentCenter;
-use crate::objc::{
-    autorelease, id, impl_HostObject_with_superclass, msg, msg_class, msg_super, nil, objc_classes,
-    release, retain, todo_objc_setter, ClassExports, HostObject, NSZonePtr,
-};
+use crate::todo_objc_setter;
+use crate::objc::{autorelease, id, impl_HostObject_with_superclass, msg, msg_class, msg_super, nil, objc_classes,
+    release, retain, ClassExports, HostObject, NSZonePtr};
 use crate::Environment;
 use std::collections::HashMap;
 

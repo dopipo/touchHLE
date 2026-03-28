@@ -930,3 +930,11 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(alSourceRewindv(_, _)),
     export_c_func!(alSpeedOfSound(_)),
 ];
+
+pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
+    path: "/System/Library/Frameworks/OpenAL.framework/OpenAL",
+    aliases: &[],
+    class_exports: &[],
+    constant_exports: &[],
+    function_exports: &[FUNCTIONS],
+};

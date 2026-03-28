@@ -8,6 +8,7 @@
 use super::ns_run_loop::NSDefaultRunLoopMode;
 use super::NSTimeInterval;
 use super::{ns_run_loop, ns_string};
+use crate::dyld::ConstantExports;
 use crate::objc::{
     autorelease, id, msg, msg_class, msg_send, nil, objc_classes, release, retain, ClassExports,
     HostObject, SEL,
@@ -267,3 +268,4 @@ pub(super) fn handle_timer(env: &mut Environment, timer: id) -> Option<Instant> 
 
     new_due_by
 }
+pub const CONSTANTS: ConstantExports = &[];

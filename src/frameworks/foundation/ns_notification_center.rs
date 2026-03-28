@@ -8,6 +8,7 @@
 use super::ns_notification::NSNotificationName;
 use super::ns_string;
 
+use crate::dyld::ConstantExports;
 use crate::objc::{
     id, msg, msg_class, msg_send, nil, objc_classes, release, retain, ClassExports, HostObject,
     NSZonePtr, SEL,
@@ -242,3 +243,4 @@ fn remove_observers_internal(
         }
     }
 }
+pub const CONSTANTS: ConstantExports = &[];

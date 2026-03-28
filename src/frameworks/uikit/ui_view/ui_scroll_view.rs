@@ -8,10 +8,9 @@
 pub mod ui_text_view;
 use crate::frameworks::core_graphics::{CGFloat, CGPoint, CGRect, CGSize};
 use crate::frameworks::foundation::{NSUInteger, NSInteger};
-use crate::objc::{
-    id, impl_HostObject_with_superclass, msg, nil, objc_classes, todo_objc_setter, ClassExports,
-    NSZonePtr, SEL,
-};
+use crate::todo_objc_setter;
+use crate::objc::{id, impl_HostObject_with_superclass, msg, nil, objc_classes, ClassExports,
+    NSZonePtr, SEL};
 
 type UIScrollViewIndicatorStyle = NSInteger;
 

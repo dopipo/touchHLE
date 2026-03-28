@@ -5,6 +5,7 @@
  */
 //! `NSNull`.
 
+use crate::dyld::ConstantExports;
 use crate::objc::{id, objc_classes, ClassExports, TrivialHostObject};
 
 #[derive(Default)]
@@ -41,3 +42,4 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 };
+pub const CONSTANTS: ConstantExports = &[];

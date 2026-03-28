@@ -6,7 +6,7 @@
 
 //! The AVFoundation framework.
 
-mod av_audio_player;
+pub mod av_audio_player;
 
 pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
     path: "/System/Library/Frameworks/AVFoundation.framework/AVFoundation",

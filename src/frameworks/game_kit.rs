@@ -10,8 +10,8 @@
 //! a `respondsToSelector:` call to some objects of this framework.
 //! Thus, we need to provide some stubs in order to not crash on that call.
 
-mod gk_local_player;
-mod gk_score;
+pub mod gk_local_player;
+pub mod gk_score;
 
 pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
     path: "/System/Library/Frameworks/GameKit.framework/GameKit",

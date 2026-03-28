@@ -15,10 +15,9 @@ use crate::frameworks::uikit::ui_font::{
 };
 use crate::frameworks::uikit::ui_graphics::UIGraphicsGetCurrentContext;
 use crate::frameworks::uikit::ui_view::ui_control::ui_text_field::UIReturnKeyType;
-use crate::objc::{
-    id, impl_HostObject_with_superclass, msg, msg_class, msg_super, nil, objc_classes, release,
-    retain, todo_objc_setter, ClassExports, NSZonePtr,
-};
+use crate::todo_objc_setter;
+use crate::objc::{id, impl_HostObject_with_superclass, msg, msg_class, msg_super, nil, objc_classes, release,
+    retain, ClassExports, NSZonePtr};
 use crate::Environment;
 
 type UIDataDetectorTypes = NSUInteger;

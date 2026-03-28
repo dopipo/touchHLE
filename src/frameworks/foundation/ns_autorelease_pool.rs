@@ -5,6 +5,7 @@
  */
 //! `NSAutoreleasePool`.
 
+use crate::dyld::ConstantExports;
 use crate::objc::{id, msg, objc_classes, release, ClassExports, HostObject, NSZonePtr};
 use crate::{Environment, ThreadId};
 use std::collections::HashMap;
@@ -130,3 +131,4 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 };
+pub const CONSTANTS: ConstantExports = &[];

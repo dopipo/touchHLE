@@ -49,6 +49,7 @@ pub mod ns_property_list_serialization;
 pub mod ns_run_loop;
 pub mod ns_scanner;
 pub mod ns_set;
+pub mod _nib_archive_decoder;
 pub mod ns_string;
 pub mod ns_thread;
 pub mod ns_time_zone;
@@ -59,6 +60,64 @@ pub mod ns_url_request;
 pub mod ns_user_defaults;
 pub mod ns_value;
 pub mod ns_xml_parser;
+
+pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
+    path: "/System/Library/Frameworks/Foundation.framework/Foundation",
+    aliases: &[],
+    class_exports: &[
+        ns_array::CLASSES,
+        ns_autorelease_pool::CLASSES,
+        ns_bundle::CLASSES,
+        ns_character_set::CLASSES,
+        ns_coder::CLASSES,
+        ns_data::CLASSES,
+        ns_date::CLASSES,
+        ns_date_formatter::CLASSES,
+        ns_dictionary::CLASSES,
+        ns_enumerator::CLASSES,
+        ns_error::CLASSES,
+        ns_file_handle::CLASSES,
+        ns_file_manager::CLASSES,
+        ns_invocation::CLASSES,
+        ns_keyed_archiver::CLASSES,
+        ns_keyed_unarchiver::CLASSES,
+        ns_locale::CLASSES,
+        ns_lock::CLASSES,
+        ns_method_signature::CLASSES,
+        ns_notification::CLASSES,
+        ns_notification_center::CLASSES,
+        ns_null::CLASSES,
+        ns_object::CLASSES,
+        ns_operation::CLASSES,
+        ns_operation_queue::CLASSES,
+        ns_process_info::CLASSES,
+        ns_property_list_serialization::CLASSES,
+        ns_run_loop::CLASSES,
+        ns_scanner::CLASSES,
+        ns_set::CLASSES,
+        ns_string::CLASSES,
+        ns_thread::CLASSES,
+        ns_timer::CLASSES,
+        ns_time_zone::CLASSES,
+        ns_url::CLASSES,
+        ns_url_connection::CLASSES,
+        ns_url_request::CLASSES,
+        ns_user_defaults::CLASSES,
+        ns_value::CLASSES,
+        ns_xml_parser::CLASSES,
+    ],
+    constant_exports: &[
+        ns_autorelease_pool::CONSTANTS,
+        ns_locale::CONSTANTS,
+        ns_notification_center::CONSTANTS,
+        ns_null::CONSTANTS,
+        ns_string::CONSTANTS,
+        ns_thread::CONSTANTS,
+        ns_timer::CONSTANTS,
+        ns_time_zone::CONSTANTS,
+    ],
+    function_exports: &[],
+};
 
 #[derive(Default)]
 pub struct State {

@@ -36,6 +36,37 @@ pub enum DeviceOrientation {
     LandscapeLeft,
     LandscapeRight,
 }
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum DeviceFamily {
+    iPhone,
+    iPad,
+}
+
+impl TryFrom<u64> for DeviceFamily {
+    type Error = ();
+
+    fn try_from(value: u64) -> Result<Self, Self::Error> {
+        match value {
+            1 => Ok(DeviceFamily::iPhone),
+            2 => Ok(DeviceFamily::iPad),
+            _ => Err(()),
+        }
+    }
+}
+
+impl TryFrom<&str> for DeviceFamily {
+    type Error = ();
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value.to_lowercase().as_str() {
+            "iphone" => Ok(DeviceFamily::iPhone),
+            "ipad" => Ok(DeviceFamily::iPad),
+            _ => Err(()),
+        }
+    }
+}
+
 fn size_for_orientation(orientation: DeviceOrientation, scale_hack: NonZeroU32) -> (u32, u32) {
     let scale_hack = scale_hack.get();
     match orientation {

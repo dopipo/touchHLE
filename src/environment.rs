@@ -385,7 +385,7 @@ impl Environment {
             log!("Applying game-specific hack for Spore Origins: zeroing memory on alloc instead of free.");
         }
 
-        let executable = mach_o::MachO::load_from_file(bundle.executable_path(), &fs, &mut mem)
+        let executable = mach_o::MachO::load_from_file(bundle.executable_path(), &fs, &mut mem, 0)
             .map_err(|e| format!("Could not load executable: {e}"))?;
 
         let mut dylibs = Vec::new();
@@ -398,7 +398,7 @@ impl Environment {
             // There are some Free Software libraries bundled with touchHLE and
             // exposed via the guest file system (see Fs::new()).
             if fs.is_file(fs::GuestPath::new(dylib)) {
-                let dylib = mach_o::MachO::load_from_file(fs::GuestPath::new(dylib), &fs, &mut mem)
+                let dylib = mach_o::MachO::load_from_file(fs::GuestPath::new(dylib), &fs, &mut mem, 0)
                     .map_err(|e| format!("Could not load bundled dylib: {e}"))?;
                 dylibs.push(dylib);
             } else {

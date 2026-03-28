@@ -215,18 +215,10 @@ pub(super) fn objc_copyStruct(
 #[macro_export]
 macro_rules! todo_objc_setter {
     ($this:ident, $($arg:tt)+) => {
-        const _: () = {
-            let bytes = _OBJC_CURRENT_SELECTOR.as_bytes();
-            let starts_with_set =
-                bytes.len() > 3 && bytes[0] == b's' && bytes[1] == b'e' && bytes[2] == b't';
-            assert!(starts_with_set, "Selector does not start with set.");
-        };
         log!(
-            "TODO: [({}*) {:?} {}:{:?}]",
-            _OBJC_CURRENT_CLASS,
+            "TODO: [objc set property] this={:?}, args={:?}",
             $this,
-            _OBJC_CURRENT_SELECTOR,
-            $($arg)+
+            ($($arg)+)
         );
     };
 }
