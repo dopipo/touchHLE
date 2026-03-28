@@ -17,7 +17,7 @@ use std::collections::HashMap;
 use std::ops::Range;
 
 #[derive(Default)]
-pub(super) struct State {
+pub struct State { // ИСПРАВЛЕНО: изменено с pub(super) на pub
     fonts: HashMap<FontKind, Font>,
     sans_regular_ja: Option<Font>,
     sans_bold_ja: Option<Font>,
@@ -479,3 +479,4 @@ fn get_equivalent_font(system_font: &str) -> Option<FontKind> {
         _ => None,
     }
 }
+
