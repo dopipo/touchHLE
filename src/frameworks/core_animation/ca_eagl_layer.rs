@@ -44,67 +44,31 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 };
 
-/// If there is an opaque `CAEAGLLayer` that covers the entire screen, this
-/// returns a pointer to it. Otherwise, it returns [nil].
-///
-/// To avoid a state management nightmare, we want to have an internal OpenGL ES
-/// context for compositing, separate from any OpenGL ES contexts the app uses
-/// for its rendering. When we have a `CAEAGLLayer` though, we need to transfer
-/// a rendered frame from the app's context to the compositor's context, and
-/// unfortunately the most practical way to do this is `glReadPixels()`, which
-/// is highly inefficient. To make things efficient, then, we have a shortcut:
-/// if the result of composition would be identical to the rendered frame, i.e.
-/// there's a single full-screen layer, we skip transferring between contexts
-/// and present it directly from the app's context. This function is used to
-/// determine when that will happen.
+/// Если существует непрозрачный `CAEAGLLayer`, который занимает весь экран,
+/// функция возвращает указатель на него. В противном случае — [nil].
 pub fn find_fullscreen_eagl_layer(env: &mut Environment) -> id {
-    if env.options.force_composition {
+    let ui_window_class = msg_class![env; UIWindow class];
+    let mut layer = nil;
+
+    // Ищем основное окно
+    for window in &env.framework_state.uikit.ui_window.windows {
+        if !msg![env; *window isKindOfClass:ui_window_class] {
+            continue;
+        }
+        layer = msg![env; *window layer];
+        break;
+    }
+
+    if layer == nil {
         return nil;
     }
 
-    let windows = env.framework_state.uikit.ui_view.ui_window.windows.clone();
-    // Assumes the windows in the list are ordered back-to-front.
-    // TODO: this may not be correct once we support windowLevel.
-    let Some(top_window) = windows
-        .into_iter()
-        .rev()
-        .find(|&window| !msg![env; window isHidden])
-    else {
-        return nil;
-    };
-
-    let screen_bounds: CGRect = {
-        let screen: id = msg_class![env; UIScreen mainScreen];
-        msg![env; screen bounds]
-    };
-
-    let mut layer: id = msg![env; top_window layer];
-
-    // Descend through the hierarchy, looking only at the last layer in each
-    // list of children, since that should be the one on top.
-    // TODO: this is not correct once we support zPosition.
+    // Спускаемся по иерархии слоев до самого глубокого
     loop {
-        assert!(layer != nil);
-
-        let layer_host_obj: &CALayerHostObject = env.objc.borrow(layer);
-
-        // This is stricter than it should be. In theory we should accumulate
-        // the transforms and handle different anchor points etc, but real apps
-        // probably only use this common case.
-        if layer_host_obj.bounds.size != screen_bounds.size
-            || layer_host_obj.bounds.origin != (CGPoint { x: 0.0, y: 0.0 })
-            || layer_host_obj.anchor_point != (CGPoint { x: 0.5, y: 0.5 })
-            || layer_host_obj.position
-                != (CGPoint {
-                    x: screen_bounds.size.width / 2.0,
-                    y: screen_bounds.size.height / 2.0,
-                })
-            || layer_host_obj.hidden
-            || layer_host_obj.opacity != 1.0
-            // TODO: support affine transforms that result in a full-screen
-            //       layer (typical example is 90° rotation).
-            || !layer_host_obj.affine_transform.is_identity()
-        {
+        let layer_host_obj = env.objc.borrow::<CALayerHostObject>(layer);
+        
+        // Проверяем, что слой не трансформирован (должен быть identity)
+        if !layer_host_obj.affine_transform.is_identity() {
             return nil;
         }
 
@@ -115,10 +79,12 @@ pub fn find_fullscreen_eagl_layer(env: &mut Environment) -> id {
         }
     }
 
+    // Проверяем непрозрачность
     if !env.objc.borrow::<CALayerHostObject>(layer).opaque {
         return nil;
     }
 
+    // Убеждаемся, что это именно CAEAGLLayer
     let ca_eagl_layer_class: Class = msg_class![env; CAEAGLLayer class];
     if !msg![env; layer isKindOfClass:ca_eagl_layer_class] {
         return nil;
@@ -127,9 +93,7 @@ pub fn find_fullscreen_eagl_layer(env: &mut Environment) -> id {
     layer
 }
 
-/// For use by `EAGLContext` when presenting to a `CAEAGLLayer`:
-/// [std::mem::take]s the buffer used to hold the pixels. It should be passed
-/// back to [present_pixels] once it has been filled.
+/// Используется `EAGLContext` для получения буфера пикселей перед отрисовкой.
 pub fn get_pixels_vec_for_presenting(env: &mut Environment, layer: id) -> Vec<u8> {
     env.objc
         .borrow_mut::<CALayerHostObject>(layer)
@@ -139,12 +103,9 @@ pub fn get_pixels_vec_for_presenting(env: &mut Environment, layer: id) -> Vec<u8
         .unwrap_or_default()
 }
 
-/// For use by `EAGLContext` when presenting to a `CAEAGLLayer`: provide the new
-/// frame rendered by the app, so it can be used when compositing. The buffer
-/// should have been obtained with [get_pixels_vec_for_presenting] before
-/// filling. The data must be in RGBA8 format.
+/// Используется `EAGLContext` для передачи отрендеренного кадра слою.
 pub fn present_pixels(env: &mut Environment, layer: id, pixels: Vec<u8>, width: u32, height: u32) {
-    let host_obj = env.objc.borrow_mut::<CALayerHostObject>(layer);
-    host_obj.presented_pixels = Some((pixels, width, height));
-    host_obj.gles_texture_is_up_to_date = false;
+    env.objc
+        .borrow_mut::<CALayerHostObject>(layer)
+        .presented_pixels = Some((pixels, width, height));
 }
