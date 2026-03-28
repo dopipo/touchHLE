@@ -36,4 +36,33 @@ pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
         ca_display_link::CLASSES,
         ca_eagl_layer::CLASSES,
         ca_layer::CLASSES,
-        ca_media_timing_function::CLASSES
+        ca_media_timing_function::CLASSES,
+        ca_transaction::CLASSES,
+    ],
+    constant_exports: &[
+        ca_animation::CONSTANTS,
+        ca_layer::CONSTANTS,
+        ca_media_timing_function::CONSTANTS,
+        ca_transaction::CONSTANTS,
+    ],
+    function_exports: &[FUNCTIONS],
+};
+
+#[derive(Default)]
+pub struct State {
+    ca_media_timing_function: ca_media_timing_function::State,
+    ca_transaction: ca_transaction::State,
+    composition: composition::State,
+}
+
+// This function should call mach_absolute_time() and convert the result into
+// seconds. Since in our implementation, mach_absolute_time() returns, in
+// nanoseconds, Instant::now, we can just do the same in seconds and save
+// the calls to the guest functions.
+pub fn CACurrentMediaTime(env: &mut Environment) -> CFTimeInterval {
+    Instant::now()
+        .duration_since(env.startup_time)
+        .as_secs_f64()
+}
+
+pub const FUNCTIONS: FunctionExports = &[export_c_func!(CACurrentMediaTime())];
