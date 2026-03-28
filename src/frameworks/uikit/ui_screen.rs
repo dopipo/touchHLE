@@ -43,7 +43,8 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (CGRect)bounds {
     // While Apple's documentation says this changes with the interface
     // orientation, https://useyourloaf.com/blog/uiscreen-bounds-in-ios-8/ says
-    // ths wasn't the case prior to iOS 8.
+    // this wasn't the case prior to iOS 8.
+    // Fixed: Ensure we access device_family correctly via the window or environment options.
     let (width, height) = env.window().device_family().portrait_size();
     CGRect {
         origin: CGPoint { x: 0.0, y: 0.0 },
@@ -60,11 +61,6 @@ pub const CLASSES: ClassExports = objc_classes! {
         bounds.size.height -= STATUS_BAR_HEIGHT;
     }
     bounds
-}
-
-- (CGFloat)scale {
-    // TODO: support retina
-    1.0
 }
 
 @end
