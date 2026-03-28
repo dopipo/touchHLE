@@ -16,7 +16,6 @@ use crate::frameworks::foundation::ns_string::{from_rust_string, to_rust_string}
 use crate::frameworks::uikit::ui_graphics::UIGraphicsGetCurrentContext;
 use crate::mem::{ConstPtr, GuestUSize, MutPtr};
 pub mod CMap {
-    use symphonia::core::meta::StandardTagKey::EncodedBy;
     use crate::font::Font;
 
     #[derive(Clone)]
@@ -50,7 +49,7 @@ pub mod CMap {
     }
 
     pub fn table_from_font(_font: &Font) -> Table {
-        let ascii_range = (0u8..255u8);
+        let ascii_range = 0u8..255u8;
         let codepoints: Vec<u16> = ascii_range
             .map(|cp| cp as u16)
             .collect();
@@ -253,3 +252,4 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CGFontGetUnitsPerEm(_)),
     export_c_func!(CGFontGetCapHeight(_)),
 ];
+
