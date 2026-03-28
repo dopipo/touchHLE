@@ -12,7 +12,7 @@
 use crate::environment::Environment;
 use crate::frameworks::foundation::NSUInteger;
 use crate::libc::string::strncpy;
-use crate::mem::{guest_size_of, ConstPtr, GuestUSize, MutVoidPtr};
+use crate::mem::{ConstPtr, GuestUSize};
 use crate::objc::{id, objc_classes, ClassExports, HostObject};
 
 struct NSMethodSignatureHostObject {
@@ -117,3 +117,4 @@ fn parse_signature_inner(env: &mut Environment, curr: ConstPtr<u8>) -> (GuestUSi
         _ => unimplemented!("parse_signature_inner: {}", c as char),
     }
 }
+
