@@ -10,7 +10,7 @@ use crate::frameworks::core_graphics::cg_color::{CGColorRef, CGColorRelease, CGC
 use crate::frameworks::core_graphics::cg_context::CGContextSetRGBFillColor;
 use crate::frameworks::core_graphics::{cg_color, CGFloat};
 use crate::frameworks::foundation::ns_string::get_static_str;
-use crate::frameworks::foundation::NSInteger;
+use crate::frameworks::foundation::{NSInteger, NSUInteger};
 use crate::mem::MutPtr;
 use crate::objc::{
     autorelease, id, msg, msg_class, nil, objc_classes, ClassExports, HostObject, NSZonePtr, ObjC,
@@ -94,6 +94,15 @@ pub const CLASSES: ClassExports = objc_classes! {
 + (id)grayColor {
     get_standard_color(env, _cmd, 1.0/2.0, 1.0/2.0, 1.0/2.0, 1.0)
 }
+
++ (id)groupTableViewBackgroundColor {
+    nil
+}
+
++ (id)colorWithPatternImage:(NSUInteger)_image {
+    msg![env; this init]
+}
+
 + (id)lightGrayColor {
     get_standard_color(env, _cmd, 2.0/3.0, 2.0/3.0, 2.0/3.0, 1.0)
 }
@@ -107,9 +116,27 @@ pub const CLASSES: ClassExports = objc_classes! {
 + (id)redColor      { get_standard_color(env, _cmd, 1.0, 0.0, 0.0, 1.0) }
 + (id)yellowColor   { get_standard_color(env, _cmd, 1.0, 1.0, 0.0, 1.0) }
 
-// Системные цвета для текста
-+ (id)lightTextColor { get_standard_color(env, _cmd, 1.0, 1.0, 1.0, 0.6) }
-+ (id)darkTextColor  { get_standard_color(env, _cmd, 0.0, 0.0, 0.0, 1.0) }
++ (id)lightTextColor {
+    nil
+}
+
++ (id)darkTextColor {
+    nil
+}
+
++ (id)viewFlipsideBackgroundColor {
+    nil
+}
+
++ (id)CGColor {
+    nil
+}
+
++ (())colorWithHue:(NSInteger)hue saturation:(bool)_saturation brightness:(bool)_brightness alpha:(bool)_alpha  {
+    // TODO
+}
+
+// TODO: more initializers, set methods, more accessors
 
 - (id)initWithCGColor:(CGColorRef)cg_color {
     CGColorRetain(env, cg_color);
@@ -121,9 +148,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     let w = w.clamp(0.0, 1.0);
     let a = a.clamp(0.0, 1.0);
 
-    let rgba = (w, w, w, a);
-    env.objc.borrow_mut::<UIColorHostObject>(this).cg_color =
-        cg_color::from_rgba(env, rgba);
+    env.objc.borrow_mut::<UIColorHostObject>(this).cg_color = cg_color::from_rgba(env, (w, w, w, a));
 
     this
 }
@@ -132,8 +157,7 @@ pub const CLASSES: ClassExports = objc_classes! {
             green:(CGFloat)g
              blue:(CGFloat)b
             alpha:(CGFloat)a {
-    env.objc.borrow_mut::<UIColorHostObject>(this).cg_color =
-        cg_color::from_rgba(env, (r, g, b, a));
+    env.objc.borrow_mut::<UIColorHostObject>(this).cg_color = cg_color::from_rgba(env, (r, g, b, a));
     this
 }
 
@@ -148,22 +172,36 @@ pub const CLASSES: ClassExports = objc_classes! {
     match count {
         4 => {
             let key_ns_string = get_static_str(env, "UIRed");
+
+            // Both RGBA and HSBA colors have 4 components.
+            // We assume presence of the red component as the indication of RGBA
+            // TODO: support HSBA decoding too
             assert!(msg![env; coder containsValueForKey:key_ns_string]);
 
             let r: CGFloat = msg![env; coder decodeFloatForKey:key_ns_string];
+
             let key_ns_string = get_static_str(env, "UIGreen");
             let g: CGFloat = msg![env; coder decodeFloatForKey:key_ns_string];
+
             let key_ns_string = get_static_str(env, "UIBlue");
             let b: CGFloat = msg![env; coder decodeFloatForKey:key_ns_string];
 
-            log_dbg!("[(UIColor*){:?} initWithCoder] RGBA", this);
+            log_dbg!(
+                "[(UIColor*){:?} initWithCoder:{:?}] => count {}, r {}, g {}, b {}, a {}",
+                this, coder, count, r, g, b, a
+            );
+
             msg![env; this initWithRed:r green:g blue:b alpha:a]
         }
         2 => {
             let key_ns_string = get_static_str(env, "UIWhite");
             let w: CGFloat = msg![env; coder decodeFloatForKey:key_ns_string];
 
-            log_dbg!("[(UIColor*){:?} initWithCoder] Gray", this);
+            log_dbg!(
+                "[(UIColor*){:?} initWithCoder:{:?}] => count {}, w {}, a {}",
+                this, coder, count, w, a
+            );
+
             msg![env; this initWithWhite:w alpha:a]
         }
         _ => unimplemented!()
@@ -185,6 +223,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (())set {
     msg![env; this setFill]
+    // TODO: set stroke color as well
 }
 
 - (())setFill {
@@ -213,11 +252,16 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
+// Undocumented classes used in NIBs
 @implementation UICGColor: UIColor
 @end
 @implementation UIDeviceRGBColor: UIColor
 @end
+@implementation UICachedDeviceWhiteColor: UIColor
+@end
 
+// Special subclass for standard colors with a static lifetime.
+// See `get_standard_color`.
 @implementation _touchHLE_UIColor_Static: UIColor
 
 + (id)allocWithZone:(NSZonePtr)_zone {
@@ -235,6 +279,8 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 };
 
+/// Shortcut for use in Core Animation's compositor: get the RGBA triple for a
+/// `UIColor*`.
 pub fn get_rgba(objc: &ObjC, ui_color: id) -> (CGFloat, CGFloat, CGFloat, CGFloat) {
     let color = objc.borrow::<UIColorHostObject>(ui_color).cg_color;
     cg_color::to_rgba(objc, color)

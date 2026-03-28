@@ -28,15 +28,15 @@ use crate::Environment;
 macro_rules! selector {
     // "foo"
     ($name:ident) => { stringify!($name) };
-    // "fooWithBar:", "fooWithBar:Baz", "fooWithBar:::" etc
-    ($_:tt; $name:ident $(, $($namen:ident)?)*) => {
-        concat!(stringify!($name), ":", $($(stringify!($namen),)? ":"),*)
+    // "fooWithBar:", "fooWithBar:Baz" etc
+    ($_:tt; $name:ident $(, $namen:ident)*) => {
+        concat!(stringify!($name), ":", $(stringify!($namen), ":"),*)
     }
 }
 pub use crate::selector; // #[macro_export] is weird...
 
 /// Opaque type used for selectors.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
 #[repr(transparent)]
 #[allow(clippy::upper_case_acronyms)] // silly clippit, this isn't an acronym!
 pub struct SEL(ConstPtr<u8>);
@@ -96,19 +96,29 @@ impl ObjC {
     /// [ObjC::register_bin_selectors], so that selector strings in the app
     /// binary can be re-used. [crate::dyld] calls both of these.
     pub fn register_host_selectors(&mut self, mem: &mut Mem) {
-        for (_name, template) in crate::dyld::DYLIB_LIST
-            .iter()
-            .flat_map(|dylib| dylib.class_exports)
-            .copied()
-            .flatten()
-        {
-            for method_list in [template.class_methods, template.instance_methods] {
-                for &(name, _imp) in method_list {
-                    if self.selectors.contains_key(name) {
-                        continue;
+        for &class_list in super::CLASS_LISTS {
+            for (_name, template) in class_list {
+                for method_list in [template.class_methods, template.instance_methods] {
+                    for &(name, _imp) in method_list {
+                        // handle cases like functionWithControlPoints:::: where multiple objc
+                        // arguments without verb exist, which rust macro can't handle
+                        let sanitized_name = name
+                            .split(':')
+                            .map(|c| if c.starts_with('_') {""} else {c})
+                            .collect::<Vec<&str>>()
+                            .join(":");
+                        if sanitized_name.as_str() != name {
+                            if !self.selectors.contains_key(sanitized_name.as_str()) {
+                                let sel = SEL(mem.alloc_and_write_cstr(sanitized_name.as_str().as_bytes()).cast_const());
+                                self.selectors.insert(sanitized_name.as_str().to_string(), sel);
+                            }
+                        }
+                        if self.selectors.contains_key(name) {
+                            continue;
+                        }
+                        let sel = SEL(mem.alloc_and_write_cstr(name.as_bytes()).cast_const());
+                        self.selectors.insert(name.to_string(), sel);
                     }
-                    let sel = SEL(mem.alloc_and_write_cstr(name.as_bytes()).cast_const());
-                    self.selectors.insert(name.to_string(), sel);
                 }
             }
         }
@@ -210,26 +220,23 @@ impl ObjC {
 
         // Also check unlinked host classes: just because the binary doesn't
         // link them in directly doesn't mean that it won't use it!
-        for (class_name, template) in crate::dyld::DYLIB_LIST
-            .iter()
-            .flat_map(|dylib| dylib.class_exports)
-            .copied()
-            .flatten()
-        {
-            if self.classes.contains_key(*class_name) {
-                continue;
-            }
+        for &class_list in super::CLASS_LISTS {
+            for (class_name, template) in class_list {
+                if self.classes.contains_key(*class_name) {
+                    continue;
+                }
 
-            for &(sel_name, _) in template.instance_methods {
-                let sel = self.lookup_selector(sel_name).unwrap();
-                let entry = impl_selectors.entry(sel);
-                entry.or_default().0.push(class_name);
-            }
+                for &(sel_name, _) in template.instance_methods {
+                    let sel = self.lookup_selector(sel_name).unwrap();
+                    let entry = impl_selectors.entry(sel);
+                    entry.or_default().0.push(class_name);
+                }
 
-            for &(sel_name, _) in template.class_methods {
-                let sel = self.lookup_selector(sel_name).unwrap();
-                let entry = impl_selectors.entry(sel);
-                entry.or_default().1.push(class_name);
+                for &(sel_name, _) in template.class_methods {
+                    let sel = self.lookup_selector(sel_name).unwrap();
+                    let entry = impl_selectors.entry(sel);
+                    entry.or_default().1.push(class_name);
+                }
             }
         }
 

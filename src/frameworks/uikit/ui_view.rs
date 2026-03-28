@@ -14,21 +14,27 @@ pub mod ui_image_view;
 pub mod ui_label;
 pub mod ui_picker_view;
 pub mod ui_scroll_view;
+pub mod ui_search_bar;
+pub mod ui_toolbar;
 pub mod ui_web_view;
 pub mod ui_window;
 
 use super::ui_graphics::{UIGraphicsPopContext, UIGraphicsPushContext};
-use crate::frameworks::core_graphics::cg_affine_transform::CGAffineTransform;
+use crate::frameworks::core_graphics::cg_affine_transform::{
+    CGAffineTransform, CGAffineTransformIdentity,
+};
 use crate::frameworks::core_graphics::cg_color::CGColorRef;
 use crate::frameworks::core_graphics::cg_context::{CGContextClearRect, CGContextRef};
 use crate::frameworks::core_graphics::{CGFloat, CGPoint, CGRect, CGSize};
 use crate::frameworks::foundation::ns_string::get_static_str;
-use crate::frameworks::foundation::{ns_array, NSInteger, NSUInteger};
+use crate::frameworks::foundation
+    ::{ns_array, NSInteger, NSTimeInterval, NSUInteger};
 use crate::objc::{
-    autorelease, id, msg, msg_class, nil, objc_classes, release, retain, todo_objc_setter, Class,
-    ClassExports, HostObject, NSZonePtr, ObjC,
+    autorelease, id, msg, msg_class, nil, objc_classes, release, retain, Class, ClassExports,
+    HostObject, NSZonePtr, ObjC,
 };
 use crate::Environment;
+use crate::mem::MutVoidPtr;
 
 #[derive(Default)]
 pub struct State {
@@ -109,6 +115,19 @@ pub const CLASSES: ClassExports = objc_classes! {
 + (Class)layerClass {
     env.objc.get_known_class("CALayer", &mut env.mem)
 }
+
++ (()) beginAnimations: (id)_animationID context: (MutVoidPtr)_context {}
+
++ (()) setAnimationCurve: (NSInteger) _curve {}
++ (()) setAnimationDuration: (NSTimeInterval) _duration {}
++ (()) setAnimationDelay: (NSTimeInterval) _delay {}
++ (()) setAnimationDelegate: (NSTimeInterval) _delegate {}
++ (()) setAnimationBeginsFromCurrentState: (NSTimeInterval) _state {}
++ (()) setAnimationRepeatAutoreverses: (NSTimeInterval) _auto {}
++ (()) setAnimationDidStopSelector: (NSTimeInterval) _sel {}
++ (()) setAnimationRepeatCount: (NSTimeInterval) _count {}
+
++ (()) commitAnimations {}
 
 // TODO: accessors etc
 
@@ -453,7 +472,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (())setClipsToBounds:(bool)clips {
-    todo_objc_setter!(this, clips);
+    log!("TODO: [{:?} setClipsToBounds:{}]", this, clips);
 }
 
 - (bool)isOpaque {
@@ -539,17 +558,16 @@ pub const CLASSES: ClassExports = objc_classes! {
     let layer = env.objc.borrow::<UIViewHostObject>(this).layer;
     msg![env; layer setFrame:frame]
 }
+
 - (CGAffineTransform)transform {
-    let layer = env.objc.borrow::<UIViewHostObject>(this).layer;
-    msg![env; layer affineTransform]
+    CGAffineTransformIdentity
 }
 - (())setTransform:(CGAffineTransform)transform {
-    let layer = env.objc.borrow::<UIViewHostObject>(this).layer;
-    msg![env; layer setAffineTransform:transform]
+    log!("TODO: [{:?} setTransform:{:?}]", this, transform);
 }
 
 - (())setContentMode:(NSInteger)content_mode { // should be UIViewContentMode
-    todo_objc_setter!(this, content_mode);
+    log!("TODO: [UIView {:?} setContentMode:{:?}] => ()", this, content_mode);
 }
 
 - (bool)clearsContextBeforeDrawing {
@@ -599,7 +617,12 @@ pub const CLASSES: ClassExports = objc_classes! {
         if hidden || alpha < 0.01 || !interactible {
            continue;
         }
-        let point: CGPoint = msg![env; subview convertPoint:point fromView:this];
+        let frame: CGRect = msg![env; subview frame];
+        let bounds: CGRect = msg![env; subview bounds];
+        let point = CGPoint {
+            x: point.x - frame.origin.x + bounds.origin.x,
+            y: point.y - frame.origin.y + bounds.origin.y,
+        };
         let subview: id = msg![env; subview hitTest:point withEvent:event];
         if subview != nil {
             return subview;
@@ -631,7 +654,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 // UIResponder implementation
 // From the Apple UIView docs regarding [UIResponder nextResponder]:
 // "UIView implements this method and returns the UIViewController object that
-//  manages it (if it has one) or its superview (if it doesn't)."
+//  manages it (if it has one) or its superview (if it doesn’t)."
 - (id)nextResponder {
     let host_object = env.objc.borrow::<UIViewHostObject>(this);
     if host_object.view_controller != nil {
@@ -648,63 +671,61 @@ pub const CLASSES: ClassExports = objc_classes! {
     if other == nil {
         let window: id = msg![env; this window];
         if window == nil {
-            log!("Warning: convertPoint:fromView:nil called on view not in a window, returning point unchanged");
+            // No window attached — safe fallback
+            // UIKit would typically just return the point unchanged
             return point;
         }
-        return msg![env; this convertPoint:point fromView:window]
+        // TODO: check if window is the key window if you need parity
+        return msg![env; this convertPoint:point fromView:window];
     }
+
     let this_layer = env.objc.borrow::<UIViewHostObject>(this).layer;
     let other_layer = env.objc.borrow::<UIViewHostObject>(other).layer;
     msg![env; this_layer convertPoint:point fromLayer:other_layer]
 }
+
 - (CGPoint)convertPoint:(CGPoint)point
                  toView:(id)other { // UIView*
     if other == nil {
         let window: id = msg![env; this window];
         if window == nil {
-            log!("Warning: convertPoint:toView:nil called on view not in a window, returning point unchanged");
+            // No window attached → just return the point unchanged
             return point;
         }
-        return msg![env; this convertPoint:point toView:window]
+        // TODO: could also check if window is the key window
+        return msg![env; this convertPoint:point toView:window];
     }
+
     let this_layer = env.objc.borrow::<UIViewHostObject>(this).layer;
     let other_layer = env.objc.borrow::<UIViewHostObject>(other).layer;
     msg![env; this_layer convertPoint:point toLayer:other_layer]
 }
+
 - (CGRect)convertRect:(CGRect)rect
              fromView:(id)other { // UIView*
-    if other == nil {
-        let window: id = msg![env; this window];
-        if window == nil {
-            log!("Warning: convertRect:fromView:nil called on view not in a window, returning rect unchanged");
-            return rect;
-        }
-        return msg![env; this convertRect:rect fromView:window]
+    let new_origin: CGPoint = msg![env; this convertPoint:(rect.origin) fromView:other];
+    // Size is preserved
+    CGRect {
+        origin: new_origin,
+        size: rect.size
     }
-    let this_layer = env.objc.borrow::<UIViewHostObject>(this).layer;
-    let other_layer = env.objc.borrow::<UIViewHostObject>(other).layer;
-    msg![env; this_layer convertRect:rect fromLayer:other_layer]
 }
+
 - (CGRect)convertRect:(CGRect)rect
                toView:(id)other { // UIView*
-    if other == nil {
-        let window: id = msg![env; this window];
-        if window == nil {
-            log!("Warning: convertRect:toView:nil called on view not in a window, returning rect unchanged");
-            return rect;
-        }
-        return msg![env; this convertRect:rect toView:window]
+    let new_origin: CGPoint = msg![env; this convertPoint:(rect.origin) toView:other];
+    // Size is preserved
+    CGRect {
+        origin: new_origin,
+        size: rect.size
     }
-    let this_layer = env.objc.borrow::<UIViewHostObject>(this).layer;
-    let other_layer = env.objc.borrow::<UIViewHostObject>(other).layer;
-    msg![env; this_layer convertRect:rect toLayer:other_layer]
 }
 
 - (())setAutoresizingMask:(NSUInteger)mask {
-    todo_objc_setter!(this, mask);
+    log!("TODO: [(UIView*){:?} setAutoresizingMask:{}]", this, mask);
 }
 - (())setAutoresizesSubviews:(bool)enabled {
-    todo_objc_setter!(this, enabled);
+    log!("TODO: [(UIView*){:?} setAutoresizesSubviews:{}]", this, enabled);
 }
 
 - (CGSize)sizeThatFits:(CGSize)size {
@@ -717,5 +738,138 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
-};
+@implementation UINavigationBar: UIView
+- (())setBarStyle:(bool)style {
+    log!("TODO: setBarStyle:{}", style);
+}
 
+- (())setTintColor:(bool)color {
+    log!("TODO: setTintColor:{}", color);
+}
+
+- (())setDelegate:(bool)delegate {
+    log!("TODO: setDelegate:{}", delegate);
+}
+    
+- (())pushNavigationItem:(NSInteger)_item animated:(bool)_animated {
+    // TODO
+}
+
+- (())showButtonsWithLeftTitle:(NSInteger)title rightTitle:(bool)_right leftBack:(bool)_back {
+    // TODO
+}
+
+- (id)sizeToFit {
+    nil
+}
+
+@end
+
+@implementation UIProgressView: UIView
+
+- (id)initWithProgressViewStyle:(NSUInteger)style {
+    msg![env; this init]
+}
+
+- (id)progress {
+    nil
+}
+
+- (())setProgressViewStyle:(bool)style {
+    log!("TODO: setProgressViewStyle:{}", style);
+}
+
+- (())setProgress:(bool)progress {
+    log!("TODO: setProgress:{}", progress);
+}
+
+@end
+
+@implementation UINavigationItem: NSObject
+- (id)initWithCoder:(id)coder {
+    nil
+}
+- (id)initWithTitle:(id)title {
+    nil
+}
+@end
+
+@implementation UITableViewCell: UIView
+- (id)contentView {
+    nil
+}
+
+- (())setText:(bool)text {
+    log!("TODO: setText:{}", text);
+}
+
+@end
+
+@implementation UITabBar: UIControl
+
+- (())setItems:(NSInteger)items animated:(bool)_animated {
+  // TODO
+}
+
+@end
+
+@implementation UITabBarItem: UIControl
+
+- (())initWithTitle:(NSInteger)title image:(bool)_image tag:(bool)_tag {
+  // TODO
+}
+
+- (())initWithTabBarSystemItem:(NSInteger)item tag:(bool)_tag {
+  // TODO
+}
+
+@end
+
+@implementation UICustomObject: NSObject
+@end
+
+@implementation UIKeyboard: NSObject
+
+- (id)initWithCoder:(id)coder {
+    nil
+}
+- (id)initWithTitle:(id)title {
+    nil
+}
+
+@end
+
+@implementation UIDatePicker: UIControl
+
+- (())setDatePickerMode:(bool)mode {
+    log!("TODO: setDatePickerMode:{}", mode);
+}
+
+- (())addTarget:(NSInteger)target action:(bool)_action forControlEvents:(bool)_events {
+    // TODO
+}
+
+@end
+
+@implementation UITabBarController: UIViewController
+
+- (id)view {
+    nil
+}
+
+- (())setViewControllers:(bool)controllers {
+    log!("TODO: setViewControllers:{}", controllers);
+}
+
+@end
+
+@implementation UIPasteboard: NSObject
+@end
+
+@implementation UILocalNotification: NSObject
+@end
+
+@implementation MKMapView: UIView
+@end
+
+};

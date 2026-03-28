@@ -97,9 +97,7 @@ pub extern "C" fn SDL_main(
 
 const USAGE: &str = "\
 Usage:
-    touchHLE [PATH] [OPTIONS]
-
-PATH should be a path to a .app bundle or .ipa file.
+    touchHLE path/to/some.app
 
 If no app path or special option is specified, a GUI app picker is displayed.
 
@@ -121,7 +119,7 @@ pub fn main<T: Iterator<Item = String>>(mut args: T) -> Result<(), String> {
         if branding().is_empty() { "" } else { " " },
         VERSION,
     );
-    if GITHUB_RUN_ID.is_some() && !branding().is_empty() {
+    if GITHUB_RUN_ID.is_some() {
         echo!(
             "Built from branch {:?} of {:?} by GitHub Actions workflow run {}/{}/actions/runs/{}.",
             GITHUB_REF_NAME.unwrap(),
@@ -144,15 +142,11 @@ pub fn main<T: Iterator<Item = String>>(mut args: T) -> Result<(), String> {
     let mut bundle_path: Option<PathBuf> = None;
     let mut just_info = false;
     let mut option_args = Vec::new();
+
     let mut options = options::Options::default();
-    let mut app_args = None::<Vec<String>>;
 
     for arg in args {
-        if let Some(ref mut app_args) = app_args {
-            app_args.push(arg);
-        } else if arg == "--args" {
-            app_args = Some(Vec::new());
-        } else if arg == "--help" {
+        if arg == "--help" {
             echo!("{}", USAGE);
             echo!("{}", options::OPTIONS_HELP);
             return Ok(());
@@ -177,12 +171,13 @@ pub fn main<T: Iterator<Item = String>>(mut args: T) -> Result<(), String> {
 
     if options.dumping_options.symbols {
         let mut file = std::fs::File::create(&options.dumping_file).map_err(|e| e.to_string())?;
-        dyld::Dyld::dump_host_symbols(&mut file).unwrap();
+        dyld::Dyld::dump_dyld_host_symbols(&mut file).unwrap();
+        objc::ObjC::dump_host_class_symbols(&mut file).unwrap();
         return Ok(());
     }
 
-    let bundle_path = if let Some(bundle_path) = bundle_path {
-        bundle_path
+    let (bundle_path, env_for_salvage) = if let Some(bundle_path) = bundle_path {
+        (bundle_path, None)
     } else {
         let mut options = options::Options::default();
         // Apply command-line options only (no app-specific options apply)
@@ -198,9 +193,10 @@ pub fn main<T: Iterator<Item = String>>(mut args: T) -> Result<(), String> {
         echo!(
             "No app specified, opening app picker. Use the --help flag to see command-line usage."
         );
-        let (bundle_path, mut extra_options) = environment::app_picker::app_picker(options)?;
+        let ((bundle_path, mut extra_options), env_for_salvage) =
+            environment::app_picker::app_picker(options)?;
         option_args.append(&mut extra_options);
-        bundle_path
+        (bundle_path, Some(env_for_salvage))
     };
 
     // When PowerShell does tab-completion on a directory, for some reason it
@@ -225,8 +221,6 @@ pub fn main<T: Iterator<Item = String>>(mut args: T) -> Result<(), String> {
 
     let app_id = bundle.bundle_identifier();
     let minimum_os_version = bundle.minimum_os_version();
-    let required_device_capabilities = bundle.required_device_capabilities();
-    let device_family = bundle.device_family_array();
 
     echo!("App bundle info:");
     echo!("- Display name: {}", bundle.display_name());
@@ -241,26 +235,6 @@ pub fn main<T: Iterator<Item = String>>(mut args: T) -> Result<(), String> {
         "- Minimum OS version: {}",
         minimum_os_version.unwrap_or("(not specified)")
     );
-    echo!(
-        "- Required device capabilities: {}",
-        if !required_device_capabilities.is_empty() {
-            required_device_capabilities.join(", ")
-        } else {
-            "(not specified)".to_string()
-        }
-    );
-    echo!(
-        "- Device family: {}",
-        if !device_family.is_empty() {
-            device_family
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>()
-                .join(", ")
-        } else {
-            "(not specified)".to_string()
-        }
-    );
     echo!();
 
     if let Some(version) = minimum_os_version {
@@ -270,15 +244,9 @@ pub fn main<T: Iterator<Item = String>>(mut args: T) -> Result<(), String> {
             .map_or(minor_etc, |(minor, _etc)| minor);
         let major: u32 = major.parse().unwrap();
         let minor: u32 = minor.parse().unwrap();
-        if major > 4 || (major == 4 && minor > 0) {
-            echo!("Warning: app requires OS version {}. Only apps for iOS 4.0 and earlier are currently supported.", version);
+        if major > 3 || (major == 3 && minor > 0) {
+            echo!("Warning: app requires OS version {}. Only iPhone OS 2.x and iPhone OS 3.0 apps are currently supported.", version);
         }
-    }
-
-    if required_device_capabilities.contains(&"opengles-2")
-        || required_device_capabilities.contains(&"opengles-3")
-    {
-        echo!("Warning: app requires OpenGL ES 2.0+ support. Only OpenGL ES 1.1 is currently supported.");
     }
 
     if just_info {
@@ -339,7 +307,7 @@ pub fn main<T: Iterator<Item = String>>(mut args: T) -> Result<(), String> {
     }
 
     let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        Environment::new(bundle, fs, options.clone(), app_args.unwrap_or_default())
+        Environment::new(bundle, fs, options.clone(), env_for_salvage)
     }));
     let env = match res {
         Ok(ret) => match ret {

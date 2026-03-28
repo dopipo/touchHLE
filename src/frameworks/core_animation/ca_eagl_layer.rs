@@ -23,9 +23,21 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.borrow::<CALayerHostObject>(this).drawable_properties
 }
 
+- (id)main {
+    nil
+}
+
+- (id)description {
+    nil
+}
+
 - (())setDrawableProperties:(id)props { // NSDictionary<NSString*, id>*
     let props: id = msg![env; props copy];
     env.objc.borrow_mut::<CALayerHostObject>(this).drawable_properties = props;
+}
+
+- (())setContentsScale:(bool)scale {
+    log!("TODO: setContentsScale:{}", scale);
 }
 
 @end

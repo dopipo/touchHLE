@@ -6,24 +6,8 @@
 //! `UISlider`.
 
 use crate::frameworks::core_graphics::CGRect;
-// Цепочка: UISlider -> UIControl -> UIView
-use crate::frameworks::uikit::ui_view::ui_control::UIControlHostObject;
-use crate::objc::{
-    id, impl_HostObject_with_superclass, msg_super, objc_classes,
-    ClassExports, NSZonePtr,
-};
-
-#[derive(Default)]
-pub(super) struct UISliderHostObject {
-    pub(super) superclass: UIControlHostObject,
-    pub(super) value: f32,
-    pub(super) minimum_value: f32,
-    pub(super) maximum_value: f32,
-    pub(super) continuous: bool,
-}
-
-// Позволяет borrow() заглядывать в superclass
-impl_HostObject_with_superclass!(UISliderHostObject);
+use crate::frameworks::uikit::ui_view::NSInteger;
+use crate::objc::{id, msg_super, nil, objc_classes, ClassExports};
 
 pub const CLASSES: ClassExports = objc_classes! {
 
@@ -31,77 +15,71 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @implementation UISlider: UIControl
 
-+ (id)allocWithZone:(NSZonePtr)_zone {
-    let host_object = Box::new(UISliderHostObject {
-        superclass: UIControlHostObject::default(),
-        value: 0.5,
-        minimum_value: 0.0,
-        maximum_value: 1.0,
-        continuous: true, // По умолчанию в UIKit это свойство равно YES
-    });
-    env.objc.alloc_object(this, host_object, &mut env.mem)
-}
-
 - (id)initWithFrame:(CGRect)frame {
+    log!("[(UISlider*){:?} initWithFrame:{:?}] TODO: Implement UISlider. The control won't be rendered.", this, frame);
     msg_super![env; this initWithFrame:frame]
 }
 
+// NSCoding implementation
 - (id)initWithCoder:(id)coder {
+    log!("[(UISlider*){:?} initWithCoder:{:?}] TODO: Implement UISlider. The control won't be rendered.", this, coder);
     msg_super![env; this initWithCoder:coder]
 }
-
-- (f32)value {
-    env.objc.borrow::<UISliderHostObject>(this).value
+- (())setContinuous:(bool)continuous {
+    log!("TODO: setContinuous:{}", continuous);
 }
 
-- (())setValue:(f32)value {
-    env.objc.borrow_mut::<UISliderHostObject>(this).value = value;
+- (())setMinimumValue:(bool)minimum {
+    log!("TODO: setMinimumValue:{}", minimum);
 }
 
-- (f32)minimumValue {
-    env.objc.borrow::<UISliderHostObject>(this).minimum_value
+- (())setMaximumValue:(bool)maximum {
+    log!("TODO: setMaximumValue:{}", maximum);
 }
 
-- (())setMinimumValue:(f32)value {
-    env.objc.borrow_mut::<UISliderHostObject>(this).minimum_value = value;
+- (())setValue:(bool)value {
+    log!("TODO: setValue:{}", value);
 }
 
-- (f32)maximumValue {
-    env.objc.borrow::<UISliderHostObject>(this).maximum_value
+- (())setMinimumValueImage:(bool)image {
+    log!("TODO: setMinimumValueImage:{}", image);
 }
 
-- (())setMaximumValue:(f32)value {
-    env.objc.borrow_mut::<UISliderHostObject>(this).maximum_value = value;
+- (())setMaximumValueImage:(bool)image {
+    log!("TODO: setMaximumValueImage:{}", image);
 }
 
-- (bool)isContinuous {
-    env.objc.borrow::<UISliderHostObject>(this).continuous
+- (())setThumbImage:(NSInteger)_image forState:(bool)_state {
+    // TODO
 }
 
-- (())setContinuous:(bool)value {
-    env.objc.borrow_mut::<UISliderHostObject>(this).continuous = value;
+- (())setMinimumTrackImage:(NSInteger)_image forState:(bool)_state {
+    // TODO
 }
 
-- (())setMinimumValueImage:(id)_img {
-    // Stub
+- (())setMaximumTrackImage:(NSInteger)_image forState:(bool)_state {
+    // TODO
 }
 
-- (())setMaximumValueImage:(id)_img {
-    // Stub
+- (())setValue:(NSInteger)_value animated:(bool)_animated {
+    // TODO
 }
 
-- (())setThumbImage:(id)_image forState:(u32)_state {
-    // Stub: custom thumb images are not rendered
+- (id)value {
+    nil
 }
 
-- (())setMinimumTrackImage:(id)_image forState:(u32)_state {
-    // Stub: custom minimum track images are not rendered
+- (id)isDragging {
+    nil
 }
+// TODO: all of it
 
-- (())setMaximumTrackImage:(id)_image forState:(u32)_state {
-    // Stub: custom maximum track images are not rendered
+@end
+
+@implementation Slider: UISlider
+- (id)isDragging {
+    nil
 }
-
 @end
 
 };

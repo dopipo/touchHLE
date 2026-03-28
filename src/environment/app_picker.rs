@@ -49,7 +49,7 @@ struct AppInfo {
     icon_ui_image: Option<id>,
 }
 
-pub fn app_picker(options: Options) -> Result<(PathBuf, Vec<String>), String> {
+pub fn app_picker(options: Options) -> Result<((PathBuf, Vec<String>), Environment), String> {
     let apps_dir = paths::user_data_base_path().join(paths::APPS_DIR);
 
     let apps: Result<Vec<AppInfo>, String> = if !apps_dir.is_dir() {
@@ -151,20 +151,10 @@ struct AppPickerDelegateHostObject {
 }
 impl HostObject for AppPickerDelegateHostObject {}
 
-pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
-    // Not a real iOS dylib obviously. This shouldn't really be in the list of
-    // dylibs if we can avoid it somehow (TODO?).
-    path: "/.touchHLE/AppPickerHelpers.dylib",
-    aliases: &[],
-    class_exports: &[CLASSES],
-    constant_exports: &[],
-    function_exports: &[],
-};
-
 /// Be careful! These classes go in the normal class list, just like everything
 /// else, so an app could try to instantiate them. Don't give them special
 /// powers that could be exploited!
-const CLASSES: ClassExports = objc_classes! {
+pub const CLASSES: ClassExports = objc_classes! {
 
 (env, this, _cmd);
 
@@ -271,7 +261,7 @@ const CLASSES: ClassExports = objc_classes! {
 fn show_app_picker_gui(
     options: Options,
     apps: Result<Vec<AppInfo>, String>,
-) -> Result<(PathBuf, Vec<String>), String> {
+) -> Result<((PathBuf, Vec<String>), Environment), String> {
     let icon = {
         let bytes: &[u8] = match crate::branding() {
             "" => include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/res/icon.png")),
@@ -540,7 +530,7 @@ fn app_picker_inner(
         }
     }
     fn update_scale_hack_buttons(env: &mut Environment, buttons: &[id], value: Option<NonZeroU32>) {
-        update_quick_option_buttons(env, buttons, value.map_or(0, |v| v.get() as usize));
+        update_quick_option_buttons(env, buttons, value.map_or(0, |v| (v.get() as usize)));
     }
     fn update_orientation_buttons(
         env: &mut Environment,
@@ -567,8 +557,6 @@ fn app_picker_inner(
         &quick_options_stuff.orientation_buttons,
         quick_options_orientation,
     );
-
-    () = msg![env; window makeKeyAndVisible];
 
     let main_run_loop: id = msg_class![env; NSRunLoop mainRunLoop];
     // If an app is picked, this loop returns. If the user quits touchHLE, the

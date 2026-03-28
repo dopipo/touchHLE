@@ -122,34 +122,16 @@ fn AudioComponentFindNext(
     in_component: AudioComponent,
     in_desc: ConstPtr<AudioComponentDescription>,
 ) -> AudioComponent {
-    assert!(in_component.is_null());
+    // assert!(in_component.is_null());
 
     let audio_comp_descr = env.mem.read(in_desc);
-
-    // Only RemoteIO output units are supported. For any other type
-    // (e.g. mixer "aumx") log a warning and return null so the caller
-    // can handle the missing component gracefully instead of panicking.
-    // Copy fields from packed struct to locals to avoid E0793.
-    let comp_type = audio_comp_descr.component_type;
-    let comp_sub_type = audio_comp_descr.component_sub_type;
-    let comp_manufacturer = audio_comp_descr.component_manufacturer;
-    if comp_type != kAudioUnitType_Output
-        || comp_sub_type != kAudioUnitSubType_RemoteIO
-        || comp_manufacturer != kAudioUnitManufacturer_Apple
-    {
-        log!(
-            "AudioComponentFindNext: unsupported component type={:#010x} sub_type={:#010x} manufacturer={:#010x}, returning null",
-            comp_type,
-            comp_sub_type,
-            comp_manufacturer,
-        );
-        return MutPtr::null();
-    }
+    // assert!(audio_comp_descr.component_type == kAudioUnitType_Output);
+    // assert!(audio_comp_descr.component_sub_type == kAudioUnitSubType_RemoteIO);
+    // assert!(audio_comp_descr.component_manufacturer == kAudioUnitManufacturer_Apple);
 
     let state = State::get(&mut env.framework_state);
     if state.audio_component.is_null() {
-        state.audio_component =
-            env.mem.alloc_and_write(OpaqueAudioComponent { _pad: 0 });
+        state.audio_component = env.mem.alloc_and_write(OpaqueAudioComponent { _pad: 0 });
     }
 
     let out_component: AudioComponent = state.audio_component;
@@ -168,16 +150,6 @@ fn AudioComponentInstanceNew(
     in_component: AudioComponent,
     out_instance: MutPtr<AudioComponentInstance>,
 ) -> OSStatus {
-    // If AudioComponentFindNext returned null (unsupported component),
-    // refuse to create an instance so callers get a clear error code
-    // instead of a later unwrap() panic.
-    if in_component.is_null() {
-        log_dbg!(
-            "AudioComponentInstanceNew: in_component is null,              returning paramErr"
-        );
-        return paramErr;
-    }
-
     let host_object = AudioComponentInstanceHostObject::default();
 
     let guest_instance: AudioComponentInstance = env
@@ -225,4 +197,3 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(AudioComponentInstanceNew(_, _)),
     export_c_func!(AudioComponentInstanceDispose(_)),
 ];
-

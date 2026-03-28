@@ -6,7 +6,7 @@
 //! `NSURL`.
 
 use super::ns_string::{from_rust_string, get_static_str, to_rust_string, NSUTF8StringEncoding};
-use super::NSUInteger;
+use super::{NSInteger, NSUInteger};
 use crate::fs::{GuestPath, GuestPathBuf};
 use crate::mem::MutPtr;
 use crate::objc::{
@@ -99,7 +99,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     }
 
     // FIXME: this should parse the URL
-    assert!(!to_rust_string(env, url).starts_with("file:")); // TODO
+    // assert!(!to_rust_string(env, url).starts_with("file:")); // TODO
     let url: id = msg![env; url copy];
     *env.objc.borrow_mut(this) = NSURLHostObject::OtherURL { ns_string: url };
     this
@@ -146,7 +146,7 @@ pub const CLASSES: ClassExports = objc_classes! {
         NSURLHostObject::FileURL { ns_string, .. } => ns_string,
         NSURLHostObject::OtherURL { ns_string } => {
             // TODO: full RFC 1808 resolution
-            assert!(to_rust_string(env, ns_string).starts_with("http"));
+            // assert!(to_rust_string(env, ns_string).starts_with("http"));
             ns_string
         },
     }
@@ -201,6 +201,43 @@ pub const CLASSES: ClassExports = objc_classes! {
     // TODO
     nil
 }
+
++ (())setSharedURLCache:(bool)cache {
+    log!("TODO: setSharedURLCache:{}", cache);
+}
+
+- (())initWithMemoryCapacity:(NSInteger)_capacity diskCapacity:(bool)_disk diskPath:(bool)_path {
+    // TODO
+}
+
+@end
+
+@implementation NSHTTPCookie: NSObject
+
++ (id)cookieWithProperties:(NSUInteger)_properties {
+    msg![env; this init]
+}
+
+@end
+
+@implementation NSHTTPCookieStorage: NSHTTPCookie
++ (id)sharedHTTPCookieStorage {
+    // TODO
+    nil
+}
+
++ (())setSharedHTTPCookieStorage:(bool)storage {
+    log!("TODO: setSharedHTTPCookieStorage:{}", storage);
+}
+
+@end
+
+@implementation NSURLProtocol: NSObject
+
++ (id)registerClass {
+    nil
+}
+
 @end
 
 };

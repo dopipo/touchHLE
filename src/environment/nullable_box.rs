@@ -37,7 +37,6 @@ impl<T> NullableBox<T> {
         self.inner.is_none()
     }
 
-    #[allow(unused)]
     pub fn into_inner(self) -> T {
         debug_assert!(self.inner.is_some(), "NullableBox derefed on None!");
         unsafe { *self.inner.unwrap_unchecked() }

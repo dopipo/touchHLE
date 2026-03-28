@@ -10,6 +10,9 @@
 //! Resources:
 //! - [[objc explain]: Classes and metaclasses](http://www.sealiesoftware.com/blog/archive/2009/04/14/objc_explain_Classes_and_metaclasses.html), especially [the PDF diagram](http://www.sealiesoftware.com/blog/class%20diagram.pdf)
 
+mod class_lists;
+pub(super) use class_lists::CLASS_LISTS;
+
 use super::{
     id, ivar_list_t, method_list_t, nil, objc_object, AnyHostObject, HostIMP, HostObject, ObjC,
     IMP, SEL,
@@ -36,6 +39,7 @@ pub(super) struct ClassHostObject {
     pub(super) is_metaclass: bool,
     pub(super) superclass: Class,
     pub(super) methods: HashMap<SEL, IMP>,
+    pub(super) guest_method_signatures: HashMap<SEL, ConstPtr<u8>>,
     /// Maps ivar name to a tuple of an offset (as pointer) and an alignment.
     /// (Alignment is used during ivar reconciliation.)
     pub(super) ivars: HashMap<String, (ConstPtr<GuestUSize>, u32)>,
@@ -46,8 +50,17 @@ pub(super) struct ClassHostObject {
     /// Size of the allocated memory for instances of this class or metaclass.
     /// This is always >= the value in the superclass.
     pub(super) instance_size: GuestUSize,
+    /// Checks if +initialize has been called yet.
+    pub(super) is_initialized: InitializationStatus,
 }
 impl HostObject for ClassHostObject {}
+
+#[derive(Clone, Copy, PartialEq)]
+pub(super) enum InitializationStatus {
+    NotInitialized,
+    Initializing,
+    Initialized,
+}
 
 /// Placeholder object for classes and metaclasses referenced by the app that
 /// we don't have an implementation for.
@@ -134,9 +147,6 @@ pub struct ClassTemplate {
 /// Each module that wants to expose functions to guest code should export a
 /// constant using this type. See [objc_classes] for an example.
 ///
-/// All the constants like this can then be collected into a
-/// [crate::dyld::HostDylib].
-///
 /// The strings are the class names.
 ///
 /// See also [crate::dyld::ConstantExports] and [crate::dyld::FunctionExports].
@@ -160,7 +170,6 @@ macro_rules! _objc_method {
         $env:ident,
         $this:ident,
         $_cmd:ident,
-        $cmd_name:ident,
         $retty:ty,
         $block:block
         $(, $ty:ty, $arg:ident)*
@@ -178,10 +187,7 @@ macro_rules! _objc_method {
             $_cmd: $crate::objc::SEL,
             $($arg: $ty,)*
             $(#[allow(unused_mut)] mut $va_arg: $va_type,)?
-        | -> $retty {
-            const _OBJC_CURRENT_SELECTOR: &str = stringify!($cmd_name);
-            $block
-        }) as fn(
+        | -> $retty {$block}) as fn(
             &mut $crate::Environment,
             $crate::objc::id,
             $crate::objc::SEL,
@@ -264,11 +270,13 @@ macro_rules! objc_classes {
         $(
             @implementation $class_name:ident $(: $superclass_name:ident)?
 
-            $( + ($cm_type:ty) $cm_name:ident $(:($cm_type1:ty) $cm_arg1:ident $($($cm_namen:ident)?:($cm_typen:ty) $cm_argn:ident)*)?
+            $( + ($cm_type:ty) $cm_name:ident $(:($cm_type1:ty) $cm_arg1:ident)?
+                              $($cm_namen:ident:($cm_typen:ty) $cm_argn:ident)*
                               $(, ...$cm_va_arg:ident)?
                  $cm_block:block )*
 
-            $( - ($im_type:ty) $im_name:ident $(:($im_type1:ty) $im_arg1:ident $($($im_namen:ident)?:($im_typen:ty) $im_argn:ident)*)?
+            $( - ($im_type:ty) $im_name:ident $(:($im_type1:ty) $im_arg1:ident)?
+                              $($im_namen:ident:($im_typen:ty) $im_argn:ident)*
                               $(, ...$im_va_arg:ident)?
                  $im_block:block )*
 
@@ -293,16 +301,16 @@ macro_rules! objc_classes {
                                 $crate::objc::selector!(
                                     $(($cm_type1);)?
                                     $cm_name
-                                    $($(, $($cm_namen)?)*)?
+                                    $(, $cm_namen)*
                                 ),
                                 $crate::_objc_method!(
                                     $env,
                                     $this,
                                     $_cmd,
-                                    $cm_name,
                                     $cm_type,
                                     { $cm_block }
-                                    $(, $cm_type1, $cm_arg1 $(, $cm_typen, $cm_argn)*)?
+                                    $(, $cm_type1, $cm_arg1)?
+                                    $(, $cm_typen, $cm_argn)*
                                     $(, ...$cm_va_arg: $crate::abi::DotDotDot)?
                                 )
                             )
@@ -314,16 +322,16 @@ macro_rules! objc_classes {
                                 $crate::objc::selector!(
                                     $(($im_type1);)?
                                     $im_name
-                                    $($(, $($im_namen)?)*)?
+                                    $(, $im_namen)*
                                 ),
                                 $crate::_objc_method!(
                                     $env,
                                     $this,
                                     $_cmd,
-                                    $im_name,
                                     $im_type,
                                     { $im_block }
-                                    $(, $im_type1, $im_arg1 $(, $im_typen, $im_argn)*)?
+                                    $(, $im_type1, $im_arg1)?
+                                    $(, $im_typen, $im_argn)*
                                     $(, ...$im_va_arg: $crate::abi::DotDotDot)?
                                 )
                             )
@@ -365,10 +373,12 @@ impl ClassHostObject {
                     (objc.selectors[name], IMP::Host(host_imp))
                 }),
             ),
+            guest_method_signatures: HashMap::default(),
             // maybe this should be 0 for NSObject? does it matter?
             instance_start: size,
             instance_size: size,
             ivars: HashMap::default(),
+            is_initialized: InitializationStatus::NotInitialized,
         }
     }
 
@@ -392,9 +402,11 @@ impl ClassHostObject {
             is_metaclass,
             superclass,
             methods: HashMap::new(),
+            guest_method_signatures: HashMap::new(),
             instance_start,
             instance_size,
             ivars: HashMap::new(),
+            is_initialized: InitializationStatus::NotInitialized,
         };
 
         if !base_methods.is_null() {
@@ -432,13 +444,14 @@ fn substitute_classes(
     // Naturally it makes a lot of use of UIKit and networking in ways we
     // don't support yet. This isn't "ad blocking" because ads no longer work
     // on real devices anyway :)
-    if !(name.starts_with("AdMob")
+        if !(name.starts_with("AdMob")
         || name.starts_with("AltAds")
         || name.starts_with("Mobclix")
         || name.starts_with("FB") // Facebook
         || name.starts_with("Flurry")
         || name.starts_with("OpenFeint")
-        || name.starts_with("Tapjoy"))
+        || name.starts_with("Tapjoy")
+        || name == "CMMotionManager") // <--- ДОБАВИЛИ ЭТО
     {
         return None;
     }
@@ -480,8 +493,7 @@ impl ObjC {
     }
 
     fn find_template(name: &str) -> Option<&'static ClassTemplate> {
-        crate::dyld::search_host_dylibs(|dylib| dylib.class_exports, name)
-            .map(|&(_name, ref template)| template)
+        crate::dyld::search_lists(CLASS_LISTS, name).map(|&(_name, ref template)| template)
     }
 
     /// For use by [crate::dyld]: get the class or metaclass referenced by an
@@ -554,17 +566,31 @@ impl ObjC {
                 panic!("Missing implementation for class {name}!");
             }
 
-            // We don't have a real implementation for this class, use a
-            // placeholder.
-
-            class_host_object = Box::new(UnimplementedClass {
-                name: name.to_string(),
-                is_metaclass: false,
-            });
-            metaclass_host_object = Box::new(UnimplementedClass {
-                name: name.to_string(),
-                is_metaclass: true,
-            });
+            // --- ИСПРАВЛЕНИЕ ТУТ ---
+            // Если игра просит CMMotionManager (гироскоп), подменяем его на FakeClass.
+            // FakeClass автоматически отвечает 0 (false) на любые запросы.
+            if name == "CMMotionManager" {
+                log!("Note: substituting fake class for CMMotionManager to avoid gyro crash");
+                class_host_object = Box::new(FakeClass {
+                    name: name.to_string(),
+                    is_metaclass: false,
+                });
+                metaclass_host_object = Box::new(FakeClass {
+                    name: name.to_string(),
+                    is_metaclass: true,
+                });
+            } else {
+                // Для всех остальных неизвестных классов оставляем стандартную заглушку
+                class_host_object = Box::new(UnimplementedClass {
+                    name: name.to_string(),
+                    is_metaclass: false,
+                });
+                metaclass_host_object = Box::new(UnimplementedClass {
+                    name: name.to_string(),
+                    is_metaclass: true,
+                });
+            }
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         }
 
         // NSObject's metaclass is special: it is its own metaclass, and it's
@@ -596,6 +622,7 @@ impl ObjC {
             class
         }
     }
+
 
     /// For use by [crate::dyld]: register all the classes from the application
     /// binary.
@@ -840,6 +867,21 @@ impl ObjC {
         writeln!(file, "    ]\n}}")
     }
 
+    pub fn dump_host_class_symbols(file: &mut std::fs::File) -> Result<(), std::io::Error> {
+        use std::io::Write;
+        for (class, _) in CLASS_LISTS.iter().flat_map(|class| class.iter()) {
+            writeln!(file, "_OBJC_CLASS_$_{class}")?;
+            writeln!(file, "_OBJC_METACLASS_$_{class}")?;
+        }
+
+        // These arent provided by us since the class system is handled on the
+        // host side, entirely seperately, but the linker still expects it to
+        // exist, so we need to provide it.
+        writeln!(file, "__objc_empty_cache")?;
+        writeln!(file, "__objc_empty_vtable")?;
+        Ok(())
+    }
+
     /// For use by [crate::dyld]: register all the categories from the
     /// application binary.
     pub fn register_bin_categories(&mut self, bin: &MachO, mem: &mut Mem) {
@@ -879,9 +921,11 @@ impl ObjC {
                         is_metaclass: Default::default(),
                         superclass: nil,
                         methods: Default::default(),
+                        guest_method_signatures: Default::default(),
                         instance_start: Default::default(),
                         instance_size: Default::default(),
                         ivars: Default::default(),
+                        is_initialized: InitializationStatus::NotInitialized,
                     },
                 );
                 log_dbg!(
@@ -930,11 +974,6 @@ impl ObjC {
     pub fn get_class_name(&self, class: Class) -> &str {
         self.try_get_class_name(class)
             .expect("Could not get class name!")
-    }
-
-    pub fn get_superclass(&self, class: Class) -> Class {
-        let &ClassHostObject { superclass, .. } = self.borrow(class);
-        superclass
     }
 
     pub fn try_get_class_name(&self, class: Class) -> Option<&str> {

@@ -133,7 +133,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (id)initWithData:(id)data { // NSData*
     let slice = ns_data::to_rust_slice(env, data);
     // TODO: refactor common parts
-    let image = Image::from_bytes(slice).unwrap();
+    let image = match Image::from_bytes(slice) {
+        Ok(img) => img,
+        Err(_) => return nil, // match UIKit semantics
+    };
     let cg_image = cg_image::from_image(env, image);
     env.objc.borrow_mut::<UIImageHostObject>(this).cg_image = cg_image;
     this

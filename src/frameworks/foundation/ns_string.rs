@@ -277,6 +277,7 @@ pub fn with_format(env: &mut Environment, format: id, args: VaList) -> String {
         },
         args,
     );
+    
     // TODO: what if it's not valid UTF-8?
     String::from_utf8(res).unwrap()
 }
@@ -400,7 +401,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     }, to_rust_string(env, res));
     res
 }
-
+    
 + (NSStringEncoding)defaultCStringEncoding {
     // I don't want to figure out what that is on all platforms, and the use
     // I've seen of this method was on ASCII strings, so let's just hardcode
@@ -433,6 +434,14 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; this dataUsingEncoding:encoding allowLossyConversion:false]
 }
 
+- (id)initWithCharactersNoCopy:(ConstVoidPtr)chars
+                       length:(NSUInteger)length
+                 freeWhenDone:(bool)_free
+{
+    // Просто вызываем обычный initWithCharacters:length:
+    msg![env; this initWithCharacters:chars length:length]
+}
+    
 // These are the two methods that have to be overridden by subclasses, so these
 // implementations don't have to care about foreign subclasses.
 - (NSUInteger)length {
@@ -1495,6 +1504,19 @@ pub const CLASSES: ClassExports = objc_classes! {
         env.mem.write(contents_end_ptr, contents_end);
     }
 }
+
+- (id)rangeOfCharacterFromSet:(NSUInteger)_set {
+    msg![env; this init]
+}
+
+- (id)localizedCaseInsensitiveCompare:(NSUInteger)_compare {
+    msg![env; this init]
+}
+
+- (id)lengthOfBytesUsingEncoding:(NSUInteger)_bytes {
+    msg![env; this init]
+}
+
 @end
 
 // Specialised subclass for static-lifetime strings.
@@ -1506,6 +1528,9 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.alloc_static_object(this, host_object, &mut env.mem)
 }
 
+- (())main {
+
+}
 - (id) retain { this }
 - (()) release {}
 - (id) autorelease { this }
@@ -1626,7 +1651,31 @@ fn data_using_encoding_lossy_inner(
         encoding == NSUTF8StringEncoding
             || encoding == NSASCIIStringEncoding
             || encoding == NSISOLatin1StringEncoding
+            || encoding == NSUTF16StringEncoding
+            || encoding == NSUTF16LittleEndianStringEncoding
+            || encoding == NSUTF16BigEndianStringEncoding
     );
+
+    // Handle UTF-16 encodings
+    if encoding == NSUTF16StringEncoding
+        || encoding == NSUTF16LittleEndianStringEncoding
+        || encoding == NSUTF16BigEndianStringEncoding
+    {
+        let string = to_rust_string(env, this);
+        let big_endian = encoding == NSUTF16BigEndianStringEncoding;
+        let mut bytes: Vec<u8> = Vec::new();
+        for ch in string.encode_utf16() {
+            if big_endian {
+                bytes.extend_from_slice(&ch.to_be_bytes());
+            } else {
+                bytes.extend_from_slice(&ch.to_le_bytes());
+            }
+        }
+        let length: NSUInteger = bytes.len().try_into().unwrap();
+        let ptr = env.mem.alloc(length);
+        env.mem.bytes_at_mut(ptr.cast(), length).copy_from_slice(&bytes);
+        return msg_class![env; NSData dataWithBytesNoCopy:(ptr.cast_void()) length:length];
+    }
 
     let string = to_rust_string(env, this);
     if encoding == NSASCIIStringEncoding || encoding == NSISOLatin1StringEncoding {
@@ -1662,7 +1711,13 @@ pub fn register_constant_strings(bin: &MachO, mem: &mut Mem, objc: &mut ObjC) {
         // See https://lists.llvm.org/pipermail/cfe-dev/2008-August/002518.html
         let (host_object, class_name) = if flags == 0x7C8 {
             // ASCII
-            let decoded = std::str::from_utf8(mem.bytes_at(bytes, length)).unwrap();
+            let decoded = match std::str::from_utf8(mem.bytes_at(bytes, length)) {
+                Ok(s) => s,
+                Err(_) => {
+                    // Invalid UTF-8 → bail out
+                   return;
+                }
+            };
 
             (
                 StringHostObject::Utf8(Cow::Owned(String::from(decoded))),

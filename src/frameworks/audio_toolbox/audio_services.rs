@@ -9,11 +9,14 @@ use crate::dyld::{export_c_func, FunctionExports};
 use crate::frameworks::carbon_core::OSStatus;
 use crate::frameworks::core_audio_types::fourcc;
 use crate::mem::{MutPtr, MutVoidPtr};
-use crate::objc::id;
 use crate::Environment;
+use crate::frameworks::core_foundation::cf_run_loop::CFRunLoopRef;
+use crate::frameworks::core_foundation::cf_string::CFStringRef;
+use crate::frameworks::core_foundation::cf_url::CFURLRef;
 
 /// Usually a FourCC.
 type AudioServicesPropertyID = u32;
+type AudioServicesSystemSoundCompletionProc = u32;
 type SystemSoundID = u32;
 
 const kAudioServicesUnsupportedPropertyError: OSStatus = fourcc(b"pty?") as _;
@@ -27,51 +30,54 @@ fn AudioServicesGetProperty(
     _io_property_data_size: MutPtr<u32>,
     _out_property_data: MutVoidPtr,
 ) -> OSStatus {
-    // Некоторые игры (например, Crash Bandicoot) запрашивают этот ID.
+    // Crash Bandicoot Nitro Kart 3D tries to use this property ID, which does
+    // not seem to be documented anywhere? Assuming this is a bug.
     if in_property_id == 0xfff {
         kAudioServicesUnsupportedPropertyError
     } else {
-        log!("AudioServicesGetProperty: property {} is unimplemented", 
-             in_property_id);
-        0 // Возвращаем Success (noErr), чтобы избежать паники
+        unimplemented!();
     }
+}
+
+fn AudioServicesPlaySystemSound(_env: &mut Environment, in_system_sound_id: SystemSoundID) {
+    // assert_eq!(in_system_sound_id, kSystemSoundID_Vibrate);
+    log!("TODO: vibration (AudioServicesPlaySystemSound)");
+    // TODO: implement other system sounds
+}
+
+fn AudioServicesDisposeSystemSoundID(_env: &mut Environment, in_system_sound_id: SystemSoundID) {
+    // assert_eq!(in_system_sound_id, kSystemSoundID_Vibrate);
+    log_dbg!("TODO: vibration (AudioServicesDisposeSystemSoundID)");
+    // TODO: implement other system sounds
+}
+
+fn AudioServicesRemoveSystemSoundCompletion(_env: &mut Environment, in_system_sound_id: SystemSoundID) {
+    // assert_eq!(in_system_sound_id, kSystemSoundID_Vibrate);
+    log_dbg!("TODO: vibration (AudioServicesRemoveSystemSoundCompletion)");
+    // TODO: implement other system sounds
 }
 
 fn AudioServicesCreateSystemSoundID(
     env: &mut Environment,
-    _in_file_url: id,
-    out_system_sound_id: MutPtr<SystemSoundID>,
+    _in_file_url: CFURLRef,
+    _in_system_sound_id: SystemSoundID
 ) -> OSStatus {
-    log!("AudioToolbox: AudioServicesCreateSystemSoundID stubbed");
-    if !out_system_sound_id.is_null() {
-        // Записываем фейковый ID (например, 1001), 
-        // чтобы игра получила валидный дескриптор.
-        env.mem.write(out_system_sound_id, 1001);
-    }
-    0 // noErr
+    -1
 }
 
-fn AudioServicesDisposeSystemSoundID(
-    _env: &mut Environment,
-    _in_system_sound_id: SystemSoundID,
+fn AudioServicesAddSystemSoundCompletion(
+    env: &mut Environment,
+    _in_file_url: CFURLRef,
+    _in_system_sound_id: SystemSoundID
 ) -> OSStatus {
-    // Просто заглушка для очистки ресурсов.
-    0 // noErr
-}
-
-fn AudioServicesPlaySystemSound(_env: &mut Environment, in_system_sound_id: SystemSoundID) {
-    if in_system_sound_id == kSystemSoundID_Vibrate {
-        log!("TODO: vibration (AudioServicesPlaySystemSound)");
-    } else {
-        log!("AudioToolbox: Playing system sound ID: {} (stub)", 
-             in_system_sound_id);
-    }
+    -1
 }
 
 pub const FUNCTIONS: FunctionExports = &[
-    // Количество "_" соответствует количеству аргументов ПОСЛЕ "env".
-    export_c_func!(AudioServicesGetProperty(_, _, _, _, _)),      // 5 аргументов
-    export_c_func!(AudioServicesCreateSystemSoundID(_, _)),       // 2 аргумента
-    export_c_func!(AudioServicesDisposeSystemSoundID(_)),         // 1 аргумент
-    export_c_func!(AudioServicesPlaySystemSound(_)),              // 1 аргумент
+    export_c_func!(AudioServicesGetProperty(_, _, _, _, _)),
+    export_c_func!(AudioServicesPlaySystemSound(_)),
+    export_c_func!(AudioServicesDisposeSystemSoundID(_)),
+    export_c_func!(AudioServicesRemoveSystemSoundCompletion(_)),
+    export_c_func!(AudioServicesCreateSystemSoundID(_, _)),
+    export_c_func!(AudioServicesAddSystemSoundCompletion(_, _)),
 ];

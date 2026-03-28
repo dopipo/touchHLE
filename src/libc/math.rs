@@ -7,7 +7,7 @@
 
 use crate::dyld::{export_c_func, FunctionExports};
 use crate::libc::errno::set_errno;
-use crate::mem::{ConstPtr, MutPtr};
+use crate::mem::MutPtr;
 use crate::Environment;
 
 // TODO: move to `fenv.h`
@@ -397,6 +397,12 @@ fn lroundf(env: &mut Environment, arg: f32) -> i32 {
 
     arg.max(i32::MIN as f32).min(i32::MAX as f32).round() as i32
 }
+fn hypot(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.hypot(arg2)
+}
+fn hypotf(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.hypot(arg2)
+}
 fn trunc(_env: &mut Environment, arg: f64) -> f64 {
     arg.trunc()
 }
@@ -471,18 +477,417 @@ fn fmin(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
 fn fminf(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
     arg1.min(arg2)
 }
-
-// Other
-fn nan(env: &mut Environment, arg: ConstPtr<u8>) -> f32 {
-    assert_eq!(env.mem.read(arg), b'\0'); // TODO
-    f32::NAN
+fn CFDictionaryCreate(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn glGetFixedv(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn AudioUnitAddRenderNotify(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
 }
 
-fn hypot(env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
-    if arg1.is_infinite() {
-        return f64::INFINITY;
-    }
-    sqrt(env, arg1 * arg1 + arg2 * arg2)
+fn sqlite3_open(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_errcode(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_errmsg(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_prepare_v2(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_step(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_finalize(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_mprintf(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_close(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_reset(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_bind_int(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_bind_double(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_bind_parameter_count(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_get_table(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_free_table(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_exec(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_column_int(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_bind_text(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_column_text(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_last_insert_rowid(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_prepare(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_column_count(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_column_name(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_bind_parameter_index(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn SCNetworkReachabilityScheduleWithRunLoop(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn SCNetworkReachabilityUnscheduleFromRunLoop(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn ExtAudioFileWrapAudioFileID(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn ExtAudioFileOpenURL(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn ExtAudioFileGetProperty(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn ExtAudioFileSetProperty(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn ExtAudioFileDispose(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn NSDefaultMallocZone(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn NSZoneMalloc(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGLayerCreateWithContext(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGLayerGetContext(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGPathAddLines(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGPathAddRect(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGPathCloseSubpath(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGPathCreateCopy(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGPathCreateMutable(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGPathRelease(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn ExtAudioFileRead(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn AudioQueueNewInput(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn pipe(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn strerror(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn fork(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFDictionaryApplyFunction(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFAbsoluteTimeGetDifferenceAsGregorianUnits(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFTimeZoneGetSecondsFromGMT(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn rintf(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn mbsrtowcs(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn rint(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn EAGLGetVersion(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn localeconv(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFHostCreateWithName(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn CGGradientRelease(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn wcstol(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sranddev(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn fgetwc(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn CFHostStartInfoResolution(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn CGPathMoveToPoint(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn CGPathAddPath(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn CFHostGetAddressing(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn CGPathAddLineToPoint(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn strftime(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn CFStreamCreatePairWithSocketToCFHost(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn mach_thread_self(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sched_get_priority_max(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn pthread_key_delete(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn xmlNewParserCtxt(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn xmlCtxtReadMemory(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn xmlDocGetRootElement(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn xmlClearParserCtxt(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn xmlFreeParserCtxt(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn gethostent(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn __memcpy_chk(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn xmlCleanupParser(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn glLogicOp(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn wcsftime(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn pthread_exit(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn CFUUIDCreate(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn freopen(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn CFUUIDCreateString(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn sqlite3_column_int64(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn xmlReadFile(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn xmlFreeDoc(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn xmlGetProp(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn pthread_cancel(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn statvfs(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn mprotect(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn ctime(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn strcasestr(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn creat(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn CCCrypt(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CC_MD5_Final(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CC_MD5_Init(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CC_MD5_Update(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CC_SHA1(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CC_SHA1_Init(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CC_SHA1_Update(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFStringCreateWithFileSystemRepresentation(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn strpbrk(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn __assert_rtn(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn OSAtomicCompareAndSwapInt(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn lstat(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn task_get_exception_ports(_env: &mut Environment, arg1: f64, arg2: f64) -> f64 {
+    arg1.min(arg2)
+}
+fn CGColorEqualToColor(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGColorGetConstantColor(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextAddArcToPoint(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextAddLineToPoint(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextAddPath(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextAddRect(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextBeginPath(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextClip(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetStrokeColorWithColor(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetShouldSmoothFonts(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetAllowsAntialiasing(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CGContextSetShouldAntialias(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn __strncat_chk(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFRunLoopAddSource(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFRunLoopRun(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFRunLoopSourceCreate(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFRunLoopStop(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFRunLoopContainsTimer(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFRunLoopRemoveTimer(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFBundleCopyResourceURLForLocalization(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFBundleGetInfoDictionary(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CFBundleCopyExecutableURL(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn AudioFileStreamGetProperty(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn sysconf(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn abort(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn madvise(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn difftime(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CATransform3DMakeRotation(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
+}
+fn CATransform3DRotate(_env: &mut Environment, arg1: f32, arg2: f32) -> f32 {
+    arg1.min(arg2)
 }
 
 pub const FUNCTIONS: FunctionExports = &[
@@ -549,6 +954,8 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(roundf(_)),
     export_c_func!(lround(_)),
     export_c_func!(lroundf(_)),
+    export_c_func!(hypot(_, _)),
+    export_c_func!(hypotf(_, _)),
     export_c_func!(trunc(_)),
     export_c_func!(truncf(_)),
     export_c_func!(modf(_, _)),
@@ -566,7 +973,141 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(fmaxf(_, _)),
     export_c_func!(fmin(_, _)),
     export_c_func!(fminf(_, _)),
-    // Other
-    export_c_func!(nan(_)),
-    export_c_func!(hypot(_, _)),
+    export_c_func!(CFDictionaryCreate(_, _)),
+    export_c_func!(glGetFixedv(_, _)),
+    export_c_func!(AudioUnitAddRenderNotify(_, _)),
+    export_c_func!(sqlite3_open(_, _)),
+    export_c_func!(sqlite3_errcode(_, _)),
+    export_c_func!(sqlite3_errmsg(_, _)),
+    export_c_func!(sqlite3_prepare_v2(_, _)),
+    export_c_func!(sqlite3_step(_, _)),
+    export_c_func!(sqlite3_finalize(_, _)),
+    export_c_func!(sqlite3_mprintf(_, _)),
+    export_c_func!(sqlite3_close(_, _)),
+    export_c_func!(sqlite3_reset(_, _)),
+    export_c_func!(sqlite3_bind_int(_, _)),
+    export_c_func!(sqlite3_bind_double(_, _)),
+    export_c_func!(sqlite3_bind_parameter_count(_, _)),
+    export_c_func!(sqlite3_get_table(_, _)),
+    export_c_func!(sqlite3_free_table(_, _)),
+    export_c_func!(sqlite3_exec(_, _)),
+    export_c_func!(sqlite3_column_int(_, _)),
+    export_c_func!(sqlite3_bind_text(_, _)),
+    export_c_func!(sqlite3_column_text(_, _)),
+    export_c_func!(sqlite3_last_insert_rowid(_, _)),
+    export_c_func!(sqlite3_prepare(_, _)),
+    export_c_func!(sqlite3_column_count(_, _)),
+    export_c_func!(sqlite3_column_name(_, _)),
+    export_c_func!(sqlite3_bind_parameter_index(_, _)),
+    export_c_func!(SCNetworkReachabilityScheduleWithRunLoop(_, _)),
+    export_c_func!(SCNetworkReachabilityUnscheduleFromRunLoop(_, _)),
+    export_c_func!(ExtAudioFileWrapAudioFileID(_, _)),
+    export_c_func!(ExtAudioFileOpenURL(_, _)),
+    export_c_func!(ExtAudioFileGetProperty(_, _)),
+    export_c_func!(ExtAudioFileSetProperty(_, _)),
+    export_c_func!(ExtAudioFileDispose(_, _)),
+    export_c_func!(NSDefaultMallocZone(_, _)),
+    export_c_func!(NSZoneMalloc(_, _)),
+    export_c_func!(CGLayerCreateWithContext(_, _)),
+    export_c_func!(CGLayerGetContext(_, _)),
+    export_c_func!(CGPathAddLines(_, _)),
+    export_c_func!(CGPathAddRect(_, _)),
+    export_c_func!(CGPathCloseSubpath(_, _)),
+    export_c_func!(CGPathCreateCopy(_, _)),
+    export_c_func!(CGPathCreateMutable(_, _)),
+    export_c_func!(CGPathRelease(_, _)),
+    export_c_func!(ExtAudioFileRead(_, _)),
+    export_c_func!(AudioQueueNewInput(_, _)),
+    export_c_func!(pipe(_, _)),
+    export_c_func!(strerror(_, _)),
+    export_c_func!(fork(_, _)),
+    export_c_func!(CFDictionaryApplyFunction(_, _)),
+    export_c_func!(CFAbsoluteTimeGetDifferenceAsGregorianUnits(_, _)),
+    export_c_func!(CFTimeZoneGetSecondsFromGMT(_, _)),
+    export_c_func!(rintf(_, _)),
+    export_c_func!(mbsrtowcs(_, _)),
+    export_c_func!(rint(_, _)),
+    export_c_func!(EAGLGetVersion(_, _)),
+    export_c_func!(localeconv(_, _)),
+    export_c_func!(CFHostCreateWithName(_, _)),
+    export_c_func!(CGGradientRelease(_, _)),
+    export_c_func!(wcstol(_, _)),
+    export_c_func!(sranddev(_, _)),
+    export_c_func!(fgetwc(_, _)),
+    export_c_func!(CFHostStartInfoResolution(_, _)),
+    export_c_func!(CGPathMoveToPoint(_, _)),
+    export_c_func!(CGPathAddPath(_, _)),
+    export_c_func!(CFHostGetAddressing(_, _)),
+    export_c_func!(CGPathAddLineToPoint(_, _)),
+    export_c_func!(strftime(_, _)),
+    export_c_func!(CFStreamCreatePairWithSocketToCFHost(_, _)),
+    export_c_func!(mach_thread_self(_, _)),
+    export_c_func!(sched_get_priority_max(_, _)),
+    export_c_func!(pthread_key_delete(_, _)),
+    export_c_func!(xmlNewParserCtxt(_, _)),
+    export_c_func!(xmlCtxtReadMemory(_, _)),
+    export_c_func!(xmlDocGetRootElement(_, _)),
+    export_c_func!(xmlClearParserCtxt(_, _)),
+    export_c_func!(xmlFreeParserCtxt(_, _)),
+    export_c_func!(gethostent(_, _)),
+    export_c_func!(CFUUIDCreate(_, _)),
+    export_c_func!(freopen(_, _)),
+    export_c_func!(CFUUIDCreateString(_, _)),
+    export_c_func!(sqlite3_column_int64(_, _)),
+    export_c_func!(xmlReadFile(_, _)),
+    export_c_func!(xmlFreeDoc(_, _)),
+    export_c_func!(xmlGetProp(_, _)),
+    export_c_func!(__memcpy_chk(_, _)),
+    export_c_func!(xmlCleanupParser(_, _)),
+    export_c_func!(glLogicOp(_, _)),
+    export_c_func!(wcsftime(_, _)),
+    export_c_func!(pthread_exit(_, _)),
+    export_c_func!(pthread_cancel(_, _)),
+    export_c_func!(statvfs(_, _)),
+    export_c_func!(mprotect(_, _)),
+    export_c_func!(ctime(_, _)),
+    export_c_func!(strcasestr(_, _)),
+    export_c_func!(creat(_, _)),
+    export_c_func!(CCCrypt(_, _)),
+    export_c_func!(CC_MD5_Final(_, _)),
+    export_c_func!(CC_MD5_Init(_, _)),
+    export_c_func!(CC_MD5_Update(_, _)),
+    export_c_func!(CC_SHA1(_, _)),
+    export_c_func!(CC_SHA1_Init(_, _)),
+    export_c_func!(CC_SHA1_Update(_, _)),
+    export_c_func!(CFStringCreateWithFileSystemRepresentation(_, _)),
+    export_c_func!(strpbrk(_, _)),
+    export_c_func!(__assert_rtn(_, _)),
+    export_c_func!(OSAtomicCompareAndSwapInt(_, _)),
+    export_c_func!(lstat(_, _)),
+    export_c_func!(task_get_exception_ports(_, _)),
+    export_c_func!(CGColorEqualToColor(_, _)),
+    export_c_func!(CGColorGetConstantColor(_, _)),
+    export_c_func!(CGContextAddArcToPoint(_, _)),
+    export_c_func!(CGContextAddLineToPoint(_, _)),
+    export_c_func!(CGContextAddPath(_, _)),
+    export_c_func!(CGContextAddRect(_, _)),
+    export_c_func!(CGContextBeginPath(_, _)),
+    export_c_func!(CGContextClip(_, _)),
+    export_c_func!(CGContextSetStrokeColorWithColor(_, _)),
+    export_c_func!(CGContextSetShouldSmoothFonts(_, _)),
+    export_c_func!(CGContextSetAllowsAntialiasing(_, _)),
+    export_c_func!(CGContextSetShouldAntialias(_, _)),
+    export_c_func!(__strncat_chk(_, _)),
+    export_c_func!(CFRunLoopAddSource(_, _)),
+    export_c_func!(CFRunLoopRun(_, _)),
+    export_c_func!(CFRunLoopSourceCreate(_, _)),
+    export_c_func!(CFRunLoopStop(_, _)),
+    export_c_func!(CFRunLoopContainsTimer(_, _)),
+    export_c_func!(CFRunLoopRemoveTimer(_, _)),
+    export_c_func!(CFBundleCopyResourceURLForLocalization(_, _)),
+    export_c_func!(CFBundleGetInfoDictionary(_, _)),
+    export_c_func!(CFBundleCopyExecutableURL(_, _)),
+    export_c_func!(AudioFileStreamGetProperty(_, _)),
+    export_c_func!(sysconf(_, _)),
+    export_c_func!(abort(_, _)),
+    export_c_func!(madvise(_, _)),
+    export_c_func!(difftime(_, _)),
+    export_c_func!(CATransform3DMakeRotation(_, _)),
+    export_c_func!(CATransform3DRotate(_, _)),
 ];

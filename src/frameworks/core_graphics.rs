@@ -16,6 +16,7 @@ pub mod cg_context;
 pub mod cg_data_provider;
 pub mod cg_geometry;
 pub mod cg_image;
+pub mod cg_font;
 
 pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
     path: "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics",

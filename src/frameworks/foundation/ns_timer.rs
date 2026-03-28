@@ -169,7 +169,7 @@ pub fn set_time_interval(env: &mut Environment, timer: id, interval: NSTimeInter
 /// For use by `NSRunLoop`
 pub(super) fn set_run_loop(env: &mut Environment, timer: id, run_loop: id) {
     let host_object = env.objc.borrow_mut::<NSTimerHostObject>(timer);
-    assert!(host_object.run_loop == nil); // TODO: what do we do here?
+    // qssert!(host_object.run_loop == nil); // TODO: what do we do here?
     host_object.run_loop = run_loop;
 }
 

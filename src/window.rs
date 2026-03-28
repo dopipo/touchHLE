@@ -25,67 +25,23 @@ use sdl2_sys::SDL_PowerState;
 use std::collections::{HashMap, VecDeque};
 use std::env;
 use std::f32::consts::FRAC_PI_2;
+use std::ffi::CStr;
 use std::num::NonZeroU32;
 use std::ptr::null_mut;
 use std::time::{Duration, Instant};
 
-#[allow(non_camel_case_types)]
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
-pub enum DeviceFamily {
-    iPhone,
-    iPad,
-}
-impl std::fmt::Display for DeviceFamily {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        std::fmt::Debug::fmt(self, f)
-    }
-}
-impl DeviceFamily {
-    pub fn portrait_size(&self) -> (u32, u32) {
-        match self {
-            DeviceFamily::iPhone => (320, 480),
-            DeviceFamily::iPad => (768, 1024),
-        }
-    }
-}
-impl TryFrom<u64> for DeviceFamily {
-    type Error = ();
-    fn try_from(value: u64) -> Result<Self, Self::Error> {
-        match value {
-            1 => Ok(DeviceFamily::iPhone),
-            2 => Ok(DeviceFamily::iPad),
-            _ => Err(()),
-        }
-    }
-}
-impl TryFrom<&str> for DeviceFamily {
-    type Error = ();
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value {
-            "iphone" => Ok(DeviceFamily::iPhone),
-            "ipad" => Ok(DeviceFamily::iPad),
-            _ => Err(()),
-        }
-    }
-}
-
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub enum DeviceOrientation {
     Portrait,
     LandscapeLeft,
     LandscapeRight,
 }
-fn size_for_orientation(
-    family: DeviceFamily,
-    orientation: DeviceOrientation,
-    scale_hack: NonZeroU32,
-) -> (u32, u32) {
-    let (width, height) = family.portrait_size();
+fn size_for_orientation(orientation: DeviceOrientation, scale_hack: NonZeroU32) -> (u32, u32) {
     let scale_hack = scale_hack.get();
     match orientation {
-        DeviceOrientation::Portrait => (width * scale_hack, height * scale_hack),
-        DeviceOrientation::LandscapeLeft => (height * scale_hack, width * scale_hack),
-        DeviceOrientation::LandscapeRight => (height * scale_hack, width * scale_hack),
+        DeviceOrientation::Portrait => (320 * scale_hack, 480 * scale_hack),
+        DeviceOrientation::LandscapeLeft => (480 * scale_hack, 320 * scale_hack),
+        DeviceOrientation::LandscapeRight => (480 * scale_hack, 320 * scale_hack),
     }
 }
 fn rotate_fullscreen_size(orientation: DeviceOrientation, screen_size: (u32, u32)) -> (u32, u32) {
@@ -122,18 +78,8 @@ pub enum FingerId {
     Touch(i64),
     VirtualCursor,
     ButtonToTouch(crate::options::Button),
-    StickToTouch,
-    DpadToTouch,
 }
 pub type Coords = (f32, f32);
-
-struct DpadState {
-    left: bool,
-    right: bool,
-    up: bool,
-    down: bool,
-    active: bool,
-}
 
 #[derive(Debug)]
 pub enum TextInputEvent {
@@ -226,12 +172,9 @@ pub struct Window {
     scale_hack: NonZeroU32,
     internal_gl_ins: Option<Box<dyn GLESContext>>,
     splash_image: Option<Image>,
-    device_family: DeviceFamily,
     device_orientation: DeviceOrientation,
     controller_ctx: sdl2::GameControllerSubsystem,
     controllers: Vec<sdl2::controller::GameController>,
-    dpad_state: DpadState,
-    stick_active: bool,
     _sensor_ctx: sdl2::SensorSubsystem,
     accelerometer: Option<sdl2::sensor::Sensor>,
     virtual_cursor_last: Option<(f32, f32, bool, bool)>,
@@ -289,7 +232,6 @@ impl Window {
         let scale_hack = options.scale_hack;
         // TODO: some apps specify their orientation in Info.plist, we could use
         // that here.
-        let device_family = options.device_family.unwrap_or(DeviceFamily::iPhone);
         let device_orientation = options.initial_orientation;
         let fullscreen = options.fullscreen;
 
@@ -315,8 +257,7 @@ impl Window {
                 .unwrap();
             window
         } else {
-            let (width, height) =
-                size_for_orientation(device_family, device_orientation, scale_hack);
+            let (width, height) = size_for_orientation(device_orientation, scale_hack);
             let window = video_ctx
                 .window(title, width, height)
                 .position_centered()
@@ -375,18 +316,9 @@ impl Window {
             scale_hack,
             internal_gl_ins: None,
             splash_image: launch_image,
-            device_family,
             device_orientation,
             controller_ctx,
             controllers: Vec::new(),
-            dpad_state: DpadState {
-                left: false,
-                right: false,
-                up: false,
-                down: false,
-                active: false,
-            },
-            stick_active: false,
             _sensor_ctx: sensor_ctx,
             accelerometer,
             virtual_cursor_last: None,
@@ -435,11 +367,8 @@ impl Window {
             independent_of_viewport: bool,
         ) -> (f32, f32) {
             let (vx, vy, vw, vh) = if independent_of_viewport {
-                let (width, height) = size_for_orientation(
-                    window.device_family,
-                    window.device_orientation,
-                    NonZeroU32::new(1).unwrap(),
-                );
+                let (width, height) =
+                    size_for_orientation(window.device_orientation, NonZeroU32::new(1).unwrap());
                 (0, 0, width, height)
             } else {
                 window.viewport()
@@ -454,8 +383,7 @@ impl Window {
             let (out_w, out_h) = window.size_unrotated_unscaled();
             let out_x = (x + 0.5) * out_w as f32;
             let out_y = (y + 0.5) * out_h as f32;
-            // Round to match touch precision of official devices.
-            (out_x.round(), out_y.round())
+            (out_x, out_y)
         }
         fn transform_virt_accel_coords(window: &Window, (in_x, in_y): (i32, i32)) -> (f32, f32) {
             let (_, _, vw, vh) = window.viewport();
@@ -583,131 +511,30 @@ impl Window {
                     let Some(button) = translate_button(button) else {
                         continue;
                     };
-                    // Called whenever a DPad direction is pressed or released
-                    if (button == crate::options::Button::DPadLeft
-                        || button == crate::options::Button::DPadUp
-                        || button == crate::options::Button::DPadRight
-                        || button == crate::options::Button::DPadDown)
-                        && options.dpad_to_touch.is_some()
-                    {
-                        let Some((x, y, w, h)) = options.dpad_to_touch else {
-                            unreachable!();
-                        };
-
-                        // Update held state
-                        let pressed = matches!(event, E::ControllerButtonDown { .. });
-                        match button {
-                            crate::options::Button::DPadLeft => self.dpad_state.left = pressed,
-                            crate::options::Button::DPadRight => self.dpad_state.right = pressed,
-                            crate::options::Button::DPadUp => self.dpad_state.up = pressed,
-                            crate::options::Button::DPadDown => self.dpad_state.down = pressed,
-                            _ => unreachable!(),
-                        }
-
-                        // Compute center
-                        let cx = x + w * 0.5;
-                        let cy = y + h * 0.5;
-
-                        // Compute combined delta
-                        let mut dx = 0.0;
-                        let mut dy = 0.0;
-
-                        if self.dpad_state.left {
-                            dx -= 0.5 * w;
-                        }
-                        if self.dpad_state.right {
-                            dx += 0.5 * w;
-                        }
-                        if self.dpad_state.up {
-                            dy -= 0.5 * h;
-                        }
-                        if self.dpad_state.down {
-                            dy += 0.5 * h;
-                        }
-
-                        // Final coords: center + movement
-                        let coords = transform_input_coords(self, (cx + dx, cy + dy), true);
-
-                        // Send TouchDown if any dpad is held, TouchUp if none
-                        let any_held = self.dpad_state.left
-                            || self.dpad_state.right
-                            || self.dpad_state.up
-                            || self.dpad_state.down;
-
-                        if !self.dpad_state.active && any_held {
-                            // New touch
-                            self.dpad_state.active = true;
-                            Event::TouchesDown(HashMap::from([(FingerId::DpadToTouch, coords)]))
-                        } else if self.dpad_state.active && any_held {
-                            // Move existing touch
-                            Event::TouchesMove(HashMap::from([(FingerId::DpadToTouch, coords)]))
-                        } else if self.dpad_state.active && !any_held {
-                            // Release touch
-                            self.dpad_state.active = false;
-                            Event::TouchesUp(HashMap::from([(FingerId::DpadToTouch, coords)]))
-                        } else {
-                            continue;
-                        }
-                    } else {
-                        let Some(&(x, y)) = options.button_to_touch.get(&button) else {
-                            continue;
-                        };
-                        match event {
-                            E::ControllerButtonUp { .. } => {
-                                let coords = transform_input_coords(self, (x, y), true);
-                                Event::TouchesUp(HashMap::from([(
-                                    FingerId::ButtonToTouch(button),
-                                    coords,
-                                )]))
-                            }
-                            E::ControllerButtonDown { .. } => {
-                                let coords = transform_input_coords(self, (x, y), true);
-                                Event::TouchesDown(HashMap::from([(
-                                    FingerId::ButtonToTouch(button),
-                                    coords,
-                                )]))
-                            }
-                            _ => unreachable!(),
-                        }
-                    }
-                }
-                E::ControllerAxisMotion { axis, .. } => {
-                    controller_updated = true;
-                    let Some((x, y, w, h)) = options.stick_to_touch else {
+                    let Some(&(x, y)) = options.button_to_touch.get(&button) else {
                         continue;
                     };
-                    if axis == sdl2::controller::Axis::LeftX
-                        || axis == sdl2::controller::Axis::LeftY
-                    {
-                        let (stick_x, stick_y, _) = self.get_controller_stick(options, true);
-                        let coords = transform_input_coords(
-                            self,
-                            (
-                                x + ((stick_x + 1.0) / 2.0) * w,
-                                y + ((stick_y + 1.0) / 2.0) * h,
-                            ),
-                            true,
-                        );
-                        if stick_x.abs() < options.deadzone && stick_y.abs() < options.deadzone {
-                            if !self.stick_active {
-                                // Ignore deadzone events when stick is inactive
-                                continue;
-                            } else {
-                                // Release touch when stick returns to deadzone
-                                self.stick_active = false;
-                                Event::TouchesUp(HashMap::from([(FingerId::StickToTouch, coords)]))
-                            }
-                        } else if !self.stick_active {
-                            // New touch
-                            self.stick_active = true;
-                            Event::TouchesDown(HashMap::from([(FingerId::StickToTouch, coords)]))
-                        } else {
-                            // Move existing touch
-                            Event::TouchesMove(HashMap::from([(FingerId::StickToTouch, coords)]))
+                    match event {
+                        E::ControllerButtonUp { .. } => {
+                            let coords = transform_input_coords(self, (x, y), true);
+                            Event::TouchesUp(HashMap::from([(
+                                FingerId::ButtonToTouch(button),
+                                coords,
+                            )]))
                         }
-                    } else {
-                        continue;
+                        E::ControllerButtonDown { .. } => {
+                            let coords = transform_input_coords(self, (x, y), true);
+                            Event::TouchesDown(HashMap::from([(
+                                FingerId::ButtonToTouch(button),
+                                coords,
+                            )]))
+                        }
+                        _ => unreachable!(),
                     }
+                }
+                E::ControllerAxisMotion { .. } => {
+                    controller_updated = true;
+                    continue;
                 }
                 E::AppWillEnterBackground { .. } => {
                     log!("Received app-will-resign-active event.");
@@ -1282,7 +1109,7 @@ impl Window {
                 set_sdl2_orientation(new_orientation);
                 rotate_fullscreen_size(new_orientation, self.window.size())
             } else {
-                size_for_orientation(self.device_family, new_orientation, self.scale_hack)
+                size_for_orientation(new_orientation, self.scale_hack)
             };
 
             // macOS quirk: when resizing the window, the new framebuffer's size
@@ -1330,10 +1157,6 @@ impl Window {
         }
     }
 
-    pub fn device_family(&self) -> DeviceFamily {
-        self.device_family
-    }
-
     /// Returns the current device orientation
     pub fn current_rotation(&self) -> DeviceOrientation {
         self.device_orientation
@@ -1344,11 +1167,16 @@ impl Window {
     /// The aspect ratio, scale and orientation reflect the guest app's view of
     /// the world.
     pub fn size_unrotated_unscaled(&self) -> (u32, u32) {
-        size_for_orientation(
-            self.device_family,
-            DeviceOrientation::Portrait,
-            NonZeroU32::new(1).unwrap(),
-        )
+        size_for_orientation(DeviceOrientation::Portrait, NonZeroU32::new(1).unwrap())
+    }
+
+    /// Get the size in pixels of the window without rotation but with the
+    /// scale hack. Scaling caused by fullscreen mode is not included.
+    ///
+    /// Only the aspect ratio and orientation reflect the guest app's view of
+    /// the world.
+    pub fn size_unrotated_scalehacked(&self) -> (u32, u32) {
+        size_for_orientation(DeviceOrientation::Portrait, self.scale_hack)
     }
 
     /// Get the region of the on-screen window (x, y, width, height) used to
@@ -1358,7 +1186,7 @@ impl Window {
     /// the world, but the scale and orientation might not.
     pub fn viewport(&self) -> (u32, u32, u32, u32) {
         let (app_width, app_height) =
-            size_for_orientation(self.device_family, self.device_orientation, self.scale_hack);
+            size_for_orientation(self.device_orientation, self.scale_hack);
         if !self.fullscreen && !Self::rotatable_fullscreen() {
             return (0, 0, app_width, app_height);
         }
@@ -1415,6 +1243,11 @@ impl Window {
         }
     }
 
+    pub fn locales_iterator(&self) -> LocaleIter {
+        assert!(self.on_main_stack);
+        unsafe { LocaleIter::from_sdl_locales(sdl2_sys::SDL_GetPreferredLocales()) }
+    }
+
     pub fn start_text_input(&self) {
         assert!(self.on_main_stack);
         unsafe {
@@ -1435,6 +1268,56 @@ impl Window {
 
 pub fn open_url(env: &mut Environment, url: &str) -> Result<(), String> {
     env.on_parent_stack_in_coroutine(|_, _| sdl2::url::open_url(url).map_err(|e| e.to_string()))
+}
+
+// Unfortunately Rust-SDL2 doesn't provide a wrapper for this yet, so we have to
+// make our own.
+pub struct LocaleIter {
+    // Owned by object
+    arr: *mut sdl2_sys::SDL_Locale,
+    off: usize,
+}
+
+impl LocaleIter {
+    /// Makes an iterator over SDL locales.
+    /// SAFETY: locales must be an index into
+    /// [sdl2_sys::SDL_GetPreferredLocales()].
+    unsafe fn from_sdl_locales(locales: *mut sdl2_sys::SDL_Locale) -> Self {
+        Self {
+            arr: locales,
+            off: 0,
+        }
+    }
+    pub fn next(&mut self) -> Option<Locale<'_>> {
+        let item = unsafe { self.arr.offset(self.off.try_into().unwrap()).read() };
+        if item.language.is_null() {
+            None
+        } else {
+            self.off += 1;
+            unsafe {
+                Some(Locale {
+                    language: CStr::from_ptr(item.language),
+                    country: if item.country.is_null() {
+                        None
+                    } else {
+                        Some(CStr::from_ptr(item.country))
+                    },
+                })
+            }
+        }
+    }
+}
+
+impl Drop for LocaleIter {
+    fn drop(&mut self) {
+        unsafe { sdl2_sys::SDL_free(self.arr.cast()) };
+    }
+}
+
+#[allow(unused)]
+pub struct Locale<'a> {
+    pub language: &'a CStr,
+    pub country: Option<&'a CStr>,
 }
 
 /// Show an SDL messagebox for an error (typically after a panic).
@@ -1513,20 +1396,4 @@ pub fn get_battery_status() -> (i32, BatteryState) {
             SDL_PowerState::SDL_POWERSTATE_CHARGED => BatteryState::Full,
         },
     )
-}
-
-pub fn get_preferred_language_codes(env: &mut Environment) -> Vec<String> {
-    env.on_parent_stack_in_coroutine(|_, _| {
-        sdl2::locale::get_preferred_locales()
-            .map(|loc| loc.lang)
-            .collect()
-    })
-}
-
-pub fn get_preferred_country_codes(env: &mut Environment) -> Vec<String> {
-    env.on_parent_stack_in_coroutine(|_, _| {
-        sdl2::locale::get_preferred_locales()
-            .filter_map(|loc| loc.country)
-            .collect()
-    })
 }

@@ -9,7 +9,7 @@ use crate::abi::{CallFromHost, GuestFunction};
 use crate::dyld::{export_c_func, export_c_func_aliased, FunctionExports};
 use crate::fs::{resolve_path, GuestPath};
 use crate::libc::clocale::{setlocale, LC_CTYPE};
-use crate::libc::errno::{set_errno, EINVAL};
+use crate::libc::errno::set_errno;
 use crate::libc::string::strlen;
 use crate::libc::wchar::wchar_t;
 use crate::mem::{ConstPtr, ConstVoidPtr, GuestUSize, MutPtr, MutVoidPtr, Ptr};
@@ -25,8 +25,14 @@ pub struct State {
     arc4random: u32,
 }
 
+// Sizes of zero are implementation-defined. macOS will happily give you back
+// an allocation for any of these, so presumably iPhone OS does too.
+// (touchHLE's allocator will round up allocations to at least 16 bytes.)
+
 fn malloc(env: &mut Environment, size: GuestUSize) -> MutVoidPtr {
+    // TODO: handle errno properly
     set_errno(env, 0);
+
     env.mem.alloc(size)
 }
 
@@ -35,13 +41,17 @@ fn malloc_size(env: &mut Environment, ptr: ConstVoidPtr) -> GuestUSize {
 }
 
 fn calloc(env: &mut Environment, count: GuestUSize, size: GuestUSize) -> MutVoidPtr {
+    // TODO: handle errno properly
     set_errno(env, 0);
+
     let total = size.checked_mul(count).unwrap();
     env.mem.calloc(total)
 }
 
 fn realloc(env: &mut Environment, ptr: MutVoidPtr, size: GuestUSize) -> MutVoidPtr {
+    // TODO: handle errno properly
     set_errno(env, 0);
+
     if ptr.is_null() {
         return malloc(env, size);
     }
@@ -49,6 +59,7 @@ fn realloc(env: &mut Environment, ptr: MutVoidPtr, size: GuestUSize) -> MutVoidP
 }
 
 fn free(env: &mut Environment, ptr: MutVoidPtr) {
+    // We need to catch situations of freeing NSObjects early!
     if env.objc.get_host_object(ptr.cast()).is_some() {
         log!(
             "App attempted to call free({:?}) on an object, calling dealloc_object() instead!",
@@ -57,23 +68,52 @@ fn free(env: &mut Environment, ptr: MutVoidPtr) {
         env.objc.dealloc_object(ptr.cast(), &mut env.mem);
         return;
     }
+
+    // TODO: handle errno properly
     set_errno(env, 0);
+
     if ptr.is_null() {
+        // "If ptr is a NULL pointer, no operation is performed."
         return;
     }
     env.mem.free(ptr);
 }
 
-fn atexit(_env: &mut Environment, func: GuestFunction) -> i32 {
+fn atexit(
+    _env: &mut Environment,
+    func: GuestFunction, // void (*func)(void)
+) -> i32 {
+    // TODO: when this is implemented, make sure it's properly compatible with
+    // __cxa_atexit.
     log!("TODO: atexit({:?}) (unimplemented)", func);
-    0
+    0 // success
 }
 
+#[allow(rustdoc::broken_intra_doc_links)] // https://github.com/rust-lang/rust/issues/83049
+/// Counts whitespaces in `subject` starting from `offset`.
+///
+/// `getc_fn` is a callback to get next character from `subject`.
+/// 3rd parameter in this callback is a index which is safe to ignore
+/// (for example, in case of a file stream).
+/// Error signifies an abnormal stop of input,
+/// such as [crate::libc::stdio::EOF] in the file stream.
+/// Note: `'\0'` does not necessary expect to produce an error!
+///
+/// `ungetc_fn` is a callback to un-get character from `subject`.
+/// Could be ignored entirely (for example, in case of a string).
+///
+/// `subject` is either C string or file stream (for now).
+///
+/// `offset` defines an offset in `subject` from which conversion starts.
+/// Could be ignored entirely (for example, in case of a file stream).
+///
+/// Returns count of whitespaces. Error returned from `getc_fn` is propagated
+/// but count is retuned too.
 fn count_whitespace_generic<
     T,
     U,
     F1: Fn(&mut Environment, MutPtr<U>, GuestUSize) -> Result<T, ()>,
-    F2: Fn(&mut Environment, MutPtr<U>, u8),
+    F2: Fn(&mut Environment, MutPtr<U>, u8), // TODO: make last param generic too?
 >(
     env: &mut Environment,
     getc_fn: F1,
@@ -90,6 +130,7 @@ where
             return Err(count - offset);
         };
         let c: u8 = c.into();
+        // Rust's definition of whitespace excludes vertical tab, unlike C's
         if c.is_ascii_whitespace() || c == b'\x0b' {
             count += 1;
         } else {
@@ -101,7 +142,10 @@ where
 }
 
 fn atoi(env: &mut Environment, s: ConstPtr<u8>) -> i32 {
+    // TODO: handle errno properly
     set_errno(env, 0);
+
+    // conveniently, overflow is undefined, so 0 is as valid a result as any
     let (res, _) = strtol_inner(env, s, 10).unwrap_or((0, 0));
     res
 }
@@ -115,7 +159,9 @@ fn atof(env: &mut Environment, s: ConstPtr<u8>) -> f64 {
 }
 
 fn strtod(env: &mut Environment, nptr: ConstPtr<u8>, endptr: MutPtr<MutPtr<u8>>) -> f64 {
+    // TODO: handle errno properly
     set_errno(env, 0);
+
     log_dbg!("strtod nptr {}", env.mem.cstr_at_utf8(nptr).unwrap());
     let (res, len) = atof_inner(env, nptr).unwrap_or((0.0, 0));
     if !endptr.is_null() {
@@ -125,7 +171,12 @@ fn strtod(env: &mut Environment, nptr: ConstPtr<u8>, endptr: MutPtr<MutPtr<u8>>)
 }
 
 fn prng(state: u32) -> u32 {
+    // The state must not be zero for this algorithm to work. This also makes
+    // the default seed be 1, which matches the C standard.
     let mut state: u32 = state.max(1);
+    // https://en.wikipedia.org/wiki/Xorshift#Example_implementation
+    // xorshift32 is not a good random number generator, but it is cute one!
+    // It's not like anyone expects the C stdlib `rand()` to be good.
     state ^= state << 13;
     state ^= state >> 17;
     state ^= state << 5;
@@ -137,27 +188,23 @@ const RAND_MAX: i32 = i32::MAX;
 fn srand(env: &mut Environment, seed: u32) {
     env.libc_state.stdlib.rand = seed;
 }
-
-/// BSD function that seeds rand() from a random source (/dev/random).
-/// Stubbed: seeds using arc4random so the game gets a non-deterministic seed
-/// without requiring actual /dev/random access.
-fn sranddev(env: &mut Environment) {
-    let seed = arc4random(env);
-    env.libc_state.stdlib.rand = seed;
-    log!("sranddev() stubbed: seeded rand with {}", seed);
-}
-
 fn rand(env: &mut Environment) -> i32 {
     env.libc_state.stdlib.rand = prng(env.libc_state.stdlib.rand);
     (env.libc_state.stdlib.rand as i32) & RAND_MAX
 }
 
+// BSD's "better" random number generator, with an implementation that is not
+// actually better.
 fn srandom(env: &mut Environment, seed: u32) {
+    // TODO: handle errno properly
     set_errno(env, 0);
+
     env.libc_state.stdlib.random = seed;
 }
 fn random(env: &mut Environment) -> i32 {
+    // TODO: handle errno properly
     set_errno(env, 0);
+
     env.libc_state.stdlib.random = prng(env.libc_state.stdlib.random);
     (env.libc_state.stdlib.random as i32) & RAND_MAX
 }
@@ -177,38 +224,44 @@ fn getenv(env: &mut Environment, name: ConstPtr<u8>) -> MutPtr<u8> {
         );
         return Ptr::null();
     };
-    log_dbg!("getenv({:?}) => {:?}", name, value);
+
+    log_dbg!(
+        "getenv({:?} ({:?})) => {:?} ({:?})",
+        name,
+        name_cstr,
+        value,
+        env.mem.cstr_at_utf8(value),
+    );
+    // Caller should not modify the result
     value
 }
-
 fn setenv(env: &mut Environment, name: ConstPtr<u8>, value: ConstPtr<u8>, overwrite: i32) -> i32 {
+    // TODO: handle errno properly
     set_errno(env, 0);
+
     let name_cstr = env.mem.cstr_at(name);
     if let Some(&existing) = env.env_vars.get(name_cstr) {
         if overwrite == 0 {
-            return 0;
+            return 0; // success
         }
         env.mem.free(existing.cast());
     };
     let value = super::string::strdup(env, value);
-    let name_cstr = env.mem.cstr_at(name);
+    let name_cstr = env.mem.cstr_at(name); // reborrow
     env.env_vars.insert(name_cstr.to_vec(), value);
-    0
-}
-
-fn unsetenv(env: &mut Environment, name: ConstPtr<u8>) -> i32 {
-    set_errno(env, 0);
-    let name_cstr = env.mem.cstr_at(name);
-    if !env.env_vars.contains_key(name_cstr) {
-        set_errno(env, EINVAL);
-        -1
-    } else {
-        todo!()
-    }
+    log_dbg!(
+        "Stored new value {:?} ({:?}) for environment variable {:?}",
+        value,
+        env.mem.cstr_at_utf8(value),
+        std::str::from_utf8(name_cstr),
+    );
+    0 // success
 }
 
 fn exit(env: &mut Environment, exit_code: i32) {
+    // TODO: handle errno properly
     set_errno(env, 0);
+
     echo!("App called exit(), exiting.");
     std::process::exit(exit_code);
 }
@@ -219,26 +272,40 @@ fn bsearch(
     items: ConstVoidPtr,
     item_count: GuestUSize,
     item_size: GuestUSize,
-    compare_callback: GuestFunction,
+    compare_callback: GuestFunction, // (*int)(const void*, const void*)
 ) -> ConstVoidPtr {
+    log_dbg!(
+        "binary search for {:?} in {} items of size {:#x} starting at {:?}",
+        key,
+        item_count,
+        item_size,
+        items
+    );
     let mut low = 0;
     let mut len = item_count;
     while len > 0 {
         let half_len = len / 2;
         let item: ConstVoidPtr = (items.cast::<u8>() + item_size * (low + half_len)).cast();
+        // key must be first argument
         let cmp_result: i32 = compare_callback.call_from_host(env, (key, item));
         (low, len) = match cmp_result.signum() {
-            0 => return item,
+            0 => {
+                log_dbg!("=> {:?}", item);
+                return item;
+            }
             1 => (low + half_len + 1, len - half_len - 1),
             -1 => (low, half_len),
             _ => unreachable!(),
         }
     }
+    log_dbg!("=> NULL (not found)");
     Ptr::null()
 }
 
 fn strtof(env: &mut Environment, nptr: ConstPtr<u8>, endptr: MutPtr<ConstPtr<u8>>) -> f32 {
+    // TODO: handle errno properly
     set_errno(env, 0);
+
     let (number, length) = atof_inner(env, nptr).unwrap_or((0.0, 0));
     if !endptr.is_null() {
         env.mem.write(endptr, nptr + length);
@@ -252,15 +319,17 @@ pub fn strtoul(
     endptr: MutPtr<MutPtr<u8>>,
     base: i32,
 ) -> u32 {
+    // TODO: handle errno properly
     set_errno(env, 0);
+
     let parse_res = str_to_int_inner_generic(
         env,
         |env, s, idx| Ok(env.mem.read(s + idx)),
-        |_, _, _| (),
+        |_, _, _| (), // could be ignored
         str.cast_mut(),
-        0,
+        0, // starting offset
         base.try_into().unwrap(),
-        u32::MAX,
+        u32::MAX, // max_length
         |s, base| u32::from_str_radix(s, base).unwrap_or(u32::MAX),
         |num| num.wrapping_neg(),
     );
@@ -286,15 +355,17 @@ fn strtoull(
     endptr: MutPtr<MutPtr<u8>>,
     base: i32,
 ) -> u64 {
+    // TODO: handle errno properly
     set_errno(env, 0);
+
     let parse_res = str_to_int_inner_generic(
         env,
         |env, s, idx| Ok(env.mem.read(s + idx)),
-        |_, _, _| (),
+        |_, _, _| (), // could be ignored
         str.cast_mut(),
-        0,
+        0, // starting offset
         base.try_into().unwrap(),
-        u32::MAX,
+        u32::MAX, // max_length
         |s, base| u64::from_str_radix(s, base).unwrap_or(u64::MAX),
         |num| num.wrapping_neg(),
     );
@@ -314,13 +385,30 @@ fn strtoull(
     }
 }
 
-fn strtol(
-    env: &mut Environment,
-    str: ConstPtr<u8>,
-    endptr: MutPtr<MutPtr<u8>>,
-    base: i32,
-) -> i32 {
+fn div(env: &mut Environment, str: ConstPtr<u8>, endptr: MutPtr<MutPtr<u8>>, base: i32) -> i32 {
+    // TODO: handle errno properly
     set_errno(env, 0);
+
+    match strtol_inner(env, str, base as u32) {
+        Ok((res, len)) => {
+            if !endptr.is_null() {
+                env.mem.write(endptr, (str + len).cast_mut());
+            }
+            res
+        }
+        Err(_) => {
+            if !endptr.is_null() {
+                env.mem.write(endptr, str.cast_mut());
+            }
+            0
+        }
+    }
+}
+
+fn strtol(env: &mut Environment, str: ConstPtr<u8>, endptr: MutPtr<MutPtr<u8>>, base: i32) -> i32 {
+    // TODO: handle errno properly
+    set_errno(env, 0);
+
     match strtol_inner(env, str, base as u32) {
         Ok((res, len)) => {
             if !endptr.is_null() {
@@ -343,14 +431,26 @@ fn realpath(
     resolve_name: MutPtr<u8>,
 ) -> MutPtr<u8> {
     assert!(!resolve_name.is_null());
+
     let file_name_str = env.mem.cstr_at_utf8(file_name).unwrap();
-    let resolved = resolve_path(GuestPath::new(file_name_str), Some(env.fs.working_directory()));
+    // TOD0: resolve symbolic links
+    let resolved = resolve_path(
+        GuestPath::new(file_name_str),
+        Some(env.fs.working_directory()),
+    );
     let result = format!("/{}", resolved.join("/"));
     env.mem
         .bytes_at_mut(resolve_name, result.len() as GuestUSize)
         .copy_from_slice(result.as_bytes());
     env.mem
         .write(resolve_name + result.len() as GuestUSize, b'\0');
+
+    log_dbg!(
+        "realpath file_name '{}', resolve_name '{}'",
+        env.mem.cstr_at_utf8(file_name).unwrap(),
+        env.mem.cstr_at_utf8(resolve_name).unwrap()
+    );
+
     resolve_name
 }
 
@@ -360,9 +460,13 @@ fn mbstowcs(
     s: ConstPtr<u8>,
     n: GuestUSize,
 ) -> GuestUSize {
+    // TODO: handle errno properly
     set_errno(env, 0);
+
+    // TODO: support other locales
     let ctype_locale = setlocale(env, LC_CTYPE, Ptr::null());
     assert_eq!(env.mem.read(ctype_locale), b'C');
+
     let size = strlen(env, s);
     let to_write = size.min(n);
     for i in 0..to_write {
@@ -381,13 +485,17 @@ fn wcstombs(
     pwcs: MutPtr<wchar_t>,
     n: GuestUSize,
 ) -> GuestUSize {
+    // TODO: support other locales
     let ctype_locale = setlocale(env, LC_CTYPE, Ptr::null());
     assert_eq!(env.mem.read(ctype_locale), b'C');
+
     if n == 0 {
         return 0;
     }
     let wcstr = env.mem.wcstr_at(pwcs);
-    let len = (wcstr.len() as GuestUSize).min(n);
+    let len: GuestUSize = wcstr.len() as GuestUSize;
+    let len = len.min(n);
+    log_dbg!("wcstombs '{}', len {}, n {}", wcstr, len, n);
     env.mem
         .bytes_at_mut(s.cast_mut(), len)
         .copy_from_slice(wcstr.as_bytes());
@@ -399,63 +507,11 @@ fn wcstombs(
 
 fn system(env: &mut Environment, cmd: ConstPtr<u8>) -> i32 {
     if cmd.is_null() {
-        return 1; // shell is available
+        log!("TODO: App checked for sh availability with system(NULL), returning 0");
+        return 0; // sh is not available!
     }
-    let cmd_str = env.mem.cstr_at_utf8(cmd).unwrap_or("").to_string();
-    log!("system({:?})", cmd_str);
-
-    // split_whitespace() автоматически игнорирует пробелы в начале и конце
-    let parts: Vec<&str> = cmd_str.split_whitespace().collect();
-    if parts.is_empty() {
-        return 0;
-    }
-
-    match parts[0] {
-        "mkdir" => {
-            // find path argument (skip flags like -p)
-            let path_arg = parts.iter().skip(1).find(|a| !a.starts_with('-'));
-            if let Some(path) = path_arg {
-                let guest_path = GuestPath::new(path);
-                // use create_dir_all to support mkdir -p semantics
-                match env.fs.create_dir_all(guest_path) {
-                    Ok(_) => {
-                        log!("system: mkdir {:?} => success", path);
-                        0
-                    }
-                    Err(e) => {
-                        log!("system: mkdir {:?} => error: {:?}", path, e);
-                        1
-                    }
-                }
-            } else {
-                1
-            }
-        }
-        _ => {
-            log!(
-                "Warning: system({:?}) not implemented, returning 0",
-                cmd_str
-            );
-            0
-        }
-    }
-}
-
-fn ___assert_rtn(
-    env: &mut Environment,
-    func: ConstPtr<u8>,
-    file: ConstPtr<u8>,
-    line: i32,
-    msg: ConstPtr<u8>,
-) {
-    let func_str = env.mem.cstr_at_utf8(func).unwrap_or("unknown_func");
-    let file_str = env.mem.cstr_at_utf8(file).unwrap_or("unknown_file");
-    let msg_str = env.mem.cstr_at_utf8(msg).unwrap_or("no message");
-
-    panic!(
-        "\n[GUEST ASSERTION FAILED]\nMessage: \"{}\"\nFunction: {}\nFile: {}\nLine: {}\n",
-        msg_str, func_str, file_str, line
-    );
+    log!("system({:?})", env.mem.cstr_at_utf8(cmd));
+    todo!()
 }
 
 pub const FUNCTIONS: FunctionExports = &[
@@ -470,17 +526,16 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(atof(_)),
     export_c_func!(strtod(_, _)),
     export_c_func!(srand(_)),
-    export_c_func!(sranddev()),
     export_c_func!(rand()),
     export_c_func!(srandom(_)),
     export_c_func!(random()),
     export_c_func!(arc4random()),
     export_c_func!(getenv(_)),
     export_c_func!(setenv(_, _, _)),
-    export_c_func!(unsetenv(_)),
     export_c_func!(exit(_)),
     export_c_func!(bsearch(_, _, _, _, _)),
     export_c_func!(strtof(_, _)),
+    export_c_func!(div(_, _, _)),
     export_c_func!(strtoul(_, _, _)),
     export_c_func!(strtoull(_, _, _)),
     export_c_func!(strtol(_, _, _)),
@@ -489,9 +544,9 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(mbstowcs(_, _, _)),
     export_c_func!(wcstombs(_, _, _)),
     export_c_func!(system(_)),
-    export_c_func_aliased!("___assert_rtn", ___assert_rtn(_, _, _, _)),
 ];
 
+/// A simple wrapper around [atof_inner_generic] for the case of C string.
 pub fn atof_inner(
     env: &mut Environment,
     s: ConstPtr<u8>,
@@ -505,7 +560,34 @@ pub fn atof_inner(
     )
 }
 
-pub fn atof_inner_generic<T, U, F1, F2>(
+#[allow(rustdoc::broken_intra_doc_links)] // https://github.com/rust-lang/rust/issues/83049
+/// Generic implementation of a conversion helper to `double`.
+///
+/// `getc_fn` is a callback to get next character from `subject`.
+/// 3rd parameter in this callback is a index which is safe to ignore
+/// (for example, in case of a file stream).
+/// Error signifies an abnormal stop of input,
+/// such as [crate::libc::stdio::EOF] in the file stream.
+/// Note: `'\0'` does not necessary expect to produce an error!
+///
+/// `ungetc_fn` is a callback to un-get character from `subject`.
+/// Could be ignored entirely (for example, in case of a string).
+///
+/// `subject` is either C string or file stream (for now).
+///
+/// `offset` defines an offset in `subject` from which conversion starts.
+/// Could be ignored entirely (for example, in case of a file stream).
+///
+/// Returns a tuple containing the parsed number and the length of the number in
+/// the string.
+///
+/// See also a TODO comment in [str_to_int_inner_generic].
+pub fn atof_inner_generic<
+    T,
+    U,
+    F1: Fn(&mut Environment, MutPtr<U>, GuestUSize) -> Result<T, ()>,
+    F2: Fn(&mut Environment, MutPtr<U>, u8), // TODO: make last param generic too?
+>(
     env: &mut Environment,
     getc_fn: F1,
     ungetc_fn: F2,
@@ -514,20 +596,28 @@ pub fn atof_inner_generic<T, U, F1, F2>(
 ) -> Result<(f64, u32), <f64 as FromStr>::Err>
 where
     u8: From<T>,
-    F1: Fn(&mut Environment, MutPtr<U>, GuestUSize) -> Result<T, ()>,
-    F2: Fn(&mut Environment, MutPtr<U>, u8),
 {
     let mut whitespace_len = 0;
     let mut len = 0;
     let mut chars = Vec::new();
+
+    // Helper is needed to support early returns on `getc_fn` errors
+    // (e.g. EOF in the input stream)
+    // We don't care about return of helper because modified vars are
+    // captured indirectly.
     let _ = || -> Result<(), ()> {
+        // atof() is similar to atoi().
+        // FIXME: no C99 hexfloat, INF, NAN support
         match count_whitespace_generic(env, &getc_fn, &ungetc_fn, subject, offset) {
-            Ok(count) => whitespace_len = count,
+            Ok(count) => {
+                whitespace_len = count;
+            }
             Err(count) => {
                 whitespace_len = count;
                 return Err(());
             }
         }
+
         let maybe_sign: u8 = getc_fn(env, subject, offset + whitespace_len + len)?.into();
         if maybe_sign == b'+' || maybe_sign == b'-' || maybe_sign.is_ascii_digit() {
             chars.push(maybe_sign);
@@ -535,12 +625,15 @@ where
         } else {
             ungetc_fn(env, subject, maybe_sign);
         }
+
         let mut curr: u8 = getc_fn(env, subject, offset + whitespace_len + len)?.into();
         while (curr as char).is_ascii_digit() {
             chars.push(curr);
             len += 1;
             curr = getc_fn(env, subject, offset + whitespace_len + len)?.into();
         }
+
+        // TODO: assert C locale
         if curr == b'.' {
             chars.push(curr);
             len += 1;
@@ -551,9 +644,11 @@ where
                 curr = getc_fn(env, subject, offset + whitespace_len + len)?.into();
             }
         }
+
         if curr.eq_ignore_ascii_case(&b'e') {
             chars.push(curr);
             len += 1;
+
             let maybe_sign: u8 = getc_fn(env, subject, offset + whitespace_len + len)?.into();
             if maybe_sign == b'+' || maybe_sign == b'-' || maybe_sign.is_ascii_digit() {
                 chars.push(maybe_sign);
@@ -561,6 +656,7 @@ where
             } else {
                 ungetc_fn(env, subject, maybe_sign);
             }
+
             curr = getc_fn(env, subject, offset + whitespace_len + len)?.into();
             while (curr as char).is_ascii_digit() {
                 chars.push(curr);
@@ -569,32 +665,79 @@ where
             }
         }
         ungetc_fn(env, subject, curr);
+
+        assert_eq!(chars.len() as u32, len);
         Ok(())
     }();
+
     let s = std::str::from_utf8(&chars).unwrap();
+    log_dbg!("atof_inner_generic('{}')", s);
     s.parse().map(|result| (result, whitespace_len + len))
 }
 
-fn strtol_inner(
-    env: &mut Environment,
-    str: ConstPtr<u8>,
-    base: u32,
-) -> Result<(i32, u32), ()> {
+/// A simple wrapper around [str_to_int_inner_generic]
+/// for the case of C string and i32.
+fn strtol_inner(env: &mut Environment, str: ConstPtr<u8>, base: u32) -> Result<(i32, u32), ()> {
     str_to_int_inner_generic(
         env,
         |env, s, idx| Ok(env.mem.read(s + idx)),
-        |_, _, _| (),
+        |_, _, _| (), // could be ignored
         str.cast_mut(),
-        0,
+        0, // starting offset
         base,
-        u32::MAX,
+        u32::MAX, // max_length
         |s, base| i32::from_str_radix(s, base).unwrap_or(i32::MAX),
         |num| num.checked_mul(-1).unwrap_or(i32::MIN),
     )
 }
 
+#[allow(rustdoc::broken_intra_doc_links)] // https://github.com/rust-lang/rust/issues/83049
+/// Generic implementation of a conversion helper from string to an integer.
+///
+/// `getc_fn` is a callback to get next character from `subject`.
+/// 3rd parameter in this callback is a index which is safe to ignore
+/// (for example, in case of a file stream).
+/// Error signifies an abnormal stop of input,
+/// such as [crate::libc::stdio::EOF] in the file stream.
+/// Note: `'\0'` does not necessary expect to produce an error!
+///
+/// `ungetc_fn` is a callback to un-get character from `subject`.
+/// Could be ignored entirely (for example, in case of a string).
+///
+/// `subject` is either C string or file stream (for now).
+///
+/// `offset` defines an offset in `subject` from which conversion starts.
+/// Could be ignored entirely (for example, in case of a file stream).
+///
+/// `base` of conversion.
+/// Is mutable because in case of base 0 we need to auto-detect it.
+///
+/// `from_str_radix_fn` is a callback to actually convert accumulated string
+/// to the number.
+///
+/// `negation_fn` is a callback which specifies how '-' is treated.
+///
+/// Returns a tuple containing the parsed number in the given base and
+/// the length of the number in the string.
+///
+/// Right now this function is a bit of the mess... We bridge together the
+/// worlds of string indexing and file stream processing with questionable
+/// results. We have fair amount of integration tests for `strtoul`
+/// and `sscanf`/`fscanf`, but some of corner cases are definitely not covered.
+/// One idea for cleaning that would be to fully embrace `getc`/`ungetc`
+/// approach and get rid of indexing.
+/// (Like, let caller to deal with indexing and override `offset` somehow?)
+/// TODO: find a more powerful abstraction for generalization
 #[allow(clippy::too_many_arguments)]
-pub fn str_to_int_inner_generic<T, U, Q, F1, F2, F3, F4>(
+pub fn str_to_int_inner_generic<
+    T,
+    U,
+    Q,
+    F1: Fn(&mut Environment, MutPtr<U>, GuestUSize) -> Result<T, ()>,
+    F2: Fn(&mut Environment, MutPtr<U>, u8), // TODO: make last param generic too?
+    F3: Fn(&str, u32) -> Q,
+    F4: Fn(Q) -> Q,
+>(
     env: &mut Environment,
     getc_fn: F1,
     ungetc_fn: F2,
@@ -608,24 +751,31 @@ pub fn str_to_int_inner_generic<T, U, Q, F1, F2, F3, F4>(
 where
     u8: From<T>,
     Q: Default,
-    F1: Fn(&mut Environment, MutPtr<U>, GuestUSize) -> Result<T, ()>,
-    F2: Fn(&mut Environment, MutPtr<U>, u8),
-    F3: Fn(&str, u32) -> Q,
-    F4: Fn(Q) -> Q,
 {
     let mut whitespace_len = 0;
     let mut len = 0;
     let mut sign = None;
     let mut prefix_length = 0;
     let mut chars = Vec::new();
+
+    // Helper is needed to support early returns on `getc_fn` errors
+    // (e.g. EOF in the input stream)
+    // We don't care about return of helper because modified vars are
+    // captured indirectly.
     let _ = || -> Result<(), ()> {
+        // strtol() doesn't work with a null-terminated string,
+        // instead it stops once it hits something that's not a digit,
+        // so we have to do some parsing ourselves.
         match count_whitespace_generic(env, &getc_fn, &ungetc_fn, subject, offset) {
-            Ok(count) => whitespace_len = count,
+            Ok(count) => {
+                whitespace_len = count;
+            }
             Err(count) => {
                 whitespace_len = count;
                 return Err(());
             }
         }
+
         let maybe_sign: u8 = getc_fn(env, subject, offset + whitespace_len + len)?.into();
         if maybe_sign == b'+' || maybe_sign == b'-' {
             sign = Some(maybe_sign);
@@ -637,11 +787,13 @@ where
         } else {
             ungetc_fn(env, subject, maybe_sign);
         }
+        // We need to do base detection before we can start counting
+        // the number length, but after we maybe skipped the sign
+        // TODO: detect base and skip prefix in one pass
         if base == 0 {
             let curr: u8 = getc_fn(env, subject, offset + whitespace_len + len)?.into();
             base = if curr == b'0' {
-                let next: u8 =
-                    getc_fn(env, subject, offset + whitespace_len + len + 1)?.into();
+                let next: u8 = getc_fn(env, subject, offset + whitespace_len + len + 1)?.into();
                 ungetc_fn(env, subject, next);
                 ungetc_fn(env, subject, curr);
                 if next == b'x' || next == b'X' {
@@ -654,6 +806,7 @@ where
                 10
             }
         }
+        // Skipping prefix if needed
         if base == 8 || base == 16 {
             let curr: u8 = getc_fn(env, subject, offset + whitespace_len + len)?.into();
             if curr == b'0' {
@@ -663,8 +816,7 @@ where
                 }
                 prefix_length += 1;
                 if base == 16 {
-                    let next: u8 =
-                        getc_fn(env, subject, offset + whitespace_len + len)?.into();
+                    let next: u8 = getc_fn(env, subject, offset + whitespace_len + len)?.into();
                     if next == b'x' || next == b'X' {
                         len += 1;
                         if len == max_length {
@@ -691,17 +843,24 @@ where
             curr = getc_fn(env, subject, offset + whitespace_len + len)?.into();
         }
         ungetc_fn(env, subject, curr);
+        assert_eq!(chars.len() as u32, len - prefix_length);
         Ok(())
     }();
+
     let s = std::str::from_utf8(&chars).unwrap();
+    log_dbg!("strtol_inner_generic('{}', {})", s, base);
+
+    assert!((2..=36).contains(&base));
     let magnitude_len = len - prefix_length;
     let res = if magnitude_len > 0 {
+        // TODO: set errno on range errors
         let mut res = from_str_radix_fn(s, base);
         if sign == Some(b'-') {
             res = negation_fn(res);
         }
         res
     } else {
+        // Special case - prefix of invalid octal number is a valid number 0
         if base == 8 && prefix_length > 0 {
             return Ok((Q::default(), whitespace_len + prefix_length));
         }
@@ -709,4 +868,3 @@ where
     };
     Ok((res, whitespace_len + len))
 }
-

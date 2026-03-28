@@ -293,6 +293,46 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (())setShowsTouchWhenHighlighted:(bool)shows {
     todo_objc_setter!(this, shows);
 }
+
+- (())setAdjustsImageWhenDisabled:(bool)disabled {
+    log!("TODO: setAdjustsImageWhenDisabled:{}", disabled);
+}
+- (())setContentVerticalAlignment:(bool)vertical {
+    log!("TODO: setContentVerticalAlignment:{}", vertical);
+}
+
+- (())setReversesTitleShadowWhenHighlighted:(bool)shadow {
+    log!("TODO: setReversesTitleShadowWhenHighlighted:{}", shadow);
+}
+
+- (())setContentHorizontalAlignment:(bool)horizontal {
+    log!("TODO: setContentHorizontalAlignment:{}", horizontal);
+}
+
+- (())setTitleShadowOffset:(bool)shadow {
+    log!("TODO: setTitleShadowOffset:{}", shadow);
+}
+
+- (())setTitleEdgeInsets:(bool)edge {
+    log!("TODO: setTitleEdgeInsets:{}", edge);
+}
+
+- (())setOrigin:(bool)origin {
+    log!("TODO: setOrigin:{}", origin);
+}
+
+- (())setShowPressFeedback:(bool)press {
+    log!("TODO: setShowPressFeedback:{}", press);
+}
+
+- (id)sizeToFit {
+    nil
+}
+
+- (())setImageEdgeInsets:(CGRect)rect {
+    log!("setImageEdgeInsets: {:?}", rect);
+}
+
 - (())setFont:(id)font { // UIFont*
     let label = env.objc.borrow_mut::<UIButtonHostObject>(this).title_label;
     () = msg![env; label setFont:font];

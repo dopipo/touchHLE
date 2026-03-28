@@ -14,25 +14,28 @@ pub const MPMusicPlayerControllerNowPlayingItemDidChangeNotification: &str =
     "MPMusicPlayerControllerNowPlayingItemDidChangeNotification";
 pub const MPMusicPlayerControllerPlaybackStateDidChangeNotification: &str =
     "MPMusicPlayerControllerPlaybackStateDidChangeNotification";
-pub const MPMediaItemPropertyPersistentID: &str = "persistentID";
+pub const MPMusicPlayerControllerVolumeDidChangeNotification: &str =
+    "MPMusicPlayerControllerVolumeDidChangeNotification";
+pub const MPMusicPlayerControllerQueueDidChange: &str =
+    "MPMusicPlayerControllerQueueDidChange";
 
 /// `NSNotificationName` values.
 pub const CONSTANTS: ConstantExports = &[
     (
         "_MPMusicPlayerControllerNowPlayingItemDidChangeNotification",
-        HostConstant::NSString(
-            MPMusicPlayerControllerNowPlayingItemDidChangeNotification,
-        ),
+        HostConstant::NSString(MPMusicPlayerControllerNowPlayingItemDidChangeNotification),
     ),
     (
         "_MPMusicPlayerControllerPlaybackStateDidChangeNotification",
-        HostConstant::NSString(
-            MPMusicPlayerControllerPlaybackStateDidChangeNotification,
-        ),
+        HostConstant::NSString(MPMusicPlayerControllerPlaybackStateDidChangeNotification),
     ),
     (
-        "_MPMediaItemPropertyPersistentID",
-        HostConstant::NSString(MPMediaItemPropertyPersistentID),
+        "_MPMusicPlayerControllerVolumeDidChangeNotification",
+        HostConstant::NSString(MPMusicPlayerControllerVolumeDidChangeNotification),
+    ),
+    (
+        "_MPMusicPlayerControllerQueueDidChange",
+        HostConstant::NSString(MPMusicPlayerControllerQueueDidChange),
     ),
 ];
 
@@ -55,6 +58,20 @@ pub const CLASSES: ClassExports = objc_classes! {
         "TODO: [(MPMusicPlayerController*){:?} applicationMusicPlayer]",
         this
     );
+    nil
+}
+
+@end
+
+@implementation MPMediaPlaylist: NSObject
+@end
+
+@implementation MPAVController: NSObject
++ (id)sharedInstance {
+    nil
+}
+
+- (id)sharedInstance {
     nil
 }
 

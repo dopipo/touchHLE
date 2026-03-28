@@ -99,7 +99,6 @@ struct ArrayStateBackup {
     size: Option<GLint>,
     stride: GLsizei,
     pointer: *const GLvoid,
-    buffer_binding: GLuint,
 }
 
 /// List of arrays shared by OpenGL ES 1.1 and OpenGL 2.1.
@@ -384,9 +383,6 @@ const TEX_PARAMS: ParamTable = ParamTable(&[
     (gl21::MAX_TEXTURE_MAX_ANISOTROPY_EXT, ParamType::Float, 1),
 ]);
 
-const UNSUPPORTED_TEX_PARAMS: ParamTable =
-    ParamTable(&[(gl21::TEXTURE_MAX_LEVEL, ParamType::Float, 1)]);
-
 pub struct GLES1OnGL2State {
     pointer_is_fixed_point: [bool; ARRAYS.len()],
     fixed_point_texture_units: HashSet<GLenum>,
@@ -516,6 +512,11 @@ impl GLES1OnGL2<'_> {
 
             let mut buffer_binding = 0;
             gl21::GetIntegerv(array_info.buffer_binding, &mut buffer_binding);
+            if buffer_binding != 0 {
+                // TODO: translation for bound array buffers
+                todo!("TODO: GLES1-on-GL2 layer does not support buffer bindings yet. (Try OpenGL ES on Android.)");
+            }
+            assert!(buffer_binding == 0);
 
             // Get and back up data
 
@@ -526,31 +527,19 @@ impl GLES1OnGL2<'_> {
             });
             let mut stride: GLsizei = 0;
             gl21::GetIntegerv(array_info.stride, &mut stride);
-            let old_pointer = {
-                let mut pointer: *mut GLvoid = std::ptr::null_mut();
-                // The second argument to glGetPointerv must be a mutable
-                // pointer, but gl_generator generates the wrong signature
-                // by mistake, see https://github.com/brendanzab/gl-rs/issues/541
-                #[allow(clippy::unnecessary_mut_passed)]
-                gl21::GetPointerv(array_info.pointer, &mut pointer);
-                pointer.cast_const()
-            };
+            let mut pointer: *mut GLvoid = std::ptr::null_mut();
+            // The second argument to glGetPointerv must be a mutable pointer,
+            // but gl_generator generates the wrong signature by mistake, see
+            // https://github.com/brendanzab/gl-rs/issues/541
+            #[allow(clippy::unnecessary_mut_passed)]
+            gl21::GetPointerv(array_info.pointer, &mut pointer);
+            let pointer = pointer.cast_const();
 
             backups[i] = Some(ArrayStateBackup {
                 size,
                 stride,
-                pointer: old_pointer,
-                buffer_binding: buffer_binding.try_into().unwrap(),
+                pointer,
             });
-
-            let pointer = if buffer_binding != 0 {
-                let mapped_buffer = gl21::MapBuffer(gl21::ARRAY_BUFFER, gl21::READ_ONLY);
-                assert!(!mapped_buffer.is_null());
-                // in this case the old_pointer is actually an offest!
-                mapped_buffer.add(old_pointer as usize)
-            } else {
-                old_pointer
-            };
 
             // Create translated array and substitute pointer
 
@@ -584,11 +573,6 @@ impl GLES1OnGL2<'_> {
                 }
             }
 
-            if buffer_binding != 0 {
-                gl21::UnmapBuffer(gl21::ARRAY_BUFFER);
-                gl21::BindBuffer(gl21::ARRAY_BUFFER, 0);
-            }
-
             let buffer_ptr: *const GLfloat = buffer.as_ptr();
             let buffer_ptr: *const GLvoid = buffer_ptr.cast();
             match array_info.name {
@@ -620,15 +604,10 @@ impl GLES1OnGL2<'_> {
                 size,
                 stride,
                 pointer,
-                buffer_binding,
             }) = backup
             else {
                 continue;
             };
-
-            if buffer_binding != 0 {
-                gl21::BindBuffer(gl21::ARRAY_BUFFER, buffer_binding);
-            }
 
             match array_info.name {
                 gl21::COLOR_ARRAY => {
@@ -751,7 +730,6 @@ impl GLES for GLES1OnGL2<'_> {
         assert!(type_ == ParamType::Boolean);
         gl21::GetBooleanv(pname, params);
     }
-    // TODO: GetFixedv
     unsafe fn GetFloatv(&mut self, pname: GLenum, params: *mut GLfloat) {
         let (type_, _count) = GET_PARAMS.get_type_info(pname);
         // TODO: type conversion
@@ -1004,28 +982,6 @@ impl GLES for GLES1OnGL2<'_> {
     }
     unsafe fn StencilMask(&mut self, mask: GLuint) {
         gl21::StencilMask(mask);
-    }
-    unsafe fn LogicOp(&mut self, opcode: GLenum) {
-        assert!([
-            gl21::CLEAR,
-            gl21::SET,
-            gl21::COPY,
-            gl21::COPY_INVERTED,
-            gl21::NOOP,
-            gl21::INVERT,
-            gl21::AND,
-            gl21::NAND,
-            gl21::OR,
-            gl21::NOR,
-            gl21::XOR,
-            gl21::EQUIV,
-            gl21::AND_REVERSE,
-            gl21::AND_INVERTED,
-            gl21::OR_REVERSE,
-            gl21::OR_INVERTED,
-        ]
-        .contains(&opcode));
-        gl21::LogicOp(opcode);
     }
 
     // Points
@@ -1360,14 +1316,10 @@ impl GLES for GLES1OnGL2<'_> {
                 gl21::ELEMENT_ARRAY_BUFFER_BINDING,
                 &mut index_buffer_binding,
             );
-            let indices = if index_buffer_binding != 0 {
-                let mapped_buffer = gl21::MapBuffer(gl21::ELEMENT_ARRAY_BUFFER, gl21::READ_ONLY);
-                assert!(!mapped_buffer.is_null());
-                // in this case the indices is actually an offest!
-                mapped_buffer.add(indices as usize)
-            } else {
-                indices
-            };
+            if index_buffer_binding != 0 {
+                // TODO: translation for bound index array buffers
+                todo!("TODO: GLES1-on-GL2 layer does not support buffer bindings yet. (Try OpenGL ES on Android.)");
+            }
 
             let mut first = usize::MAX;
             let mut last = usize::MIN;
@@ -1401,10 +1353,6 @@ impl GLES for GLES1OnGL2<'_> {
                     (last + 1 - first).try_into().unwrap(),
                 )
             };
-
-            if index_buffer_binding != 0 {
-                gl21::UnmapBuffer(gl21::ELEMENT_ARRAY_BUFFER);
-            }
 
             Some(self.translate_fixed_point_arrays(first, count))
         } else {
@@ -1495,15 +1443,7 @@ impl GLES for GLES1OnGL2<'_> {
     }
     unsafe fn TexParameteri(&mut self, target: GLenum, pname: GLenum, param: GLint) {
         assert!(target == gl21::TEXTURE_2D);
-        if UNSUPPORTED_TEX_PARAMS.contains(pname) {
-            log_dbg!(
-                "Tolerating TexParameteri({:#x}, {:#x}) of parameter",
-                target,
-                pname
-            );
-        } else {
-            TEX_PARAMS.assert_known_param(pname);
-        }
+        TEX_PARAMS.assert_known_param(pname);
         gl21::TexParameteri(target, pname, param);
     }
     unsafe fn TexParameterf(&mut self, target: GLenum, pname: GLenum, param: GLfloat) {
@@ -1891,33 +1831,6 @@ impl GLES for GLES1OnGL2<'_> {
             }
             _ => unimplemented!(),
         }
-    }
-
-    unsafe fn MultiTexCoord4f(
-        &mut self,
-        target: GLenum,
-        s: GLfloat,
-        t: GLfloat,
-        r: GLfloat,
-        q: GLfloat,
-    ) {
-        gl21::MultiTexCoord4f(target, s, t, r, q)
-    }
-    unsafe fn MultiTexCoord4x(
-        &mut self,
-        target: GLenum,
-        s: GLfixed,
-        t: GLfixed,
-        r: GLfixed,
-        q: GLfixed,
-    ) {
-        gl21::MultiTexCoord4f(
-            target,
-            fixed_to_float(s),
-            fixed_to_float(t),
-            fixed_to_float(r),
-            fixed_to_float(q),
-        )
     }
 
     // Matrix stack operations

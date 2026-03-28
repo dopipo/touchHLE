@@ -38,13 +38,6 @@ pub struct pthread_attr_t {
 }
 unsafe impl SafeRead for pthread_attr_t {}
 
-#[derive(Copy, Clone, Debug)]
-#[repr(C, packed)]
-struct sched_param {
-    sched_priority: i32,
-}
-unsafe impl SafeRead for sched_param {}
-
 const DEFAULT_ATTR: pthread_attr_t = pthread_attr_t {
     magic: MAGIC_ATTR,
     detachstate: PTHREAD_CREATE_JOINABLE,
@@ -87,17 +80,6 @@ pub fn pthread_attr_init(env: &mut Environment, attr: MutPtr<pthread_attr_t>) ->
     env.mem.write(attr, DEFAULT_ATTR);
     0 // success
 }
-fn pthread_attr_getdetachstate(
-    env: &mut Environment,
-    attr: MutPtr<pthread_attr_t>,
-    detachstate_ptr: MutPtr<DetachState>,
-) -> i32 {
-    check_magic!(env, attr, MAGIC_ATTR);
-    let detachstate = env.mem.read(attr).detachstate;
-    assert!(detachstate == PTHREAD_CREATE_JOINABLE || detachstate == PTHREAD_CREATE_DETACHED);
-    env.mem.write(detachstate_ptr, detachstate);
-    0 // success
-}
 pub fn pthread_attr_setdetachstate(
     env: &mut Environment,
     attr: MutPtr<pthread_attr_t>,
@@ -128,7 +110,7 @@ pub fn pthread_attr_setstacksize(
     attr: MutPtr<pthread_attr_t>,
     stacksize: GuestUSize,
 ) -> i32 {
-    if attr.is_null() || stacksize < PTHREAD_STACK_MIN || !stacksize.is_multiple_of(PAGE_SIZE) {
+    if attr.is_null() || stacksize < PTHREAD_STACK_MIN || stacksize % PAGE_SIZE != 0 {
         return EINVAL;
     }
     check_magic!(env, attr, MAGIC_ATTR);
@@ -137,46 +119,46 @@ pub fn pthread_attr_setstacksize(
     env.mem.write(attr, attr_copy);
     0 // success
 }
+
 fn pthread_attr_setinheritsched(
-    env: &mut Environment,
+    _env: &mut Environment,
     attr: MutPtr<pthread_attr_t>,
     inheritsched: i32,
 ) -> i32 {
-    check_magic!(env, attr, MAGIC_ATTR);
-    log!(
-        "TODO: pthread_attr_setinheritsched({:?}, {})",
+    log_dbg!(
+        "TODO: pthread_setinheritsched({:?}, {})",
         attr,
         inheritsched
     );
-    0 // success
+    0
 }
+
+fn pthread_attr_setschedparam(
+    _env: &mut Environment,
+    attr: MutPtr<pthread_attr_t>,
+    param: ConstVoidPtr,
+) -> i32 {
+    log_dbg!(
+        "TODO: pthread_setschedparam({:?}, {:?})",
+        attr,
+        param
+    );
+    0
+}
+
 fn pthread_attr_setschedpolicy(
-    env: &mut Environment,
+    _env: &mut Environment,
     attr: MutPtr<pthread_attr_t>,
     policy: i32,
 ) -> i32 {
-    check_magic!(env, attr, MAGIC_ATTR);
-    log!(
-        "TODO: pthread_attr_setschedpolicy({:?}, {}) (ignored)",
+    log_dbg!(
+        "TODO: pthread_setschedpolicy({:?}, {})",
         attr,
         policy
     );
-    0 // success
+    0
 }
-fn pthread_attr_setschedparam(
-    env: &mut Environment,
-    attr: MutPtr<pthread_attr_t>,
-    param: ConstPtr<sched_param>,
-) -> i32 {
-    check_magic!(env, attr, MAGIC_ATTR);
-    let sched_param = env.mem.read(param);
-    log!(
-        "TODO: pthread_attr_setschedparam({:?}, {:?}) (ignored)",
-        attr,
-        sched_param
-    );
-    0 // success
-}
+
 fn pthread_attr_destroy(env: &mut Environment, attr: MutPtr<pthread_attr_t>) -> i32 {
     check_magic!(env, attr, MAGIC_ATTR);
     env.mem.write(
@@ -388,13 +370,9 @@ fn pthread_setschedparam(
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(pthread_attr_init(_)),
-    export_c_func!(pthread_attr_getdetachstate(_, _)),
     export_c_func!(pthread_attr_setdetachstate(_, _)),
     export_c_func!(pthread_attr_getstacksize(_, _)),
     export_c_func!(pthread_attr_setstacksize(_, _)),
-    export_c_func!(pthread_attr_setinheritsched(_, _)),
-    export_c_func!(pthread_attr_setschedpolicy(_, _)),
-    export_c_func!(pthread_attr_setschedparam(_, _)),
     export_c_func!(pthread_attr_destroy(_)),
     export_c_func!(pthread_create(_, _, _, _)),
     export_c_func!(pthread_equal(_, _)),
@@ -406,4 +384,7 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(pthread_mach_thread_np(_)),
     export_c_func!(pthread_getschedparam(_, _, _)),
     export_c_func!(pthread_setschedparam(_, _, _)),
+    export_c_func!(pthread_attr_setinheritsched(_, _)),
+    export_c_func!(pthread_attr_setschedparam(_, _)),
+    export_c_func!(pthread_attr_setschedpolicy(_, _)),
 ];

@@ -18,7 +18,8 @@
 //! classes that are both (considering Objective-C's support for inheritance,
 //! categories and dynamic class editing).
 
-use crate::dyld::{export_c_func, ConstantExports, FunctionExports, HostConstant, HostDylib};
+use crate::dyld::{export_c_func, FunctionExports};
+use crate::objc::messages::ThreadInitializer;
 use crate::MutexId;
 use std::collections::HashMap;
 
@@ -32,22 +33,19 @@ mod synchronization;
 
 pub use classes::{objc_classes, Class, ClassExports, ClassTemplate};
 pub use messages::{
-    autorelease, msg, msg_class, msg_send, msg_send_no_type_checking, msg_send_super2, msg_super,
-    objc_super, release, retain,
+    autorelease, msg, msg_class, msg_send, msg_send_super2, msg_super, objc_super, release, retain,
 };
 pub use methods::{HostIMP, IMP};
 pub use objects::{
     id, impl_HostObject_with_superclass, nil, AnyHostObject, HostObject, TrivialHostObject,
 };
-pub use properties::todo_objc_setter;
 pub use selectors::{selector, SEL};
 
 use crate::mem::ConstVoidPtr;
 use crate::Environment;
-use classes::{ClassHostObject, FakeClass, UnimplementedClass};
-use messages::{
-    objc_msgSend, objc_msgSendSuper2, objc_msgSend_stret, MsgSendSignature, MsgSendSuperSignature,
-};
+use classes::{ClassHostObject, FakeClass, UnimplementedClass, CLASS_LISTS};
+pub(crate) use messages::objc_msgSend;
+use messages::{objc_msgSendSuper2, objc_msgSend_stret, MsgSendSignature, MsgSendSuperSignature};
 use methods::method_list_t;
 use objects::{objc_object, HostObjectEntry};
 use properties::{ivar_list_t, objc_copyStruct, objc_getProperty, objc_setProperty};
@@ -78,6 +76,9 @@ pub struct ObjC {
     /// Mutexes used in @synchronized blocks (objc_sync_enter/exit).
     sync_mutexes: HashMap<id, MutexId>,
 
+    /// Mutexes for running the +initialize function.
+    initializer_threads: HashMap<id, ThreadInitializer>,
+
     /// Temporary storage for optional type information when sending a message.
     /// Type information isn't part of the `objc_msgSend` ABI, so an alternative
     /// channel is needed.
@@ -91,26 +92,11 @@ impl ObjC {
             objects: HashMap::new(),
             classes: HashMap::new(),
             sync_mutexes: HashMap::new(),
+            initializer_threads: HashMap::new(),
             message_type_info: None,
         }
     }
 }
-
-pub const DYLIB: HostDylib = HostDylib {
-    path: "/usr/lib/libobjc.A.dylib",
-    aliases: &["/usr/lib/libobjc.dylib"],
-    class_exports: &[],
-    constant_exports: &[CONSTANTS],
-    function_exports: &[FUNCTIONS],
-};
-
-const CONSTANTS: ConstantExports = &[
-    // We don't use these in our Objective-C runtime, but exporting useless
-    // symbols for these silences the warning about the unhandled relocation,
-    // and avoids a linker error for the integration tests.
-    ("__objc_empty_vtable", HostConstant::NullPtr),
-    ("__objc_empty_cache", HostConstant::NullPtr),
-];
 
 /// Block support is iOS 4+, but it seems like Block Runtime Helpers
 /// could still be called on even if minimal iOS version is set to 3.x?
@@ -127,7 +113,7 @@ fn _Block_object_dispose(_env: &mut Environment, object: ConstVoidPtr, flags: i3
     );
 }
 
-const FUNCTIONS: FunctionExports = &[
+pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(objc_msgSend(_, _)),
     export_c_func!(objc_msgSend_stret(_, _, _)),
     export_c_func!(objc_msgSendSuper2(_, _)),

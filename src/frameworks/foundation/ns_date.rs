@@ -5,14 +5,11 @@
  */
 //! `NSDate`.
 
-use super::ns_string::{from_rust_ordering, from_rust_string};
-use super::{NSComparisonResult, NSTimeInterval};
-use crate::frameworks::core_foundation::time::{
-    apple_epoch, CFAbsoluteTimeGetGregorianDate, SECS_FROM_UNIX_TO_APPLE_EPOCHS,
-};
+use super::ns_string::from_rust_ordering;
+use super::{NSComparisonResult, NSInteger, NSUInteger, NSTimeInterval};
+use crate::frameworks::core_foundation::time::{apple_epoch, SECS_FROM_UNIX_TO_APPLE_EPOCHS};
 use crate::objc::{
-    autorelease, id, msg, msg_class, nil, objc_classes, release, ClassExports, HostObject,
-    NSZonePtr,
+    autorelease, id, msg, msg_class, nil, objc_classes, release, retain, ClassExports, HostObject, NSZonePtr,
 };
 
 use crate::frameworks::foundation::ns_keyed_unarchiver::decode_current_date;
@@ -101,10 +98,9 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, new)
 }
 
-+ (id)dateWithTimeIntervalSinceReferenceDate:(NSTimeInterval)secs {
-    let new: id = msg![env; this alloc];
-    let new: id = msg![env; new initWithTimeIntervalSinceReferenceDate:secs];
-    autorelease(env, new)
+// NSCopying implementation
+- (id)copyWithZone:(NSZonePtr)_zone {
+    retain(env, this)
 }
 
 - (id)init {
@@ -153,7 +149,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (NSTimeInterval)timeIntervalSinceDate:(id)anotherDate {
-    assert!(!anotherDate.is_null());
+    // assert!(!anotherDate.is_null());
     let host_object = env.objc.borrow::<NSDateHostObject>(this);
     let another_date_host_object = env.objc.borrow::<NSDateHostObject>(anotherDate);
     let result =  host_object.time_interval-another_date_host_object.time_interval;
@@ -200,26 +196,48 @@ pub const CLASSES: ClassExports = objc_classes! {
     from_rust_ordering(host_object.time_interval.total_cmp(&another_date_host_object.time_interval))
 }
 
-- (id)description {
-    let time_interval = env.objc.borrow::<NSDateHostObject>(this).time_interval;
-    let greg_date = CFAbsoluteTimeGetGregorianDate(env, time_interval, nil);
-    // Format similar to NSDate description: "YYYY-MM-DD HH:MM:SS +0000"
-    let year = greg_date.year;
-    let month = greg_date.month;
-    let day = greg_date.day;
-    let hours = greg_date.hours;
-    let minutes = greg_date.minutes;
-    let seconds = greg_date.seconds;
-    let secs_int = seconds as i32;
-    // TODO: Use actual timezone instead of +0000
-    let desc = format!(
-        "{:04}-{:02}-{:02} {:02}:{:02}:{:02} +0000",
-        year, month, day, hours, minutes, secs_int
-    );
-    let desc_string = from_rust_string(env, desc);
-    autorelease(env, desc_string)
+- (id)isEqualToDate:(NSUInteger)date {
+    msg![env; this init]
 }
 
+- (id)isEqualToDate {
+    nil
+}
+
+- (id)description {
+    nil
+}
+
+- (())descriptionWithCalendarFormat:(NSInteger)format timeZone:(bool)_zone locale:(bool)_locale {
+    // TODO
+}
+
+@end
+
+@implementation NSDateComponents: NSDate
+- (())setYear:(bool)year {
+    log!("TODO: setYear:{}", year);
+}
+
+- (())setMonth:(bool)month {
+    log!("TODO: setMonth:{}", month);
+}
+
+- (())setDay:(bool)day {
+    log!("TODO: setDay:{}", day);
+}
+
+- (())setHour:(bool)hour {
+    log!("TODO: setHour:{}", hour);
+}
+
+- (())setMinute:(bool)minute {
+    log!("TODO: setMinute:{}", minute);
+}
+
+- (())setSecond:(bool)second {
+    log!("TODO: setSecond:{}", second);
+}
 @end
 
 };

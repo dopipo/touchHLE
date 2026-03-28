@@ -12,16 +12,15 @@
 
 use super::ca_eagl_layer::find_fullscreen_eagl_layer;
 use super::ca_layer::CALayerHostObject;
-use crate::frameworks::core_animation::animation;
-use crate::frameworks::core_graphics::cg_color::CGColorHostObject;
-use crate::frameworks::core_graphics::{cg_bitmap_context, cg_image, CGFloat, CGRect};
-use crate::gles::gles11_raw as gles11; // constants only
+use crate::frameworks::core_graphics::{
+    cg_bitmap_context, cg_color, cg_image, CGFloat, CGPoint, CGRect,
+};
 use crate::gles::gles11_raw::types::*;
 use crate::gles::present::{present_frame, FpsCounter};
-use crate::gles::GLES; // constants only
+use crate::gles::{gles11_raw as gles11, GLES}; // constants only
 use crate::image::Image;
 use crate::matrix::Matrix;
-use crate::mem::SafeWrite;
+use crate::mem::{Mem, SafeWrite};
 use crate::objc::{id, msg, msg_class, nil, ObjC};
 use crate::Environment;
 use std::time::{Duration, Instant};
@@ -29,6 +28,7 @@ use std::time::{Duration, Instant};
 #[derive(Default)]
 pub(super) struct State {
     texture_framebuffer: Option<(GLuint, GLuint)>,
+    is_compositing: bool,
     recomposite_next: Option<Instant>,
     fps_counter: Option<FpsCounter>,
     misc_gl_objects: Option<MiscGlObjects>,
@@ -63,10 +63,28 @@ unsafe fn load_matrix(gles: &mut dyn GLES, matrix: Matrix<4>) {
 ///
 /// Returns the time a recomposite is due, if any.
 pub fn recomposite_if_necessary(env: &mut Environment, force: bool) -> Option<Instant> {
-    let mut animation_state = animation::State::default();
-    let windows = env.framework_state.uikit.ui_view.ui_window.windows.clone();
-    if !windows.iter().any(|&window| !msg![env; window isHidden]) {
-        log_dbg!("No visible windows, skipping composition");
+    // Assumes the last window in the list is the one on top.
+    // TODO: this is not correct once we support zPosition.
+    // TODO: can there be windows smaller than the screen? If so we need to draw
+    //       all of them.
+    let Some(&top_window) = env
+        .framework_state
+        .uikit
+        .ui_view
+        .ui_window
+        .visible_windows
+        .last()
+    else {
+        log_dbg!("No visible window, skipping composition");
+        return None;
+    };
+    if env
+        .framework_state
+        .core_animation
+        .composition
+        .is_compositing
+    {
+        log_dbg!("Already compositing, skipping composition");
         return None;
     }
 
@@ -118,17 +136,16 @@ pub fn recomposite_if_necessary(env: &mut Environment, force: bool) -> Option<In
     env.framework_state
         .core_animation
         .composition
+        .is_compositing = true;
+    env.framework_state
+        .core_animation
+        .composition
         .recomposite_next = new_recomposite_next;
 
-    let window_layers: Vec<id> = windows
-        .into_iter()
-        .map(|window| {
-            let layer: id = msg![env; window layer];
-            // Ensure layer bitmaps are up to date.
-            display_layers(env, layer);
-            layer
-        })
-        .collect();
+    let root_layer: id = msg![env; top_window layer];
+
+    // Ensure layer bitmaps are up to date.
+    display_layers(env, root_layer);
 
     let screen_bounds: CGRect = {
         let screen: id = msg_class![env; UIScreen mainScreen];
@@ -146,7 +163,7 @@ pub fn recomposite_if_necessary(env: &mut Environment, force: bool) -> Option<In
     // TODO: draw status bar if it's not hidden
 
     // Initial state for layer tree traversal (see composite_layer_recursive)
-    let cumulative_transform = Matrix::<4>::identity();
+    let origin = CGPoint { x: 0.0, y: 0.0 };
     let opacity = 1.0;
 
     let window = env.window.as_mut().unwrap();
@@ -322,26 +339,19 @@ pub fn recomposite_if_necessary(env: &mut Environment, force: bool) -> Option<In
         // One index buffer to rule them all
         gles.BindBuffer(gles11::ELEMENT_ARRAY_BUFFER, misc_gl_objects.index_buffer);
     }
-    std::mem::drop(gles);
 
-    // Assumes the windows in the list are ordered back-to-front.
-    // TODO: this may not be correct once we support windowLevel.
-    for root_layer in window_layers {
-        // Here's where the actual drawing happens
-        unsafe {
-            composite_layer_recursive(
-                env,
-                &mut animation_state,
-                root_layer,
-                cumulative_transform,
-                opacity,
-            );
-        }
+    // Here's where the actual drawing happens
+    unsafe {
+        composite_layer_recursive(
+            gles.as_mut(),
+            &mut env.objc,
+            &env.mem,
+            misc_gl_objects,
+            root_layer,
+            origin,
+            opacity,
+        );
     }
-
-    // Re-borrow
-    let window = env.window.as_mut().unwrap();
-    let mut gles = window.make_internal_gl_ctx_current();
 
     // Clean up some GL state
     unsafe {
@@ -372,7 +382,10 @@ pub fn recomposite_if_necessary(env: &mut Environment, force: bool) -> Option<In
     std::mem::drop(gles);
     window.swap_window();
 
-    animation_state.update_started_and_finished_animations(env);
+    env.framework_state
+        .core_animation
+        .composition
+        .is_compositing = false;
 
     new_recomposite_next
 }
@@ -405,60 +418,60 @@ fn display_layers(env: &mut Environment, root_layer: id) {
 
 /// Traverses the layer tree and draws each layer.
 unsafe fn composite_layer_recursive(
-    env: &mut Environment,
-    animation_state: &mut animation::State,
+    gles: &mut dyn GLES,
+    objc: &mut ObjC,
+    mem: &Mem,
+    misc: &MiscGlObjects,
     layer: id,
-    cumulative_transform: Matrix<4>,
+    origin: CGPoint,
     opacity: CGFloat,
 ) {
-    // TODO: this can't handle zPosition among other things, but it is not
-    //       supported yet :)
+    // TODO: this can't handle zPosition, non-AABB layer transforms, rounded
+    // corners, and many other things, but none of these are supported yet :)
     // TODO: back-to-front drawing is not efficient, could we use front-to-back?
 
-    // This is both acting as the presentationLayer and the private render layer
-    // It might need to be reworked in the future into a guest presentationLayer
-    let host_obj = animation_state.create_presentation_layer(env, layer);
+    let host_obj = objc.borrow::<CALayerHostObject>(layer);
 
     if host_obj.hidden {
         return;
     }
 
-    let window = env.window.as_mut().unwrap();
-    let mut gles = window.make_internal_gl_ctx_current();
-
     let opacity = opacity * host_obj.opacity;
-    let cumulative_transform = {
-        let CALayerHostObject { bounds, .. } = host_obj;
+    let next_origin = {
+        let &CALayerHostObject {
+            bounds,
+            position,
+            anchor_point,
+            ..
+        } = host_obj;
 
-        // Update the transform to match this layer's co-ordinate space.
-        let cumulative_transform =
-            <Matrix<4> as From<_>>::from(host_obj.superlayer_to_layer_transform())
-                .multiply(&cumulative_transform);
+        let absolute_pos_top_left = CGPoint {
+            x: origin.x + position.x - bounds.size.width * anchor_point.x,
+            y: origin.y + position.y - bounds.size.height * anchor_point.y,
+        };
+        let next_origin = CGPoint {
+            x: absolute_pos_top_left.x - bounds.origin.x,
+            y: absolute_pos_top_left.y - bounds.origin.y,
+        };
 
-        // Reposition and scale the unit quad (see ARRAY_BUFFER binding)
-        // so it will have the right size in this layer's co-ordinate space.
+        // Reposition and scale the unit quad (see ARRAY_BUFFER binding).
+        let matrix = {
+            let scale = Matrix::<4>::from(&Matrix::scale_2d(bounds.size.width, bounds.size.height));
+            let position =
+                Matrix::translate_3d(absolute_pos_top_left.x, absolute_pos_top_left.y, 0.0);
+            scale.multiply(&position)
+        };
         gles.MatrixMode(gles11::MODELVIEW);
-        load_matrix(
-            gles.as_mut(),
-            Matrix::<4>::from(&Matrix::scale_2d(bounds.size.width, bounds.size.height))
-                .multiply(&Matrix::translate_3d(bounds.origin.x, bounds.origin.y, 0.0))
-                .multiply(&cumulative_transform),
-        );
+        load_matrix(gles, matrix);
 
-        cumulative_transform
+        next_origin
     };
 
     // Draw background color, if any
-    let have_background = if let Some(background_color) = host_obj.background_color {
-        let misc = env
-            .framework_state
-            .core_animation
-            .composition
-            .misc_gl_objects
-            .as_ref()
-            .unwrap();
-
-        let CGColorHostObject { r, g, b, a, .. } = background_color;
+    let have_background = if host_obj.background_color == nil {
+        false
+    } else {
+        let (r, g, b, a) = cg_color::to_rgba(objc, host_obj.background_color);
         gles.Color4f(
             r * a * opacity,
             g * a * opacity,
@@ -493,7 +506,7 @@ unsafe fn composite_layer_recursive(
             gles.EnableClientState(gles11::VERTEX_ARRAY);
             gles.BindBuffer(gles11::ARRAY_BUFFER, misc.rounded_vertex_buffer);
             upload_slice(
-                gles.as_mut(),
+                gles,
                 gles11::ARRAY_BUFFER,
                 &make_9patch_coords(
                     [
@@ -522,9 +535,10 @@ unsafe fn composite_layer_recursive(
         };
 
         true
-    } else {
-        false
     };
+
+    // re-borrow mutably
+    let host_obj = objc.borrow_mut::<CALayerHostObject>(layer);
 
     let need_texture = host_obj.presented_pixels.is_some()
         || host_obj.contents != nil
@@ -539,19 +553,17 @@ unsafe fn composite_layer_recursive(
             let mut texture = 0;
             gles.GenTextures(1, &mut texture);
             gles.BindTexture(gles11::TEXTURE_2D, texture);
-            // Update original layer texture
-            env.objc.borrow_mut::<CALayerHostObject>(layer).gles_texture = Some(texture);
+            host_obj.gles_texture = Some(texture);
         }
     }
 
-    // Update original layer texture with CAEAGLLayer pixels (slow path), if any
+    // Update texture with CAEAGLLayer pixels (slow path), if any
     if need_update {
-        let original_host_obj = env.objc.borrow_mut::<CALayerHostObject>(layer);
-        if let Some((ref mut pixels, width, height)) = original_host_obj.presented_pixels {
+        if let Some((ref mut pixels, width, height)) = host_obj.presented_pixels {
             // The pixels are always RGBA, but if the layer is opaque then the
             // alpha channel is meant to be ignored. glTexImage2D() has no
             // option to ignore it, so let's manually set them to 255.
-            if original_host_obj.opaque {
+            if host_obj.opaque {
                 let mut i = 3;
                 while i < pixels.len() {
                     pixels[i] = 255;
@@ -559,45 +571,40 @@ unsafe fn composite_layer_recursive(
                 }
             }
 
-            upload_rgba8_pixels(gles.as_mut(), pixels, (width, height));
+            upload_rgba8_pixels(gles, pixels, (width, height));
         }
     }
+
+    // re-borrow immutably
+    let host_obj = objc.borrow::<CALayerHostObject>(layer);
 
     // Update texture with CGImageRef or CGContextRef pixels, if any
     if need_update {
         if host_obj.contents != nil {
-            let image = cg_image::borrow_image(&env.objc, host_obj.contents);
+            let image = cg_image::borrow_image(objc, host_obj.contents);
 
             // No special handling for opacity is needed here: the alpha channel
             // on an image is meaningful and won't be ignored.
-            upload_rgba8_pixels(gles.as_mut(), image.pixels(), image.dimensions());
+            upload_rgba8_pixels(gles, image.pixels(), image.dimensions());
         } else if let Some(cg_context) = host_obj.cg_context {
             // Make sure this is in sync with the code in ca_layer.rs that
             // sets up the context!
-            let (width, height, data) = cg_bitmap_context::get_data(&env.objc, cg_context);
+            let (width, height, data) = cg_bitmap_context::get_data(objc, cg_context);
             let size = width * height * 4;
-            let pixels = env.mem.bytes_at(data.cast(), size);
-            upload_rgba8_pixels(gles.as_mut(), pixels, (width, height));
+            let pixels = mem.bytes_at(data.cast(), size);
+            upload_rgba8_pixels(gles, pixels, (width, height));
         }
     }
 
+    // re-borrow mutably
+    let host_obj = objc.borrow_mut::<CALayerHostObject>(layer);
+
     if need_update {
-        // Update original layer field
-        env.objc
-            .borrow_mut::<CALayerHostObject>(layer)
-            .gles_texture_is_up_to_date = true;
+        host_obj.gles_texture_is_up_to_date = true;
     }
 
     // Draw texture, if any
     if need_texture {
-        let misc = env
-            .framework_state
-            .core_animation
-            .composition
-            .misc_gl_objects
-            .as_ref()
-            .unwrap();
-
         gles.Color4f(opacity, opacity, opacity, opacity);
         if opacity == 1.0 && host_obj.opaque && !have_background {
             gles.Disable(gles11::BLEND);
@@ -630,20 +637,22 @@ unsafe fn composite_layer_recursive(
             0 as *const GLvoid,
         );
     }
-    std::mem::drop(gles);
 
     // avoid holding mutable borrow while recursing
-    let original_host_obj = env.objc.borrow_mut::<CALayerHostObject>(layer);
-    for &child_layer in &original_host_obj.sublayers.clone() {
+    let sublayers = std::mem::take(&mut host_obj.sublayers);
+    for &child_layer in &sublayers {
         // TODO: clipping/masksToBounds support
         composite_layer_recursive(
-            env,
-            animation_state,
+            gles,
+            objc,
+            mem,
+            misc,
             child_layer,
-            cumulative_transform,
+            /* origin: */ next_origin,
             opacity,
         )
     }
+    objc.borrow_mut::<CALayerHostObject>(layer).sublayers = sublayers;
 }
 
 const FLOATS_PER_POINT: usize = 2;

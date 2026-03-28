@@ -283,7 +283,8 @@ impl super::ObjC {
                 );
             }
         }
-    }
+}
+
 
     /// Getting a refcount of an object.
     /// While Apple's docs advise to not relay on the returned value,

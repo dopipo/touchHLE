@@ -14,7 +14,6 @@ mod nullable_box;
 
 use crate::abi::{CallFromHost, GuestFunction};
 use crate::audio::openal::OpenALManager;
-use crate::cpu::Cpu;
 use crate::libc::semaphore::sem_t;
 use crate::mem::{GuestUSize, MutPtr, MutVoidPtr};
 use crate::{
@@ -28,7 +27,6 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use crate::libc::pthread::cond::pthread_cond_t;
-use crate::window::DeviceFamily;
 use corosensei::{Coroutine, Yielder};
 pub use mutex::{MutexId, MutexType, PTHREAD_MUTEX_DEFAULT};
 use nullable_box::NullableBox;
@@ -41,7 +39,7 @@ pub type HostContext = Coroutine<Environment, Environment, Environment>;
 /// Bookkeeping for a thread.
 pub struct Thread {
     /// Once a thread finishes, this is set to false.
-    pub active: bool,
+    pub state: ThreadState,
     /// If this is not [ThreadBlock::NotBlocked], the thread is not executing
     /// until a certain condition is fufilled.
     pub blocked_by: ThreadBlock,
@@ -53,7 +51,7 @@ pub struct Thread {
     /// When a thread is currently executing, its state is stored directly in
     /// the CPU, rather than in a context object. In that case, this field is
     /// None. See also: [std::mem::take] and [cpu::Cpu::swap_context].
-    guest_context: Option<Box<cpu::CpuContext>>,
+    pub guest_context: Option<Box<cpu::CpuContext>>,
     /// The coroutine associated with this thread.
     ///
     /// In more typical rust, this is equivalent to to a [std::future::Future].
@@ -72,21 +70,37 @@ impl Thread {
     fn is_blocked(&self) -> bool {
         !matches!(self.blocked_by, ThreadBlock::NotBlocked)
     }
+    pub fn is_alive(&self) -> bool {
+        !matches!(self.state, ThreadState::Dead)
+    }
+    pub fn is_running(&self) -> bool {
+        matches!(self.state, ThreadState::Running | ThreadState::Stepping)
+    }
 }
 
 impl std::fmt::Debug for Thread {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Thread {{ active: {:?}, blocked_by: {:?}, return_value: {:?} }}",
-            self.active, self.blocked_by, self.return_value
+            "Thread {{ state: {:?}, blocked_by: {:?}, return_value: {:?} }}",
+            self.state, self.blocked_by, self.return_value
         )
     }
 }
 
+// Currently we consider a thread taking 1/3 of a frame (~5.5ms) as 
+// an amount that should cause a warning.
+const COROUTINE_UNACCEPTABLE_TIME: Duration = Duration::from_nanos(5555555);
+
 /// The struct containing the entire emulator state. Methods are provided for
 /// execution and management of threads.
 pub struct Environment {
+    // BEFOREMERGE: Note: these are all split up instead of there being one
+    // Environment inside a NullableBox since rust (intentionally) doesn't
+    // understand "split borrows" behind a Deref type.
+    // This can't change without a large amount of code refactoring or
+    // proc macro magic.
+    //
     /// Reference point for various timing functions.
     pub startup_time: Instant,
     pub bundle: NullableBox<bundle::Bundle>,
@@ -113,9 +127,20 @@ pub struct Environment {
     pub dump_file: Option<std::fs::File>,
     pub is_app_picker: bool,
     yielder: *const Yielder<Environment, Environment>,
-    // The amount of ticks to run for Some(value), or single-stepping for None.
-    // Sadly, setting ticks to 1 does not step properly, so Option is required.
+    /// The amount of ticks to run for Some(value), or single-stepping for None.
+    /// Sadly, setting ticks to 1 does not step properly, so Option is required.
     remaining_ticks: Option<u64>,
+    // The length of time that we consider unacceptable for a coroutine to use
+    // without returning to the scheduler. This is set to predefined value
+    // initially, then increases to the maximum amount of time spent in any
+    // single coroutine run.
+    //
+    // This is needed because our threading system is only preemptive for guest
+    // code, and is cooperative for host code. If our host code doesn't
+    // relinquish it's control of the single host thread (either by explicitly
+    // calling env.yield_thread() or implicitly by calling guest code) it
+    // prevents other threads from running, which is not good.
+    coroutine_unacceptable_time: Duration,
     panic_cell: Rc<Cell<Option<Environment>>>,
 }
 
@@ -146,6 +171,36 @@ pub enum ThreadBlock {
     Joining(ThreadId, MutPtr<MutVoidPtr>),
     // Thread has hit a cpu error, and is waiting to be debugged.
     WaitingForDebugger(Option<cpu::CpuError>),
+}
+
+impl std::fmt::Display for ThreadBlock {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ThreadBlock::NotBlocked => write!(f, "Running"),
+            ThreadBlock::Sleeping(wake_time) => {
+                let remaining = wake_time.checked_duration_since(Instant::now());
+                match remaining {
+                    Some(dur) => write!(f, "Sleeping for {:.3}s", dur.as_secs_f32()),
+                    None => write!(f, "Waking"),
+                }
+            }
+            ThreadBlock::Mutex(ptr) => write!(f, "Blocked on mutex {ptr:?}"),
+            ThreadBlock::Semaphore(ptr) => write!(f, "Blocked on semaphore {ptr:?}"),
+            ThreadBlock::Condition(ptr) => write!(f, "Blocked on condition {ptr:?}"),
+            // tid adds 1 to match gdb's thread numbers
+            ThreadBlock::Joining(tid, _) => write!(f, "Joining on thread {}", tid + 1),
+            // Unlikely to be seen
+            ThreadBlock::WaitingForDebugger(_) => write!(f, "Waiting for debugger"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ThreadState {
+    Running,
+    Stepping,
+    Paused,
+    Dead,
 }
 
 struct BinaryDependencyNode {
@@ -242,79 +297,37 @@ static ENVIRONMENT_INSTANCE_EXISTS: std::sync::atomic::AtomicBool =
 
 impl Environment {
     /// Loads the binary and sets up the emulator.
+    ///
+    /// `env_for_salvage` can be used to provide an existing environment (in
+    /// practice, the app picker's, created with [Environment::new_without_app])
+    /// that is to be destroyed. Certain components may be salvaged from the
+    /// old environment, but their states will be reset, so the result should be
+    /// "like new". This option exists because touchHLE on Android would crash
+    /// when allocating a second [mem::Mem] instance, since it believe.
     pub fn new(
         bundle: bundle::Bundle,
         fs: fs::Fs,
-        mut options: options::Options,
-        app_args: Vec<String>,
+        options: options::Options,
+        env_for_salvage: Option<Environment>,
     ) -> Result<Environment, String> {
         let startup_time = Instant::now();
 
+        // Extract things to salvage from the old environment, and then drop it.
+        // This needs to be done before creating a new window, because SDL2 only
+        // allows one window at once.
+        let mem_for_salvage = if let Some(env_for_salvage) = env_for_salvage {
+            let mem = env_for_salvage.salvage();
+            // Everything other than the memory is now dropped.
+            Some(mem)
+        } else {
+            None
+        };
+
         // Enforces the one (real) Environment limit. See `with_yielder` for
-        // why this is needed.
+        // why this is needed. We have to do this after an env is salvaged.
         if ENVIRONMENT_INSTANCE_EXISTS.swap(true, std::sync::atomic::Ordering::SeqCst) {
             return Err("Only one (real) Environment can exist at a time!".to_string());
         }
-
-        // Certain apps need to launch in a non-portrait orientation, and this
-        // should be handled before creating the window because handling of
-        // window rotation after-the-fact is somewhat glitchy.
-        // This also ensures the splash screen is correctly oriented.
-        if options.initial_orientation == window::DeviceOrientation::Portrait {
-            if let Some(&non_portrait_orientation) = bundle
-                .supported_interface_orientations()
-                .iter()
-                .find(|&&o| o != "UIInterfaceOrientationPortrait")
-            {
-                // TODO: Overwriting the options might not be ideal; do we need
-                //       to distinguish this kind of orientation change from
-                //       others?
-                options.initial_orientation = match non_portrait_orientation {
-                    // UIInterfaceOrientation values are flipped relative to
-                    // (UI)DeviceOrientation values (content has to rotate in
-                    // the opposite direction to how the device rotates).
-                    "UIInterfaceOrientationLandscapeLeft" => {
-                        window::DeviceOrientation::LandscapeRight
-                    }
-                    "UIInterfaceOrientationLandscapeRight" => {
-                        window::DeviceOrientation::LandscapeLeft
-                    }
-                    // This appears to be an older way set the orientation.
-                    // From testing, it seems to correspond to left.
-                    "UIInterfaceOrientationLandscape" => window::DeviceOrientation::LandscapeLeft,
-                    other => unimplemented!("Unsupported startup orientation: {:?}", other),
-                };
-                log!("App needs non-portrait user interface orientation {:?}, applying device orientation {:?}.", non_portrait_orientation, options.initial_orientation);
-            }
-        }
-
-        let device_family_override = options.device_family;
-        let device_family_array = bundle.device_family_array();
-        let device_family = match device_family_array.len() {
-            // iPhone only or iPad only
-            1 => {
-                let only_supported = device_family_array[0];
-                if let Some(dfo) = device_family_override {
-                    if dfo != only_supported {
-                        log!("Warning: User-defined {:?} device family override is not supported by the app! ignoring", dfo);
-                    }
-                }
-                only_supported
-            }
-            // iPhone and iPad
-            2 => {
-                if let Some(dfo) = device_family_override {
-                    assert!(device_family_array.contains(&dfo));
-                    dfo
-                } else {
-                    assert!(device_family_array.contains(&DeviceFamily::iPhone));
-                    DeviceFamily::iPhone
-                }
-            }
-            _ => unreachable!(),
-        };
-        log!("{:?} device family is chosen.", device_family);
-        options.device_family = Some(device_family);
 
         let window = if options.headless {
             None
@@ -359,7 +372,11 @@ impl Environment {
             )))
         };
 
-        let mut mem = mem::Mem::new();
+        let mut mem = if let Some(mem) = mem_for_salvage {
+            mem::Mem::refurbish(mem)
+        } else {
+            mem::Mem::new()
+        };
 
         let is_spore = bundle.bundle_identifier().starts_with("com.ea.spore");
         // We always reset this flag depending on which game is launched.
@@ -367,54 +384,34 @@ impl Environment {
         if is_spore {
             log!("Applying game-specific hack for Spore Origins: zeroing memory on alloc instead of free.");
         }
-        let executable = mach_o::MachO::load_from_file(
-            bundle.executable_path(),
-            &fs,
-            &mut mem,
-            /* slide: */ 0,
-        )
-        .map_err(|e| format!("Could not load executable: {e}"))?;
+
+        let executable = mach_o::MachO::load_from_file(bundle.executable_path(), &fs, &mut mem)
+            .map_err(|e| format!("Could not load executable: {e}"))?;
 
         let mut dylibs = Vec::new();
         for dylib in &executable.dynamic_libraries {
+            if dylib == "/usr/lib/libSystem.B.dylib" || dylib == "/usr/lib/libobjc.A.dylib" {
+                // We have host implementations of these
+                continue;
+            }
+
             // There are some Free Software libraries bundled with touchHLE and
             // exposed via the guest file system (see Fs::new()).
-            let dylib_path = fs::GuestPath::new(dylib);
-            if fs.is_file(dylib_path) {
-                // We use hardcoded slide values for libgcc and libstdc++
-                // based on base addresses of those dylibs prior to iOS 3.1
-                // TODO: implement some kind of ASLR instead of hardcoding
-                assert!(dylib_path.as_str().starts_with("/usr/lib/"));
-                let name = dylib_path.file_name().unwrap();
-                let dylib_slide = match name {
-                    "libstdc++.6.dylib" | "libstdc++.6.0.9.dylib" => 0x3748a000,
-                    "libgcc_s.1.dylib" => 0x30000000,
-                    "libz.1.dylib" | "libz.1.2.3.dylib" | "libz.dylib" | "libz.1.1.3.dylib" => {
-                        // We build `libz` from sources with our OSS toolchain,
-                        // the base address is already set and sliding is not
-                        // needed.
-                        0
-                    }
-                    _ => unimplemented!("Unknown binary slide for {}", name),
-                };
-                let dylib = mach_o::MachO::load_from_file(
-                    fs::GuestPath::new(dylib),
-                    &fs,
-                    &mut mem,
-                    dylib_slide,
-                )
-                .map_err(|e| format!("Could not load bundled dylib: {e}"))?;
+            if fs.is_file(fs::GuestPath::new(dylib)) {
+                let dylib = mach_o::MachO::load_from_file(fs::GuestPath::new(dylib), &fs, &mut mem)
+                    .map_err(|e| format!("Could not load bundled dylib: {e}"))?;
                 dylibs.push(dylib);
-            // Otherwise, look for it in our host implementations.
-            } else if !crate::dyld::DYLIB_LIST
-                .iter()
-                .any(|d| d.path == dylib || d.aliases.contains(&dylib.as_str()))
-            {
-                log!(
-                    "Warning: app binary depends on unimplemented or missing dylib \"{}\"",
-                    dylib
-                );
-            }
+            } else {
+                // System frameworks will have host implementations.
+                // TODO: warn about unimplemented frameworks?
+                if !dylib.starts_with("/System/Library/Frameworks/") {
+                    log!(
+                        "Warning: app binary depends on unexpected dylib \"{}\"",
+                        dylib
+                    );
+                }
+                continue;
+            };
         }
 
         let entry_point_addr = executable
@@ -445,13 +442,8 @@ impl Environment {
             let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 env.with_yielder(yielder, move |env| {
                     echo!("CPU emulation begins now.");
-                    // Some apps use the stack inside the static initializer.
-                    // While properly behaving apps should be fine, some app
-                    // will try to poke the top of the stack, so we'll give
-                    // it some room.
-                    env.cpu.regs_mut()[Cpu::SP] = 0xFFFFF000;
-                    // Static initializers for libraries must be run before
-                    // the initializer in the app binary.
+                    // Static initializers for libraries must be run before the
+                    // initializer in the app binary.
                     for bin_idx in env.get_sorted_bin_indices().unwrap() {
                         let Some(bin) = env.bins.get(bin_idx) else {
                             continue;
@@ -469,51 +461,15 @@ impl Environment {
                         let count = section.size / 4;
                         for i in 0..count {
                             let func = env.mem.read(base + i);
-                            log_dbg!(
-                                "Calling static initializer at {:?} from {:?}",
-                                func,
-                                (base + i)
-                            );
                             () = func.call_from_host(env, ());
                         }
                         log_dbg!("Static initialization done");
                     }
 
-                    {
-                        let bin_path = env.bundle.executable_path();
+                    let regs = env.cpu.regs_mut();
+                    regs[cpu::Cpu::LR] = env.dyld.thread_exit_routine().addr_with_thumb_bit();
 
-                        let envp_list: Vec<String> = env
-                            .env_vars
-                            .clone()
-                            .iter_mut()
-                            .map(|tuple| {
-                                [
-                                    std::str::from_utf8(tuple.0).unwrap(),
-                                    "=",
-                                    env.mem.cstr_at_utf8(*tuple.1).unwrap(),
-                                ]
-                                .concat()
-                            })
-                            .collect();
-                        let envp_ref_list: Vec<&str> =
-                            envp_list.iter().map(|keyvalue| keyvalue.as_str()).collect();
-
-                        let bin_path_apple_key = format!("executable_path={}", bin_path.as_str());
-
-                        let argv = Vec::from_iter(
-                            std::iter::once(bin_path.as_str())
-                                .chain(app_args.iter().map(|s| s.as_str())),
-                        );
-                        let envp = envp_ref_list.as_slice();
-                        let apple = &[bin_path_apple_key.as_str()];
-                        stack::prep_stack_for_start(&mut env.mem, &mut env.cpu, &argv, envp, apple);
-                    }
-
-                    // Manually call here, since running call_from_host pushes
-                    // a stack frame and disrupts abi for _start.
-                    env.cpu
-                        .branch_with_link(entry_point_addr, env.dyld.thread_exit_routine());
-                    env.run_call();
+                    let _: () = entry_point_addr.call_from_host(env, ());
 
                     panic!("Main function exited unexpectedly!");
                 })
@@ -526,7 +482,7 @@ impl Environment {
             env
         });
         let main_thread = Thread {
-            active: true,
+            state: ThreadState::Running,
             blocked_by: ThreadBlock::NotBlocked,
             return_value: None,
             guest_context: None,
@@ -556,16 +512,44 @@ impl Environment {
             dump_file: None,
             is_app_picker: false,
             yielder: std::ptr::null(),
+            coroutine_unacceptable_time: COROUTINE_UNACCEPTABLE_TIME,
             remaining_ticks: None,
             panic_cell: Rc::new(Cell::new(None)),
         };
-
+        
         if env.options.dumping_options.any() {
             env.dump_file =
                 Some(std::fs::File::create(&env.options.dumping_file).map_err(|e| e.to_string())?);
         }
 
         env.set_up_initial_env_vars();
+        {
+            let bin_path = env.bundle.executable_path();
+
+            let envp_list: Vec<String> = env
+                .env_vars
+                .clone()
+                .iter_mut()
+                .map(|tuple| {
+                    [
+                        std::str::from_utf8(tuple.0).unwrap(),
+                        "=",
+                        env.mem.cstr_at_utf8(*tuple.1).unwrap(),
+                    ]
+                    .concat()
+                })
+                .collect();
+            let envp_ref_list: Vec<&str> =
+                envp_list.iter().map(|keyvalue| keyvalue.as_str()).collect();
+
+            let bin_path_apple_key = format!("executable_path={}", bin_path.as_str());
+
+            let argv = &[bin_path.as_str()];
+            let envp = envp_ref_list.as_slice();
+            let apple = &[bin_path_apple_key.as_str()];
+            stack::prep_stack_for_start(&mut env.mem, &mut env.cpu, argv, envp, apple);
+        }
+
         dyld::Dyld::do_late_linking(&mut env);
 
         env.cpu.set_cpsr(cpu::Cpu::CPSR_USER_MODE);
@@ -585,10 +569,7 @@ impl Environment {
                 .accept()
                 .map_err(|e| format!("Could not accept connection: {e}"))?;
             echo!("Debugger client connected on {}.", client_addr);
-            let mut gdb_server = gdb::GdbServer::new(client);
-            let step = gdb_server.wait_for_debugger(None, &mut env.cpu, &mut env.mem);
-            assert!(!step, "Can't step right now!"); // TODO?
-            env.gdb_server = Some(Box::new(gdb_server));
+            env.gdb_server = Some(Box::new(gdb::GdbServer::new(client)));
         }
 
         if env.options.dumping_options.linking_info {
@@ -660,7 +641,7 @@ impl Environment {
         });
 
         let main_thread = Thread {
-            active: true,
+            state: ThreadState::Running,
             blocked_by: ThreadBlock::NotBlocked,
             return_value: None,
             guest_context: None,
@@ -690,6 +671,7 @@ impl Environment {
             dump_file: None,
             is_app_picker: true,
             yielder: std::ptr::null(),
+            coroutine_unacceptable_time: COROUTINE_UNACCEPTABLE_TIME,
             remaining_ticks: None,
             panic_cell: Rc::new(Cell::new(None)),
         };
@@ -749,6 +731,7 @@ impl Environment {
             dump_file: None,
             is_app_picker: true,
             yielder: std::ptr::null(),
+            coroutine_unacceptable_time: Duration::from_secs_f32(0.0),
             remaining_ticks: None,
             panic_cell: Rc::new(Cell::new(None)),
         }
@@ -833,7 +816,7 @@ impl Environment {
         );
         self.cpu.dump_regs();
         for (tid, thread) in self.threads.iter().enumerate() {
-            if thread.active && tid != self.current_thread {
+            if thread.is_alive() && tid != self.current_thread {
                 echo_no_panic!("Dumping registers for thread #{}", tid);
                 let Some(ctx) = thread.guest_context.as_ref() else {
                     echo_no_panic!("Could not get registers for thread {}!", tid);
@@ -844,7 +827,7 @@ impl Environment {
         }
     }
 
-    fn stack_trace_current(&self) {
+    pub fn stack_trace_current(&self) {
         if self.current_thread == 0 {
             echo_no_panic!("Attempting to produce stack trace for main thread:");
         } else {
@@ -856,14 +839,14 @@ impl Environment {
         self.stack_trace_for_thread(self.current_thread);
     }
 
-    fn stack_trace_all(&self) {
+    pub fn stack_trace_all(&self) {
         echo_no_panic!(
             "Attempting to produce stack trace for current thread (#{}):",
             self.current_thread
         );
         self.stack_trace_for_thread(self.current_thread);
         for tid in 0..self.threads.len() {
-            if self.threads[tid].active && tid != self.current_thread {
+            if self.threads[tid].is_alive() && tid != self.current_thread {
                 echo_no_panic!("Attempting to produce stack trace for thread #{}:", tid);
                 self.stack_trace_for_thread(tid);
             }
@@ -938,9 +921,10 @@ impl Environment {
         user_data: mem::MutVoidPtr,
         stack_size: GuestUSize,
     ) -> ThreadId {
+        self.stack_trace_all();
         let stack_alloc = self.mem.alloc(stack_size);
         let stack_high_addr = stack_alloc.to_bits() + stack_size;
-        assert!(stack_high_addr.is_multiple_of(4));
+        assert!(stack_high_addr % 4 == 0);
 
         let thread_routine = Coroutine::new(move |yielder, mut env: Environment| {
             let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -958,7 +942,7 @@ impl Environment {
                         start_routine.call_from_host(env, (user_data,));
                     let curr_thread = &mut env.threads[env.current_thread];
                     curr_thread.return_value = Some(return_value);
-                    curr_thread.active = false;
+                    curr_thread.state = ThreadState::Dead;
                 });
             }));
             if let Err(e) = res {
@@ -970,7 +954,7 @@ impl Environment {
         });
 
         self.threads.push(Thread {
-            active: true,
+            state: ThreadState::Running,
             blocked_by: ThreadBlock::NotBlocked,
             return_value: None,
             guest_context: Some(Box::new(cpu::CpuContext::new())),
@@ -1094,7 +1078,7 @@ impl Environment {
         self.yield_thread(ThreadBlock::Joining(joinee_thread, ptr));
     }
 
-    pub fn run_app_picker<F, R>(mut self, f: F) -> R
+    pub fn run_app_picker<F, R>(mut self, f: F) -> (R, Environment)
     where
         F: FnOnce(&mut Environment) -> R + 'static,
         R: 'static,
@@ -1106,8 +1090,7 @@ impl Environment {
                 env.with_yielder(yielder, f)
             }));
             match res {
-                // We want the environment to be dropped outside of the
-                // coroutine, so send it back when we return.
+                // Return the environment so some parts of it can be salvaged.
                 Ok(r) => (r, env),
                 Err(e) => {
                     let panic_cell = env.panic_cell.clone();
@@ -1123,7 +1106,7 @@ impl Environment {
             self = match res {
                 Ok(ret) => match ret {
                     corosensei::CoroutineResult::Yield(env) => env,
-                    corosensei::CoroutineResult::Return((ret_val, _env)) => {
+                    corosensei::CoroutineResult::Return(ret_val) => {
                         return ret_val;
                     }
                 },
@@ -1159,9 +1142,12 @@ impl Environment {
     pub fn run(mut self) {
         let mut curr_host_context = self.threads[0].host_context.take().unwrap();
         let panic_cell = self.panic_cell.clone();
-        let mut stepping = false;
+        if let Some(mut gdb_server) = self.gdb_server.take() {
+            gdb_server.wait_for_debugger(None, &mut self);
+            self.gdb_server = Some(gdb_server);
+        }
         loop {
-            if stepping {
+            if self.threads[self.current_thread].state == ThreadState::Stepping {
                 self.remaining_ticks = None;
             } else {
                 // 100,000 ticks is an arbitrary number. It needs to be
@@ -1175,9 +1161,13 @@ impl Environment {
             if let Some(w) = self.window.as_mut() {
                 w.on_main_stack = false;
             }
+
+            let start = Instant::now();
             let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 curr_host_context.resume(self)
             }));
+            let elapsed = start.elapsed();
+
             self = match res {
                 Ok(ret) => match ret {
                     corosensei::CoroutineResult::Yield(env) => env,
@@ -1220,6 +1210,12 @@ impl Environment {
                 }
             };
 
+            if elapsed > self.coroutine_unacceptable_time {
+                log!("Coroutine blocked main thread by {:?}", elapsed);
+                self.stack_trace_current();
+                self.coroutine_unacceptable_time = elapsed;
+            }
+
             let mut old_context = if kill_current_thread {
                 log_dbg!("Killing thread {}", self.current_thread);
                 panic_cell.set(Some(self));
@@ -1229,10 +1225,6 @@ impl Environment {
                     std::process::exit(-1);
                 };
                 self = env;
-                let stack = self.threads[self.current_thread].stack.take().unwrap();
-                let stack: mem::MutVoidPtr = mem::Ptr::from_bits(*stack.start());
-                log_dbg!("Freeing thread {} stack {:?}", self.current_thread, stack);
-                self.mem.free(stack);
                 None
             } else {
                 Some(curr_host_context)
@@ -1253,32 +1245,11 @@ impl Environment {
                     window.poll_for_events(&self.options);
                 }
                 let curr_thread_block = self.threads[self.current_thread].blocked_by.clone();
-                if stepping || matches!(curr_thread_block, ThreadBlock::WaitingForDebugger(_)) {
-                    if old_context.is_none() {
-                        let old_thread = self.current_thread;
-                        let next_thread = self.schedule_next_thread();
-                        self.switch_thread(&mut old_context, next_thread);
-                        echo!(
-                            "\nGDB WARNING ------- Thread {} has exited - switched thread to {}",
-                            old_thread,
-                            next_thread
-                        );
-                    }
-                    match self.threads[self.current_thread].blocked_by {
-                        ThreadBlock::NotBlocked | ThreadBlock::WaitingForDebugger(_) => {}
-                        _ => {
-                            let old_thread = self.current_thread;
-                            let next_thread = self.schedule_next_thread();
-                            self.switch_thread(&mut old_context, next_thread);
-                            let block = &self.threads[old_thread].blocked_by;
-                            echo!(
-                                "\nGDB WARNING ------- Thread {} is blocked by {:?} - switched thread to {}",
-                                old_thread,
-                                block,
-                                next_thread
-                            );
-                        }
-                    }
+                if matches!(
+                    self.threads[self.current_thread].state,
+                    ThreadState::Stepping
+                ) || matches!(curr_thread_block, ThreadBlock::WaitingForDebugger(_))
+                {
                     let reason = if let ThreadBlock::WaitingForDebugger(reason) = curr_thread_block
                     {
                         self.threads[self.current_thread].blocked_by = ThreadBlock::NotBlocked;
@@ -1286,23 +1257,18 @@ impl Environment {
                     } else {
                         None
                     };
-                    let will_step = self.gdb_server.as_deref_mut().unwrap().wait_for_debugger(
-                        reason.clone(),
-                        self.cpu.as_mut(),
-                        self.mem.as_mut(),
-                    );
-                    if will_step {
-                        stepping = true;
-                    }
+                    let mut gdb_server = self.gdb_server.take().unwrap();
+                    gdb_server.wait_for_debugger(reason.clone(), &mut self);
+                    self.gdb_server = Some(gdb_server);
+                } else if self
+                    .gdb_server
+                    .as_mut()
+                    .is_some_and(|server| server.break_was_sent())
+                {
+                    let mut gdb_server = self.gdb_server.take().unwrap();
+                    gdb_server.wait_for_debugger(Some(cpu::CpuError::Interrupt), &mut self);
+                    self.gdb_server = Some(gdb_server);
                 }
-
-                // Don't switch threads if stepping.
-                if stepping {
-                    assert!(old_context.is_some());
-                    return;
-                }
-
-                stepping = false;
 
                 let next_thread = self.schedule_next_thread();
                 if next_thread != self.current_thread {
@@ -1338,7 +1304,7 @@ impl Environment {
                         std::mem::drop(ctx);
                         self = panic_cell.take().unwrap_or_else(|| {
                             log_no_panic!(
-                            "Did not recieve env from coroutine unwind during drop, must abort!"
+                            "Did not recieve env from coroutine unwind during salvage, must abort!"
                             );
                             std::process::exit(-1)
                         });
@@ -1368,7 +1334,7 @@ impl Environment {
     /// This also internally switches the currently used guest context.
     fn switch_thread(&mut self, old_context: &mut Option<HostContext>, new_thread: ThreadId) {
         assert!(new_thread != self.current_thread);
-        assert!(self.threads[new_thread].active);
+        assert!(self.threads[new_thread].is_running());
 
         log_dbg!(
             "Switching thread: {} => {}",
@@ -1379,7 +1345,7 @@ impl Environment {
         let mut guest_ctx = self.threads[new_thread].guest_context.take().unwrap();
         self.cpu.swap_context(&mut guest_ctx);
         assert!(self.threads[self.current_thread].guest_context.is_none());
-        assert!(old_context.is_some() || !self.threads[self.current_thread].active);
+        assert!(old_context.is_some() || !self.threads[self.current_thread].is_alive());
         self.threads[self.current_thread].guest_context = Some(guest_ctx);
 
         let new_host_ctx = self.threads[new_thread].host_context.take().unwrap();
@@ -1489,7 +1455,7 @@ impl Environment {
 
     fn run_inner(&mut self) {
         let initial_thread = self.current_thread;
-        assert!(self.threads[initial_thread].active);
+        assert!(self.threads[initial_thread].is_running());
         assert!(self.threads[initial_thread].guest_context.is_none());
 
         loop {
@@ -1502,14 +1468,15 @@ impl Environment {
                     .run_or_step(&mut self.mem, self.remaining_ticks.as_mut());
 
                 match self.handle_cpu_state(state) {
-                    ThreadNextAction::Continue => {}
+                    ThreadNextAction::Continue => {
+                        if self.remaining_ticks.is_none() {
+                            break;
+                        }
+                    }
                     ThreadNextAction::ReturnToHost => return,
                     ThreadNextAction::DebugCpuError(e) => {
                         self.debug_cpu_error(e);
                     }
-                }
-                if self.remaining_ticks.is_none() {
-                    break;
                 }
             }
             self.yield_thread(ThreadBlock::NotBlocked);
@@ -1571,7 +1538,7 @@ impl Environment {
                 let thread_id = (self.current_thread + 1 + i) % self.threads.len();
                 let candidate = &mut self.threads[thread_id];
 
-                if !candidate.active {
+                if !candidate.is_running() {
                     continue;
                 }
                 match candidate.blocked_by {
@@ -1640,7 +1607,7 @@ impl Environment {
                         }
                     }
                     ThreadBlock::Joining(joinee_thread, ptr) => {
-                        if !self.threads[joinee_thread].active {
+                        if !self.threads[joinee_thread].is_alive() {
                             log_dbg!(
                                 "Thread {} joining with now finished thread {}.",
                                 self.current_thread,
@@ -1705,16 +1672,56 @@ impl Environment {
         generate_binary_load_order(&dylib_graph)
     }
 
-    /// Run a function using window and options on the parent stack if we are
-    /// inside a coroutine, or run it directly if we aren't. Some
-    /// [window::Window] functions require to be called inside this function.
+    /// Destroy the passed Environment, and return the Mem so it can be reused.
     ///
-    /// Android's ABI seems to dislike if certain functions aren't called from
-    /// the main stack. Since corosensei uses seperate stacks to run
-    /// coroutines, Android doesn't recognize it as the main stack, so those
-    /// functions need to be run on the main stack. Unfortunately, there's no
-    /// documentation of which functions need to be called with this, so we
-    /// have to check ourselves.
+    /// This is needed (primarily) for Android, where the OOM killer will
+    /// sometimes kill the app if we allocate the 4GB memory space twice.
+    fn salvage(mut self) -> mem::Mem {
+        if let Some(w) = self.window.as_mut() {
+            w.on_main_stack = false;
+        }
+        if !self
+            .threads
+            .iter()
+            .all(|thread| thread.host_context.is_none())
+        {
+            let panic_cell = self.panic_cell.clone();
+            let threads_len = self.threads.len();
+            for i in 0..threads_len {
+                let host_context = self.threads[i].host_context.take();
+                panic_cell.set(Some(self));
+                std::mem::drop(host_context);
+                self = panic_cell.take().unwrap_or_else(|| {
+                    log_no_panic!(
+                        "Did not recieve env from coroutine unwind during salvage, must abort!"
+                    );
+                    std::process::exit(-1)
+                });
+            }
+        }
+        unsafe {
+            let mem = std::mem::replace(&mut self.mem, NullableBox::null());
+            // Safe to drop env now since all the host contexts are dropped.
+            std::mem::drop(self);
+            mem.into_inner()
+        }
+    }
+
+    // BEFOREMERGE: I think it might be better if this was done automatically
+    // by all window functions. Unfortunately, you need Yielder to run on the
+    // parent stack. We can:
+    //     - Leave it as it is now (which would mean that all window functions
+    //       need to annotated with this at the call site, which is
+    //       error prone)
+    //     - Provide some kind of wrapper for yielder (since we don't want to
+    //       let threads arbitrarily yield - it breaks certain safety
+    //       expectations), and pass this in to every Window function that
+    //       needs it.
+    //
+    // Personally, I'm more or less fine with how it is now - we only need it
+    // in one function, two if we're calling window.poll_for_events inside
+    // the coroutines (there are more uses but they are already implicitly
+    // handled), but it's not necessarily the cleanest design.
     pub fn on_parent_stack_in_coroutine<F, R>(&mut self, f: F) -> R
     where
         F: FnOnce(&mut window::Window, &mut options::Options) -> R + Send,

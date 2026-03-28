@@ -7,8 +7,6 @@
 //!
 //! See also [crate::frameworks::uikit::ui_geometry].
 
-use std::ops::{Add, Mul, Sub};
-
 use super::CGFloat;
 use crate::abi::{impl_GuestRet_for_large_struct, GuestArg};
 use crate::dyld::{export_c_func, ConstantExports, FunctionExports, HostConstant};
@@ -56,36 +54,10 @@ impl std::fmt::Display for CGPoint {
         write!(f, "{{{x}, {y}}}")
     }
 }
-// Implemented to aid animation code.
-// Theres are the operations needed for the interpolation.
-impl Mul<f32> for CGPoint {
-    type Output = CGPoint;
-
-    fn mul(self, rhs: f32) -> Self::Output {
-        CGPoint {
-            x: self.x * rhs,
-            y: self.y * rhs,
-        }
-    }
-}
-impl Add<CGPoint> for CGPoint {
-    type Output = CGPoint;
-
-    fn add(self, rhs: CGPoint) -> Self::Output {
-        CGPoint {
-            x: self.x + rhs.x,
-            y: self.y + rhs.y,
-        }
-    }
-}
-impl Sub<CGPoint> for CGPoint {
-    type Output = CGPoint;
-
-    fn sub(self, rhs: CGPoint) -> Self::Output {
-        CGPoint {
-            x: self.x - rhs.x,
-            y: self.y - rhs.y,
-        }
+impl CGPoint {
+    /// Utility host function that isn't availible for some reason
+    pub fn distance_from_squared(self, other: CGPoint) -> CGFloat {
+        (self.x - other.x) * (self.x - other.x) + (self.y - other.y) * (self.y - other.y)
     }
 }
 // This function is rare because it is usually inlined.
@@ -132,38 +104,6 @@ impl std::fmt::Display for CGSize {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         let &CGSize { width, height } = self;
         write!(f, "{{{width}, {height}}}")
-    }
-}
-// Implemented to aid animation code.
-// Theres are the operations needed for the interpolation.
-impl Mul<f32> for CGSize {
-    type Output = CGSize;
-
-    fn mul(self, rhs: f32) -> Self::Output {
-        CGSize {
-            width: self.width * rhs,
-            height: self.height * rhs,
-        }
-    }
-}
-impl Add<CGSize> for CGSize {
-    type Output = CGSize;
-
-    fn add(self, rhs: CGSize) -> Self::Output {
-        CGSize {
-            width: self.width + rhs.width,
-            height: self.height + rhs.height,
-        }
-    }
-}
-impl Sub<CGSize> for CGSize {
-    type Output = CGSize;
-
-    fn sub(self, rhs: CGSize) -> Self::Output {
-        CGSize {
-            width: self.width - rhs.width,
-            height: self.height - rhs.height,
-        }
     }
 }
 // This function is rare because it is usually inlined.
@@ -221,38 +161,6 @@ impl std::fmt::Display for CGRect {
         write!(f, "{{{origin}, {size}}}")
     }
 }
-// Implemented to aid animation code.
-// Theres are the operations needed for the interpolation.
-impl Mul<f32> for CGRect {
-    type Output = CGRect;
-
-    fn mul(self, rhs: f32) -> Self::Output {
-        CGRect {
-            origin: self.origin * rhs,
-            size: self.size * rhs,
-        }
-    }
-}
-impl Add<CGRect> for CGRect {
-    type Output = CGRect;
-
-    fn add(self, rhs: CGRect) -> Self::Output {
-        CGRect {
-            origin: self.origin + rhs.origin,
-            size: self.size + rhs.size,
-        }
-    }
-}
-impl Sub<CGRect> for CGRect {
-    type Output = CGRect;
-
-    fn sub(self, rhs: CGRect) -> Self::Output {
-        CGRect {
-            origin: self.origin - rhs.origin,
-            size: self.size - rhs.size,
-        }
-    }
-}
 // This function is rare because it is usually inlined.
 fn CGRectEqualToRect(_env: &mut Environment, a: CGRect, b: CGRect) -> bool {
     a == b
@@ -264,6 +172,7 @@ pub const CGRectZero: CGRect = CGRect {
 };
 
 fn CGRectContainsPoint(_env: &mut Environment, rect: CGRect, point: CGPoint) -> bool {
+    log!("{rect:?} {point:?}");
     rect.origin.x <= point.x
         && rect.origin.x + rect.size.width > point.x
         && rect.origin.y <= point.y
@@ -277,24 +186,31 @@ fn CGRectIntersectsRect(_env: &mut Environment, rect1: CGRect, rect2: CGRect) ->
             <= (rect1.origin.y + rect1.size.height).min(rect2.origin.y + rect2.size.height)
 }
 
-fn CGRectGetMinX(_env: &mut Environment, rect: CGRect) -> CGFloat {
-    rect.origin.x
+fn CGRectIntersection(_env: &mut Environment, rect1: CGRect, rect2: CGRect) -> bool {
+    rect1.origin.x.max(rect2.origin.x)
+        <= (rect1.origin.x + rect1.size.width).min(rect2.origin.x + rect2.size.width)
+        && rect1.origin.y.max(rect2.origin.y)
+            <= (rect1.origin.y + rect1.size.height).min(rect2.origin.y + rect2.size.height)
 }
 
 fn CGRectGetMidX(_env: &mut Environment, rect: CGRect) -> CGFloat {
-    rect.origin.x + rect.size.width / 2.0
+    rect.origin.x
+}
+
+fn CGRectGetMinX(_env: &mut Environment, rect: CGRect) -> CGFloat {
+    rect.origin.x
 }
 
 fn CGRectGetMaxX(_env: &mut Environment, rect: CGRect) -> CGFloat {
     rect.origin.x + rect.size.width
 }
 
-fn CGRectGetMinY(_env: &mut Environment, rect: CGRect) -> CGFloat {
+fn CGRectGetMidY(_env: &mut Environment, rect: CGRect) -> CGFloat {
     rect.origin.y
 }
 
-fn CGRectGetMidY(_env: &mut Environment, rect: CGRect) -> CGFloat {
-    rect.origin.y + rect.size.height / 2.0
+fn CGRectGetMinY(_env: &mut Environment, rect: CGRect) -> CGFloat {
+    rect.origin.y
 }
 
 fn CGRectGetMaxY(_env: &mut Environment, rect: CGRect) -> CGFloat {
@@ -322,6 +238,20 @@ fn CGRectMake(
     }
 }
 
+fn CGRectOffset(
+    _env: &mut Environment,
+    _rect: CGRect,
+    x: CGFloat,
+    y: CGFloat,
+    width: CGFloat,
+    height: CGFloat,
+) -> CGRect {
+    CGRect {
+        origin: CGPoint { x, y },
+        size: CGSize { width, height },
+    }
+}
+
 pub const CGRectNull: CGRect = CGRect {
     origin: CGPoint {
         x: f32::INFINITY,
@@ -334,35 +264,28 @@ fn CGRectIsNull(_env: &mut Environment, rect: CGRect) -> bool {
     rect == CGRectNull
 }
 
-fn CGRectOffset(_env: &mut Environment, rect: CGRect, dx: CGFloat, dy: CGFloat) -> CGRect {
-    assert!(rect != CGRectNull); // TODO
-    CGRect {
-        origin: CGPoint {
-            x: rect.origin.x + dx,
-            y: rect.origin.y + dy,
-        },
-        size: rect.size,
-    }
+pub const CGRectEmpty: CGRect = CGRect {
+    origin: CGPoint {
+        x: f32::INFINITY,
+        y: f32::INFINITY,
+    },
+    size: CGSizeZero,
+};
+
+fn CGRectIsEmpty(_env: &mut Environment, rect: CGRect) -> bool {
+    rect == CGRectEmpty
 }
 
-fn CGRectInset(_env: &mut Environment, rect: CGRect, dx: CGFloat, dy: CGFloat) -> CGRect {
-    let res = CGRect {
-        origin: CGPoint {
-            x: rect.origin.x + dx,
-            y: rect.origin.y + dy,
-        },
-        size: CGSize {
-            width: rect.size.width - 2.0 * dx,
-            height: rect.size.height - 2.0 * dy,
-        },
-    };
-    assert!(res.size.width >= 0.0); // TODO return a null rectangle
-    assert!(res.size.height >= 0.0); // TODO return a null rectangle
+pub const CGRectInfinite: CGRect = CGRect {
+    origin: CGPoint {
+        x: f32::INFINITY,
+        y: f32::INFINITY,
+    },
+    size: CGSizeZero,
+};
 
-    // center invariant
-    assert!(rect.origin.x + rect.size.width / 2.0 == res.origin.x + res.size.width / 2.0);
-    assert!(rect.origin.y + rect.size.height / 2.0 == res.origin.y + res.size.height / 2.0);
-    res
+fn CGRectIsInfinite(_env: &mut Environment, rect: CGRect) -> bool {
+    rect == CGRectInfinite
 }
 
 pub const FUNCTIONS: FunctionExports = &[
@@ -371,18 +294,20 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CGRectEqualToRect(_, _)),
     export_c_func!(CGRectContainsPoint(_, _)),
     export_c_func!(CGRectIntersectsRect(_, _)),
-    export_c_func!(CGRectGetMinX(_)),
+    export_c_func!(CGRectIntersection(_, _)),
     export_c_func!(CGRectGetMidX(_)),
+    export_c_func!(CGRectGetMinX(_)),
     export_c_func!(CGRectGetMaxX(_)),
-    export_c_func!(CGRectGetMinY(_)),
     export_c_func!(CGRectGetMidY(_)),
+    export_c_func!(CGRectGetMinY(_)),
     export_c_func!(CGRectGetMaxY(_)),
     export_c_func!(CGRectGetHeight(_)),
     export_c_func!(CGRectGetWidth(_)),
     export_c_func!(CGRectMake(_, _, _, _)),
+    export_c_func!(CGRectOffset(_, _, _, _, _)),
     export_c_func!(CGRectIsNull(_)),
-    export_c_func!(CGRectOffset(_, _, _)),
-    export_c_func!(CGRectInset(_, _, _)),
+    export_c_func!(CGRectIsEmpty(_)),
+    export_c_func!(CGRectIsInfinite(_)),
 ];
 
 pub const CONSTANTS: ConstantExports = &[
@@ -401,5 +326,13 @@ pub const CONSTANTS: ConstantExports = &[
     (
         "_CGRectNull",
         HostConstant::Custom(|env| env.mem.alloc_and_write(CGRectNull).cast().cast_const()),
+    ),
+    (
+        "_CGRectEmpty",
+        HostConstant::Custom(|env| env.mem.alloc_and_write(CGRectEmpty).cast().cast_const()),
+    ),
+    (
+        "_CGRectInfinite",
+        HostConstant::Custom(|env| env.mem.alloc_and_write(CGRectInfinite).cast().cast_const()),
     ),
 ];

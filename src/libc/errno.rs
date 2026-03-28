@@ -17,15 +17,12 @@ pub const ESRCH: i32 = 3;
 pub const EINTR: i32 = 4;
 pub const EIO: i32 = 5;
 pub const EBADF: i32 = 9;
-pub const ECHILD: i32 = 10;
 pub const EDEADLK: i32 = 11;
-pub const EACCES: i32 = 13;
 pub const EBUSY: i32 = 16;
 pub const EEXIST: i32 = 17;
-pub const EISDIR: i32 = 21;
 pub const EINVAL: i32 = 22;
 pub const ESPIPE: i32 = 29;
-pub const EROFS: i32 = 30;
+pub const EAGAIN: i32 = 35;
 #[allow(dead_code)]
 pub const EPROTONOSUPPORT: i32 = 43;
 pub const ECONNRESET: i32 = 54;

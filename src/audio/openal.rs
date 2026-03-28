@@ -93,12 +93,6 @@ impl OpenALContext {
     pub fn GetContextsDevice(&self) -> *mut ALCdevice {
         self.device
     }
-
-    // According to both OpenAL docs and OpenALsoft source code, this is
-    // context independent, and can be called without one active.
-    pub unsafe fn GetEnumValue(enumName: *const ALchar) -> ALenum {
-        al_sys::alGetEnumValue(enumName)
-    }
 }
 
 impl Drop for OpenALContext {
@@ -120,14 +114,15 @@ impl OpenAL<'_> {
         al_sys::alDistanceModel(value)
     }
 
+    pub unsafe fn GetEnumValue(&self, enumName: *const ALchar) -> ALenum {
+        al_sys::alGetEnumValue(enumName)
+    }
+
     pub unsafe fn IsBuffer(&self, buffer: ALuint) -> ALboolean {
         al_sys::alIsBuffer(buffer)
     }
     pub unsafe fn IsSource(&self, source: ALuint) -> ALboolean {
         al_sys::alIsSource(source)
-    }
-    pub unsafe fn IsExtensionPresent(&self, extName: *const ALchar) -> ALboolean {
-        al_sys::alIsExtensionPresent(extName)
     }
 
     pub unsafe fn Enable(&self, capability: ALenum) {

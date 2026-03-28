@@ -4,7 +4,7 @@
 [workspace]
 
 [workspace.package]
-version = "0.2.3"
+version = "0.2.2"
 edition = "2021"
 license = "MPL-2.0"
 authors = ["touchHLE project contributors"]
@@ -44,16 +44,15 @@ mach_object = "0.1.17"
 plist = "1.8.0"
 zip = { version = "0.6.4", default-features = false, features = ["deflate"] }
 rusttype = "0.9.3"
+owned_ttf_parser = "0.15.2"
 # While most Symphonia codecs are (likely) unpatented/have freely licenseable 
-# patents as of 2024, all of the AAC profiles except AAC-LC (likely) have 
+# patents as of 2024, alf the AAC profiles except AAC-LC (likely) have 
 # active patent claims. The "aac" feature only enables AAC-LC, so it's should 
 # be ok.
 # (The above statements should not understood as legal claims/advice.)
 symphonia = { version = "0.5.3", default-features = false, features = ["adpcm", "wav", "aac", "isomp4", "mp3", "alac"] }
 quick-xml = "0.38.4"
-digest = "0.10.7"
-md-5 = "0.10.6"
-sha1 = "0.10.6"
+md5 = "0.7.0"
 yore = "1.1.0"
 encoding_rs = "0.8.35"
 # We currently use a fork of rust-sdl2 because we need a fix for Android builds
@@ -70,10 +69,8 @@ touchHLE_openal_soft_wrapper = { path = "src/audio/openal_soft_wrapper" }
 touchHLE_pvrt_decompress_wrapper = { path = "src/image/pvrt_decompress_wrapper" }
 touchHLE_stb_image_wrapper = { path = "src/image/stb_image_wrapper" }
 touchHLE_version = { path = "src/version" }
-windows-sys = { version = "0.61.0", features = ["Win32_System_Memory"] }
-nibarchive = "0.1.0"
-libc = "0.2.180"
-corosensei = "0.3.2"
+corosensei = "0.1.4"
+lazy_static = "1.4"
 
 [build-dependencies]
 cargo-license = "0.5.1"

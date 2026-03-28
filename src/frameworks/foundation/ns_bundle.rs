@@ -13,7 +13,6 @@ use crate::frameworks::core_foundation::cf_bundle::{
 use crate::frameworks::foundation::ns_string::from_rust_string;
 use crate::objc::{
     autorelease, id, msg, msg_class, nil, objc_classes, release, retain, ClassExports, HostObject,
-    NSZonePtr,
 };
 use crate::Environment;
 use std::collections::{HashMap, HashSet};
@@ -62,21 +61,68 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @implementation NSBundle: NSObject
 
++ (id)pathForResource:(id)name // NSString*
+              ofType:(id)ext   // NSString*
+{
+    let main_bundle: id = msg_class![env; NSBundle mainBundle];
+    msg![env; main_bundle pathForResource:name ofType:ext]
+}
+    
 + (id)mainBundle {
     if let Some(bundle) = env.framework_state.foundation.ns_bundle.main_bundle {
         bundle
     } else {
-        let new = msg_class![env; _touchHLE_NSBundle_Static alloc];
+        let bundle_path = env.bundle.bundle_path().as_str().to_string();
+        let bundle_path = ns_string::from_rust_string(env, bundle_path);
+        let bundle_identifier = env.bundle.bundle_identifier().to_string();
+        let bundle_identifier = ns_string::from_rust_string(env, bundle_identifier);
+        let host_object = NSBundleHostObject {
+            bundle: None,
+            bundle_path,
+            bundle_identifier,
+            bundle_url: None,
+            info_dictionary: None,
+        };
+        let new = env.objc.alloc_object(
+            this,
+            Box::new(host_object),
+            &mut env.mem
+        );
         env.framework_state.foundation.ns_bundle.main_bundle = Some(new);
         new
    }
 }
 
-+ (id)bundleForClass:(id)_aClass {
-    // Return the main bundle. For single-bundle iPhone apps this is always
-    // correct. A full implementation would look up which bundle contains the
-    // given class, but that is not needed for typical app binaries.
-    msg_class![env; NSBundle mainBundle]
++ (id)bundlePath {
+    nil
+}
+
++ (id)description {
+    nil
+}
+
++ (id)executablePath {
+    nil
+}
+
++ (id)bundleWithPath:(NSUInteger)_path {
+    msg![env; this init]
+}
+
++ (id)bundleForClass:(NSUInteger)_class {
+    msg![env; this init]
+}
+
++ (id)classNamed:(NSUInteger)_named {
+    msg![env; this init]
+}
+
++ (id)load {
+    nil
+}
+
++ (id)objectAtIndex:(NSUInteger)_index {
+    msg![env; this init]
 }
 
 + (id)preferredLocalizationsFromArray:(id)localizations_array { // NSArray<NSString *> *
@@ -147,6 +193,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     let exec_path_str = env.bundle.executable_path().as_str().to_string();
     let exec_path = from_rust_string(env, exec_path_str);
     autorelease(env, exec_path)
+}
+
+- (id)initWithPath:(NSUInteger)_path {
+    msg![env; this init]
 }
 
 - (id)pathForResource:(id)name // NSString*
@@ -304,37 +354,51 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, preferred_localizations)
 }
 
-// TODO: constructors, more accessors
-
-@end
-
-// Private static implementation of NSBundle, used for the main bundle
-// allocation. This is needed because some apps (e.g. Ovenbreak)
-// attempts to release it.
-@implementation _touchHLE_NSBundle_Static: NSBundle
-
-+ (id)allocWithZone:(NSZonePtr)_zone {
-    let bundle_path = env.bundle.bundle_path().as_str().to_string();
-    let bundle_path = ns_string::from_rust_string(env, bundle_path);
-    let bundle_identifier = env.bundle.bundle_identifier().to_string();
-    let bundle_identifier = ns_string::from_rust_string(env, bundle_identifier);
-    let host_object = NSBundleHostObject {
-        bundle: None,
-        bundle_path,
-        bundle_identifier,
-        bundle_url: None,
-        info_dictionary: None,
+- (id)pathsForResourcesOfType:(id)extension // NSString*
+                 inDirectory:(id)directory { // NSString*
+    let resource_path: id = msg![env; this resourcePath];
+    let search_dir: id = if directory != nil {
+        msg![env; resource_path stringByAppendingPathComponent:directory]
+    } else {
+        resource_path
     };
-    env.objc.alloc_object(
-        this,
-        Box::new(host_object),
-        &mut env.mem
-    )
+
+    let search_dir_str = ns_string::to_rust_string(env, search_dir).to_string();
+    let ext_filter = if extension != nil {
+        Some(ns_string::to_rust_string(env, extension).to_string())
+    } else {
+        None
+    };
+
+    let entries = match env.fs.enumerate(crate::fs::GuestPath::new(&search_dir_str)) {
+        Ok(e) => e.map(|s| s.to_string()).collect::<Vec<String>>(),
+        Err(_) => return msg_class![env; NSArray array],
+    };
+
+    let mut result_paths: Vec<id> = Vec::new();
+    for filename in entries {
+        let matches = match &ext_filter {
+            None => true,
+            Some(ext) => {
+                if let Some(dot_pos) = filename.rfind('.') {
+                    &filename[dot_pos + 1..] == ext.as_str()
+                } else {
+                    false
+                }
+            }
+        };
+        if matches {
+            let full = format!("{}/{}", search_dir_str, filename);
+            let full_id = ns_string::from_rust_string(env, full);
+            result_paths.push(full_id);
+        }
+    }
+
+    let arr = super::ns_array::from_vec(env, result_paths);
+    autorelease(env, arr)
 }
 
-- (id) retain { this }
-- (()) release {}
-- (id) autorelease { this }
+// TODO: constructors, more accessors
 
 @end
 

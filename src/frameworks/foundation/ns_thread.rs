@@ -8,15 +8,14 @@
 use super::NSTimeInterval;
 use crate::dyld::HostFunction;
 use crate::frameworks::core_foundation::CFTypeRef;
-use crate::frameworks::foundation::NSUInteger;
 use crate::libc::pthread::thread::{
-    pthread_attr_init, pthread_attr_setdetachstate, pthread_attr_setstacksize, pthread_attr_t,
-    pthread_create, pthread_self, pthread_t, PTHREAD_CREATE_DETACHED,
+    pthread_attr_init, pthread_attr_setdetachstate, pthread_attr_t, pthread_create, pthread_self,
+    pthread_t, PTHREAD_CREATE_DETACHED,
 };
-use crate::mem::{guest_size_of, Mem, MutPtr};
+use crate::mem::{guest_size_of, MutPtr};
 use crate::objc::{
-    id, msg_send, msg_send_no_type_checking, nil, objc_classes, release, retain, todo_objc_setter,
-    Class, ClassExports, HostObject, NSZonePtr, SEL,
+    autorelease, id, msg_send, nil, objc_classes, release, retain, Class, ClassExports, HostObject, NSZonePtr,
+    SEL,
 };
 use crate::Environment;
 use crate::{msg, msg_class};
@@ -25,6 +24,7 @@ use std::time::Duration;
 
 #[derive(Default)]
 pub struct State {
+    is_main_threaded: bool,
     is_multi_threaded: bool,
     ns_threads: HashMap<pthread_t, id>,
 }
@@ -42,8 +42,7 @@ struct NSThreadHostObject {
     thread_dictionary: id,
     owned: bool,
     finished: bool,
-    stack_size: NSUInteger,
-    tolerate_type_mismatch: bool,
+    cancelled: bool,
 }
 impl HostObject for NSThreadHostObject {}
 
@@ -61,8 +60,7 @@ pub const CLASSES: ClassExports = objc_classes! {
         thread_dictionary: nil,
         owned: false,
         finished: false,
-        stack_size: Mem::SECONDARY_THREAD_DEFAULT_STACK_SIZE,
-        tolerate_type_mismatch: false,
+        cancelled: false,
     });
     env.objc.alloc_object(this, host_object, &mut env.mem)
 }
@@ -72,6 +70,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     // only for `detachNewThreadSelector:toTarget:withObject:` and
     // `start` methods (according to the docs)
     env.framework_state.foundation.ns_thread.is_multi_threaded
+}
+
++ (bool)isMainThread {
+    env.framework_state.foundation.ns_thread.is_main_threaded
 }
 
 + (f64)threadPriority {
@@ -98,9 +100,21 @@ pub const CLASSES: ClassExports = objc_classes! {
     *State::get(env).ns_threads.get(&pthread).unwrap()
 }
 
++ (bool)isMainThread {
+    env.current_thread == 0
+}
+    
 + (id)callStackReturnAddresses {
     log!("WARNING: [NSThread callStackReturnAddresses] is called, returning an empty array!");
     msg_class![env; NSArray new]
+}
+
++ (())exit {
+
+}
+
++ (())setStackSize {
+
 }
 
 + (())sleepForTimeInterval:(NSTimeInterval)ti {
@@ -111,7 +125,19 @@ pub const CLASSES: ClassExports = objc_classes! {
 + (())detachNewThreadSelector:(SEL)selector
                      toTarget:(id)target
                    withObject:(id)object {
-    detach_new_thread_inner(env, selector, target, object, /* tolerate_type_mismatch: */ false)
+    let new: id = msg_class![env; NSThread alloc];
+    let new: id = msg![env; new initWithTarget:target
+                                      selector:selector
+                                        object:object];
+
+    // We own this thread and need to release it after it's finished
+    env.objc.borrow_mut::<NSThreadHostObject>(new).owned = true;
+
+    // redundant with `start`, but we do it for the sake of completeness
+    env.framework_state.foundation.ns_thread.is_multi_threaded = true;
+    env.framework_state.foundation.ns_thread.is_main_threaded = true;
+
+    msg![env; new start]
 }
 
 - (id)initWithTarget:(id)target
@@ -136,8 +162,6 @@ pub const CLASSES: ClassExports = objc_classes! {
     let attr: MutPtr<pthread_attr_t> = env.mem.alloc(guest_size_of::<pthread_attr_t>()).cast();
     pthread_attr_init(env, attr);
 
-    let stack_size = env.objc.borrow::<NSThreadHostObject>(this).stack_size;
-    pthread_attr_setstacksize(env, attr, stack_size);
     pthread_attr_setdetachstate(env, attr, PTHREAD_CREATE_DETACHED);
     let thread_ptr: MutPtr<pthread_t> = env.mem.alloc(guest_size_of::<pthread_t>()).cast();
 
@@ -148,6 +172,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     State::get(env).ns_threads.insert(pthread, this);
 
     env.framework_state.foundation.ns_thread.is_multi_threaded = true;
+    env.framework_state.foundation.ns_thread.is_main_threaded = true;
     // TODO: post NSWillBecomeMultiThreadedNotification
 }
 
@@ -158,14 +183,9 @@ pub const CLASSES: ClassExports = objc_classes! {
         target,
         selector,
         object,
-        tolerate_type_mismatch,
         ..
     } = env.objc.borrow(this);
-    if tolerate_type_mismatch {
-        () = msg_send_no_type_checking(env, (target, selector.unwrap(), object));
-    } else {
-        () = msg_send(env, (target, selector.unwrap(), object));
-    }
+    () = msg_send(env, (target, selector.unwrap(), object));
 }
 
 - (id)threadDictionary {
@@ -188,20 +208,8 @@ pub const CLASSES: ClassExports = objc_classes! {
     1.0
 }
 - (bool)setThreadPriority:(f64)priority {
-    todo_objc_setter!(this, priority);
+    log!("TODO: [(NSThread *){:?} setThreadPriority:{:?}] (ignored)", this, priority);
     true
-}
-
-// "To change the stack size, you must set this property before starting your
-// thread. Setting the stack size after the thread has started changes the
-// attribute size (which is reflected by the stackSize method), but it does
-// not affect the actual number of pages set aside for the thread."
-// https://developer.apple.com/documentation/foundation/thread/stacksize?language=objc
-- (NSUInteger)stackSize {
-    env.objc.borrow::<NSThreadHostObject>(this).stack_size
-}
-- (())setStackSize:(NSUInteger)size {
-    env.objc.borrow_mut::<NSThreadHostObject>(this).stack_size = size;
 }
 
 - (bool)isFinished {
@@ -209,8 +217,27 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (bool)isCancelled {
-    log!("TODO: [(NSThread *){:?} isCancelled]", this);
-    false
+    env.objc.borrow::<NSThreadHostObject>(this).cancelled
+}
+
+- (bool)isMainThread {
+    true
+}
+    
+- (id)stackSize {
+    nil
+}
+
+- (id)cancel {
+    nil
+}
+
+- (())setName:(bool)name {
+    log!("TODO: setName:{}", name);
+}
+
+- (())setStackSize:(bool)stack {
+    log!("TODO: setStackSize:{}", stack);
 }
 
 - (())dealloc {
@@ -218,6 +245,19 @@ pub const CLASSES: ClassExports = objc_classes! {
     let host_object = env.objc.borrow::<NSThreadHostObject>(this);
     release(env, host_object.thread_dictionary);
     env.objc.dealloc_object(this, &mut env.mem)
+}
+
+- (id)description {
+    let desc = format!("<NSThread: {:?}>", this);
+    let s = super::ns_string::from_rust_string(env, desc);
+    autorelease(env, s)
+}
+
+- (id)name {
+    nil
+}
+
+- (())setName:(id)_name {
 }
 
 @end
@@ -233,14 +273,18 @@ pub fn _touchHLE_NSThreadInvocationHelper(env: &mut Environment, ns_thread_obj: 
         env.objc.get_class_name(class)
     );
     let thread_class = env.objc.get_known_class("NSThread", &mut env.mem);
-    assert!(env.objc.class_is_subclass_of(class, thread_class));
+    // assert!(env.objc.class_is_subclass_of(class, thread_class));
 
     () = msg![env; ns_thread_obj main];
 
     env.objc
         .borrow_mut::<NSThreadHostObject>(ns_thread_obj)
         .finished = true;
-
+    
+    env.objc
+        .borrow_mut::<NSThreadHostObject>(ns_thread_obj)
+        .cancelled = true;
+    
     let &NSThreadHostObject {
         target,
         object,
@@ -263,29 +307,4 @@ pub fn _touchHLE_NSThreadInvocationHelper(env: &mut Environment, ns_thread_obj: 
     }
 
     // TODO: NSThread exit
-}
-
-pub fn detach_new_thread_inner(
-    env: &mut Environment,
-    selector: SEL,
-    target: id,
-    object: id,
-    tolerate_type_mismatch: bool,
-) {
-    let new: id = msg_class![env; NSThread alloc];
-    let new: id = msg![env; new initWithTarget:target
-                                      selector:selector
-                                        object:object];
-
-    // We own this thread and need to release it after it's finished
-    env.objc.borrow_mut::<NSThreadHostObject>(new).owned = true;
-
-    env.objc
-        .borrow_mut::<NSThreadHostObject>(new)
-        .tolerate_type_mismatch = tolerate_type_mismatch;
-
-    // Redundant with `start`, but we do it for the sake of completeness
-    env.framework_state.foundation.ns_thread.is_multi_threaded = true;
-
-    msg![env; new start]
 }

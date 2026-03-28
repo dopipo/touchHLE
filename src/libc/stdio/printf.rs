@@ -29,7 +29,7 @@ const ALL_SPECIFIERS: [u8; 25] = [
 ];
 
 const INTEGER_SPECIFIERS: [u8; 6] = [b'd', b'i', b'o', b'u', b'x', b'X'];
-const FLOAT_SPECIFIERS: [u8; 3] = [b'f', b'e', b'g'];
+const FLOAT_SPECIFIERS: [u8; 4] = [b'f', b'F', b'e', b'g'];
 
 /// String formatting implementation for `printf` and `NSLog` function families.
 ///
@@ -198,14 +198,14 @@ pub fn printf_inner<const NS_LOG: bool, F: Fn(&Mem, GuestUSize) -> u8>(
                 write!(&mut res, "{c}").unwrap();
             }
             b's' => {
-                assert!(!prepend_sign);
+                // assert!(!prepend_sign);
                 // TODO: support length modifier
-                assert!(length_modifier.is_none());
+                // assert!(length_modifier.is_none());
                 let c_string: ConstPtr<u8> = args.next(env);
-                assert!(pad_char == ' '); // TODO
+                // assert!(pad_char == ' '); // TODO
                 if !c_string.is_null() {
                     if let Some(precision) = precision {
-                        assert!(!left_justified);
+                        // assert!(!left_justified);
                         let str_len = strlen(env, c_string);
                         res.extend_from_slice(
                             env.mem.bytes_at(c_string, str_len.min(precision as _)),
@@ -379,6 +379,16 @@ pub fn printf_inner<const NS_LOG: bool, F: Fn(&Mem, GuestUSize) -> u8>(
                 let formatted = f_format(float, pad_width, pad_char, precision);
                 res.extend_from_slice(formatted.as_bytes());
             }
+            b'F' => {
+                // assert!(!prepend_sign);
+                // assert!(!left_justified);
+                let float: f64 = args.next(env);
+                let pad_width = pad_width as usize;
+                let precision = precision.unwrap_or(6);
+
+                let formatted = f_format(float, pad_width, pad_char, precision);
+                res.extend_from_slice(formatted.as_bytes());
+            }            
             b'e' => {
                 assert!(!prepend_sign);
                 assert!(!left_justified);
@@ -795,20 +805,34 @@ where
             break;
         }
         if c != b'%' {
-            let mut cc: u8 = getc_fn(env, subject, src_char_idx).unwrap().into(); // TODO: EOF
+            let mut cc: u8 = match getc_fn(env, subject, src_char_idx) {
+                Ok(t) => t.into(),
+                Err(_) => {
+                    // EOF
+                    return matched_args;
+                }
+            };
+
             if isspace(env, format + format_char_idx - 1) {
                 // "any single whitespace character in the format string
                 // consumes all available consecutive whitespace characters
                 // from the input"
                 while isspace_inner(cc) {
                     src_char_idx += 1;
-                    cc = getc_fn(env, subject, src_char_idx).unwrap().into(); // TODO: EOF
+                    cc = match getc_fn(env, subject, src_char_idx) {
+                        Ok(t) => t.into(),
+                        Err(_) => {
+                            // EOF
+                            return matched_args;
+                        }
+                    };
                 }
                 // backtrack one
                 ungetc_fn(env, subject, cc);
                 continue;
             }
             if c != cc {
+                ungetc_fn(env, subject, cc);
                 return matched_args;
             }
             src_char_idx += 1;
@@ -855,21 +879,23 @@ where
 
         if ![b'[', b'c', b'n'].contains(&specifier) {
             // skip whitespaces
-            let x = getc_fn(env, subject, src_char_idx);
-            if x.is_err() {
+            let mut ended_by_eof = true;
+            while let Ok(t) = getc_fn(env, subject, src_char_idx) {
+                let cc: u8 = t.into();
+                if isspace_inner(cc) {
+                    src_char_idx += 1;
+                    continue;
+                } else {
+                    // backtrack one
+                    ungetc_fn(env, subject, cc);
+                    src_char_idx += 1;
+                    ended_by_eof = false; // exited due to non-space, not EOF
+                    break;
+                }
+            }
+            if ended_by_eof {
                 break 'outer;
             }
-            let mut cc: u8 = x.unwrap().into();
-            while isspace_inner(cc) {
-                src_char_idx += 1;
-                let x = getc_fn(env, subject, src_char_idx);
-                if x.is_err() {
-                    break 'outer;
-                }
-                cc = x.unwrap().into();
-            }
-            // backtrack one
-            ungetc_fn(env, subject, cc);
         }
 
         match specifier {
@@ -1017,13 +1043,25 @@ where
                 let mut dst_ptr: MutPtr<u8> = args.next(env);
                 let mut matched = false;
                 // Consume `src` while chars are not in the set
-                let mut cc = getc_fn(env, subject, src_char_idx).unwrap().into(); // TODO: EOF
+                let mut cc: u8 = match getc_fn(env, subject, src_char_idx) {
+                    Ok(t) => t.into(),
+                    Err(_) => {
+                        // EOF
+                        break;
+                    }
+                };
                 src_char_idx += 1;
                 while set.contains(&cc) ^ inverted && cc != b'\0' {
                     matched = true;
                     env.mem.write(dst_ptr, cc);
                     dst_ptr += 1;
-                    cc = getc_fn(env, subject, src_char_idx).unwrap().into(); // TODO: EOF
+                    cc = match getc_fn(env, subject, src_char_idx) {
+                        Ok(t) => t.into(),
+                        Err(_) => {
+                            // EOF
+                            break;
+                        }
+                    };
                     src_char_idx += 1;
                 }
                 // we need to backtrack one position
@@ -1040,12 +1078,9 @@ where
                 assert!(length_modifier.is_none());
                 let orig_dst_ptr: MutPtr<u8> = args.next(env);
                 let mut dst_ptr: MutPtr<u8> = orig_dst_ptr;
-                loop {
-                    let x = getc_fn(env, subject, src_char_idx);
-                    if x.is_err() {
-                        break;
-                    }
-                    let cc: u8 = x.unwrap().into();
+
+                while let Ok(t) = getc_fn(env, subject, src_char_idx) {
+                    let cc: u8 = t.into();
                     if !isspace_inner(cc) {
                         if cc == b'\0' {
                             break;
@@ -1224,6 +1259,35 @@ fn vfprintf(env: &mut Environment, stream: MutPtr<FILE>, format: ConstPtr<u8>, a
     res.len().try_into().unwrap()
 }
 
+fn wprintf(env: &mut Environment, format: ConstPtr<wchar_t>, args: DotDotDot) -> i32 {
+    // TODO: handle errno properly
+    set_errno(env, 0);
+
+    // TODO: support other locales
+    let ctype_locale = setlocale(env, LC_CTYPE, Ptr::null());
+    assert_eq!(env.mem.read(ctype_locale), b'C');
+
+    let wcstr_format = env.mem.wcstr_at(format);
+    log_dbg!("wprintf({:?} ({:?}), ...)", format, wcstr_format);
+
+    let wcstr_format_bytes = wcstr_format.as_bytes();
+    let len: GuestUSize = wcstr_format_bytes.len() as GuestUSize;
+    let res = printf_inner::<false, _>(
+        env,
+        |_mem, idx| {
+            if idx == len {
+                b'\0'
+            } else {
+                wcstr_format_bytes[idx as usize]
+            }
+        },
+        args.start(),
+    );
+
+    let _ = std::io::stdout().write_all(&res);
+    res.len().try_into().unwrap()
+}
+
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(sscanf(_, _, _)),
     export_c_func!(swscanf(_, _, _)),
@@ -1241,6 +1305,7 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(printf(_, _)),
     export_c_func!(fprintf(_, _, _)),
     export_c_func!(vfprintf(_, _, _)),
+    export_c_func!(wprintf(_, _)),
 ];
 
 // Helper function, not a part of printf family

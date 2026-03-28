@@ -10,20 +10,18 @@ use super::ns_property_list_serialization::{
     deserialize_plist_from_file, NSPropertyListBinaryFormat_v1_0,
 };
 use super::ns_string::{from_rust_string, get_static_str, to_rust_string};
-use super::{ns_array, ns_keyed_unarchiver, ns_string, ns_url, NSUInteger, _nib_archive_decoder};
+use super::{ns_array, ns_keyed_unarchiver, ns_string, ns_url, NSInteger, NSUInteger};
 use crate::abi::{CallFromHost, GuestFunction, VaList};
 use crate::frameworks::core_foundation::{CFHashCode, CFIndex};
 use crate::frameworks::foundation::ns_enumerator::{
     fast_enumeration_helper, NSFastEnumerationState,
 };
-use crate::frameworks::foundation::ns_file_manager::{
-    NSFileModificationDate, NSFileSize, NSFileType,
-};
+use crate::frameworks::foundation::ns_file_manager::{NSFileModificationDate, NSFileSize};
 use crate::fs::GuestPath;
 use crate::mem::{ConstPtr, MutPtr, Ptr, SafeRead};
 use crate::objc::{
-    autorelease, id, msg, msg_class, nil, objc_classes, release, retain, Class, ClassExports,
-    HostObject, NSZonePtr,
+    autorelease, id, msg, msg_class, nil, objc_classes, release, retain, ClassExports, HostObject,
+    NSZonePtr,
 };
 use crate::{impl_HostObject_with_superclass, Environment};
 use std::collections::hash_map::Entry;
@@ -406,27 +404,34 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 // These probably comes from some category related to plists.
 + (id)dictionaryWithContentsOfFile:(id)path { // NSString*
-    let new_dict: id = msg![env; this alloc];
-    let new_dict: id = msg![env; new_dict initWithContentsOfFile:path];
-    autorelease(env, new_dict)
-}
-+ (id)dictionaryWithContentsOfURL:(id)url { // NSURL*
-    let new_dict: id = msg![env; this alloc];
-    let new_dict: id = msg![env; new_dict initWithContentsOfURL:url];
-    autorelease(env, new_dict)
+    let path = ns_string::to_rust_string(env, path);
+    let res = deserialize_plist_from_file(
+        env,
+        GuestPath::new(&path),
+        /* array_expected: */ false,
+    );
+    autorelease(env, res)
 }
 
 + (id)dictionaryWithObjects:(id)objects //NSArray *
                     forKeys:(id)keys { //NSArray *
     let new_dict: id = msg![env; this alloc];
     let new_dict: id = msg![env; new_dict initWithObjects:objects forKeys:keys];
+
     autorelease(env, new_dict)
 }
 
 + (id)dictionaryWithDictionary:(id)dict { // NSDictionary*
     let new_dict: id = msg![env; this alloc];
     let new_dict: id = msg![env; new_dict initWithDictionary:dict];
+
     autorelease(env, new_dict)
+}
+
++ (id)dictionaryWithContentsOfURL:(id)url { // NSURL*
+    let path = ns_url::to_rust_path(env, url);
+    let res = deserialize_plist_from_file(env, &path, /* array_expected: */ false);
+    autorelease(env, res)
 }
 
 - (id)init {
@@ -493,10 +498,6 @@ pub const CLASSES: ClassExports = objc_classes! {
         0
     }
 }
-- (id)fileType {
-    let file_type_key = get_static_str(env, NSFileType);
-    msg![env; this objectForKey:file_type_key]
-}
 
 @end
 
@@ -519,38 +520,6 @@ pub const CLASSES: ClassExports = objc_classes! {
     let new: id = msg![env; this alloc];
     let new: id = msg![env; new initWithCapacity:capacity];
     autorelease(env, new)
-}
-
-// These probably comes from some category related to plists.
-- (id)initWithContentsOfFile:(id)path { // NSString*
-    release(env, this);
-    let path = ns_string::to_rust_string(env, path);
-    let tmp = deserialize_plist_from_file(
-        env,
-        GuestPath::new(&path),
-        /* array_expected: */ false
-    );
-    if tmp == nil {
-        return nil;
-    }
-    // We should respect mutability of the top most container!
-    let res = msg_class![env; NSMutableDictionary alloc];
-    let res = msg![env; res initWithDictionary:tmp];
-    release(env, tmp);
-    res
-}
-- (id)initWithContentsOfURL:(id)url { // NSURL*
-    release(env, this);
-    let path = ns_url::to_rust_path(env, url);
-    let tmp = deserialize_plist_from_file(env, &path, /* array_expected: */ false);
-    if tmp == nil {
-        return nil;
-    }
-    // We should respect mutability of the top most container!
-    let res = msg_class![env; NSMutableDictionary alloc];
-    let res = msg![env; res initWithDictionary:tmp];
-    release(env, tmp);
-    res
 }
 
 @end
@@ -604,6 +573,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     all_keys_common(env, this)
 }
 
+- (())setObject:(NSInteger)_object forKey:(bool)_key {
+    // TODO
+}
+
 // NSFastEnumeration implementation
 - (NSUInteger)countByEnumeratingWithState:(MutPtr<NSFastEnumerationState>)state
                                   objects:(MutPtr<id>)stackbuf
@@ -643,6 +616,105 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 @end
 
+@implementation NSCondition: NSObject
+
+- (id)lock {
+    nil
+}
+
+- (id)name {
+    nil
+}
+
+- (id)signal {
+    nil
+}
+
+- (id)broadcast {
+    nil
+}
+
+- (id)unlock {
+    nil
+}
+
+- (id)wait {
+    nil
+}
+
+@end
+
+@implementation NSSortDescriptor: NSObject
+@end
+
+@implementation CMMotionManager: NSObject
+@end
+
+@implementation NSConditionLock: NSObject
+@end
+
+@implementation NSNetServiceBrowser: NSObject
+@end
+
+@implementation ADBannerView: NSObject
+@end
+
+@implementation CTTelephonyNetworkInfo: NSObject
+
+- (id)subscriberCellularProvider {
+    nil
+}
+
+@end
+
+@implementation NSUbiquitousKeyValueStore: NSObject
+
++ (id)defaultStore {
+    nil
+}
+
+@end
+
+@implementation NSNotificationQueue: NSObject
+
++ (id)defaultQueue {
+    nil
+}
+
+@end
+
+@implementation NSIndexPath: NSObject
+
++ (())indexPathForRow:(NSInteger)_row inSection:(bool)_section {
+    // TODO
+}
+
+@end
+
+@implementation NSInputStream: NSObject
+
++ (id)inputStreamWithFileAtPath:(NSUInteger)_path {
+    msg![env; this init]
+}
+
++ (id)hasBytesAvailable {
+    nil
+}
+
++ (id)open {
+    nil
+}
+
++ (id)close {
+    nil
+}
+
++ (())read:(NSInteger)read maxLength:(bool)_length {
+    // TODO
+}
+
+@end
+
 // Our private subclass that is the single implementation of
 // NSMutableDictionary for the time being.
 @implementation _touchHLE_NSMutableDictionary: NSMutableDictionary
@@ -678,29 +750,20 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 // NSCoding implementation
 - (id)initWithCoder:(id)coder {
-    let class: Class = msg![env; coder class];
-    let keyed_unarch_class: Class = msg_class![env; NSKeyedUnarchiver class];
-    let nib_archive_class: Class = msg_class![env; _touchHLE_NIBArchiveDecoder class];
-    let tuples = if env.objc.class_is_subclass_of(class, keyed_unarch_class) {
-        // It seems that every NSDictionary item in an NSKeyedArchiver plist
-        // looks like:
-        // {
-        //   "$class" => (uid of NSDictionary class goes here),
-        //   "NS.keys" => [
-        //     // keys here
-        //   ]
-        //   "NS.objects" => [
-        //     // objects here
-        //   ]
-        // }
-        ns_keyed_unarchiver::decode_current_dict(env, coder)
-    } else if env.objc.class_is_subclass_of(class, nib_archive_class) {
-        _nib_archive_decoder::decode_current_dict(env, coder)
-    } else {
-        unimplemented!()
-    };
-
+    // It seems that every NSDictionary item in an NSKeyedArchiver plist
+    // looks like:
+    // {
+    //   "$class" => (uid of NSArray class goes here),
+    //   "NS.keys" => [
+    //     // keys here
+    //   ]
+    //   "NS.objects" => [
+    //     // objects here
+    //   ]
+    // }
     release(env, this);
+    // FIXME: What if it's not an NSKeyedUnarchiver?
+    let tuples = ns_keyed_unarchiver::decode_current_dict(env, coder);
     let dict = dict_from_keys_and_objects(env, &tuples);
 
     let mut_dict = msg![env; dict mutableCopy];
@@ -723,24 +786,6 @@ pub const CLASSES: ClassExports = objc_classes! {
     let res = host_obj.lookup(env, key);
     *env.objc.borrow_mut(this) = host_obj;
     res
-}
-
-// NSFastEnumeration implementation
-- (NSUInteger)countByEnumeratingWithState:(MutPtr<NSFastEnumerationState>)state
-                                  objects:(MutPtr<id>)stackbuf
-                                    count:(NSUInteger)len {
-    // TODO: check that dict wasn't mutated!
-    // We assume that order in which objects are reported is consistent
-    // between calls!
-    let objects: id = msg![env; this allKeys];
-    let count: NSUInteger = msg![env; objects count];
-    fast_enumeration_helper(env, this, |env, idx| {
-        if idx < count {
-            msg![env; objects objectAtIndex:idx]
-        } else {
-            nil
-        }
-    }, state, stackbuf, len)
 }
 
 // NSCopying implementation
@@ -794,6 +839,30 @@ pub const CLASSES: ClassExports = objc_classes! {
     old_host_obj.release(env);
 }
 
+- (())countByEnumeratingWithState:(NSInteger)state objects:(bool)_objects count:(bool)_count {
+    // TODO
+}
+
+- (())getObjects:(NSInteger)_objects andKeys:(bool)_keys {
+    // TODO
+}
+
+- (())initWithObjects:(NSInteger)_objects forKeys:(bool)_keys {
+    // TODO
+}
+
+- (())searchForServicesOfType:(NSInteger)_type inDomain:(bool)_domain {
+    // TODO
+}
+
+- (())setName:(bool)name {
+    log!("TODO: setName:{}", name);
+}
+
+- (())setDictionary:(bool)dictionary{
+    log!("TODO: setDictionary:{}", dictionary);
+}
+
 - (())addEntriesFromDictionary:(id)other { // NSDictionary *
     let host_obj: DictionaryHostObject = std::mem::take(env.objc.borrow_mut(other));
     for (k, v) in host_obj.map.values().flatten() {
@@ -820,23 +889,6 @@ pub const CLASSES: ClassExports = objc_classes! {
     }
     let res = ns_array::from_vec(env, values);
     autorelease(env, res)
-}
-
-- (id)allKeysForObject:(id)obj {
-    let res: id = msg_class![env; NSMutableArray new];
-
-    let host_obj: DictionaryHostObject = std::mem::take(env.objc.borrow_mut(this));
-    host_obj.map.values().flatten().for_each(|&(key, value)| {
-        let equal = msg![env; obj isEqual:value];
-        if equal {
-            () = msg![env; res addObject:key];
-        }
-    });
-    *env.objc.borrow_mut(this) = host_obj;
-
-    let res_imm = msg![env; res copy];
-    release(env, res);
-    autorelease(env, res_imm)
 }
 
 - (id)objectEnumerator { // NSEnumerator*
@@ -931,25 +983,6 @@ pub const CLASSES: ClassExports = objc_classes! {
 /// this **does** copy and retain!
 pub fn dict_from_keys_and_objects(env: &mut Environment, keys_and_objects: &[(id, id)]) -> id {
     let dict: id = msg_class![env; NSDictionary alloc];
-
-    let mut host_object = <DictionaryHostObject as Default>::default();
-    for &(key, object) in keys_and_objects {
-        host_object.insert(env, key, object, /* copy_key: */ true);
-    }
-    *env.objc.borrow_mut(dict) = host_object;
-
-    dict
-}
-
-/// Direct constructor for use by host code, similar to
-/// `[[NSMutableDictionary alloc] initWithObjectsAndKeys:]` but without
-/// variadics and with a more intuitive argument order.
-/// Unlike [super::ns_array::mutable_from_vec], this **does** copy and retain!
-pub fn mutable_dict_from_keys_and_objects(
-    env: &mut Environment,
-    keys_and_objects: &[(id, id)],
-) -> id {
-    let dict: id = msg_class![env; NSMutableDictionary alloc];
 
     let mut host_object = <DictionaryHostObject as Default>::default();
     for &(key, object) in keys_and_objects {

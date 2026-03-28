@@ -9,7 +9,6 @@ use crate::dyld::{ConstantExports, HostConstant};
 use crate::frameworks::core_animation::ca_eagl_layer::{
     find_fullscreen_eagl_layer, get_pixels_vec_for_presenting, present_pixels,
 };
-use crate::frameworks::core_graphics::{CGRect, CGSize};
 use crate::frameworks::foundation::ns_string::get_static_str;
 use crate::frameworks::foundation::NSUInteger;
 use crate::gles::gles11_raw as gles11; // constants only
@@ -224,16 +223,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     }
     let internalformat = gles11::RGBA8_OES;
 
-    let (width, height) = {
-        let bounds: CGRect = msg![env; drawable bounds];
-        let CGSize { width, height } = bounds.size;
-        assert!((0.0..(u32::MAX as f32)).contains(&width));
-        assert!((0.0..(u32::MAX as f32)).contains(&height));
-        let scale_hack = env.options.scale_hack.get();
-        (width.round() as u32 * scale_hack, height.round() as u32 * scale_hack)
-    };
-
     let window = env.window.as_mut().expect("OpenGL ES is not supported in headless mode");
+
+    // FIXME: get width and height from the layer!
+    let (width, height) = window.size_unrotated_scalehacked();
 
     let renderbuffer = {
         // Unclear from documentation if this method requires an appropriate

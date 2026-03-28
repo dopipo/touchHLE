@@ -5,26 +5,18 @@
  */
 //! `NSLocale`.
 
-use super::{ns_array, ns_string};
+use super::{ns_array, ns_string, NSUInteger};
 use crate::dyld::{ConstantExports, HostConstant};
 use crate::frameworks::core_foundation::cf_locale::kCFLocaleCountryCode;
-use crate::objc::{id, nil, objc_classes, release, retain, ClassExports, HostObject, NSZonePtr};
-use crate::window::{get_preferred_country_codes, get_preferred_language_codes};
+use crate::objc::{id, msg, nil, objc_classes, release, retain, ClassExports, HostObject, NSZonePtr};
 use crate::Environment;
 
 const NSLocaleCountryCode: &str = "NSLocaleCountryCode";
-const NSLocaleIdentifier: &str = "kCFLocaleIdentifierKey";
 
-pub const CONSTANTS: ConstantExports = &[
-    (
-        "_NSLocaleCountryCode",
-        HostConstant::NSString(NSLocaleCountryCode),
-    ),
-    (
-        "_NSLocaleIdentifier",
-        HostConstant::NSString(NSLocaleIdentifier),
-    ),
-];
+pub const CONSTANTS: ConstantExports = &[(
+    "_NSLocaleCountryCode",
+    HostConstant::NSString(NSLocaleCountryCode),
+)];
 
 #[derive(Default)]
 pub struct State {
@@ -47,7 +39,13 @@ fn get_preferred_languages(env: &mut Environment) -> Vec<String> {
         return preferred_languages.clone();
     }
 
-    let languages = get_preferred_language_codes(env);
+    let mut languages = Vec::new();
+    let mut locale_iter = env.on_parent_stack_in_coroutine(|window, _| window.locales_iterator());
+
+    while let Some(locale) = locale_iter.next() {
+        languages.push(locale.language.to_str().unwrap().to_string());
+    }
+
     if languages.is_empty() {
         let lang = "en".to_string();
         log!("The app requested your preferred languages. No information could be retrieved, so {:?} (English) will be reported.", lang);
@@ -59,7 +57,17 @@ fn get_preferred_languages(env: &mut Environment) -> Vec<String> {
 }
 
 fn get_preferred_countries(env: &mut Environment) -> Vec<String> {
-    let countries = get_preferred_country_codes(env);
+    // Unfortunately Rust-SDL2 doesn't provide a wrapper for this yet.
+    let mut countries = Vec::new();
+
+    let mut locale_iter = env.on_parent_stack_in_coroutine(|window, _| window.locales_iterator());
+
+    while let Some(locale) = locale_iter.next() {
+        if let Some(country) = locale.country {
+            countries.push(country.to_str().unwrap().to_string());
+        }
+    }
+
     if countries.is_empty() {
         let country = "US".to_string();
         log!("The app requested your current locale. No country information could be retrieved, so {:?} will be reported.", country);
@@ -67,16 +75,6 @@ fn get_preferred_countries(env: &mut Environment) -> Vec<String> {
     } else {
         log!("The app requested your current locale. {:?} will be reported based on your system region settings.", countries);
         countries
-    }
-}
-
-/// Extract the language subtag from a locale identifier.
-/// Handles "ru", "ru_RU", "ru-RU", "en_US" etc.
-fn language_from_locale_identifier(identifier: &str) -> &str {
-    let sep = identifier.find('_').or_else(|| identifier.find('-'));
-    match sep {
-        Some(idx) => &identifier[..idx],
-        None => identifier,
     }
 }
 
@@ -102,10 +100,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.alloc_object(this, host_object, &mut env.mem)
 }
 
-// The documentation is not clear about what the format of the strings should
-// be, but Super Monkey Ball does isEqualToString against "fr", "es", "de",
-// "it" and "ja", and its locale detection works properly, so presumably they
-// do not usually have region suffixes.
+// The documentation isn't clear about what the format of the strings should be,
+// but Super Monkey Ball does `isEqualToString:` against "fr", "es", "de", "it"
+// and "ja", and its locale detection works properly, so presumably they do not
+// usually have region suffixes.
 + (id)preferredLanguages {
     if let Some(existing) = State::get(env).preferred_languages {
         existing
@@ -116,6 +114,18 @@ pub const CLASSES: ClassExports = objc_classes! {
         State::get(env).preferred_languages = Some(new);
         new
     }
+}
+
++ (id)canonicalLocaleIdentifierFromString:(NSUInteger)string {
+    msg![env; this init]
+}
+
++ (id)rangeOfString:(NSUInteger)string {
+    msg![env; this init]
+}
+
++ (id)autoupdatingCurrentLocale {
+    nil
 }
 
 + (id)currentLocale {
@@ -164,13 +174,14 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (id)initWithLocaleIdentifier:(id)string { // NSString *
     let str = ns_string::to_rust_string(env, string);
     log_dbg!("[(NSLocale *){:?} initWithLocaleIdentifier:'{}']", this, str);
-    // Locale identifiers may be "ru", "ru_RU", "en-US", etc.
-    // Use a helper outside the macro to avoid closure syntax inside
-    // objc_classes!
-    let lang = language_from_locale_identifier(&str).to_string();
-    let lang_ns_string = ns_string::from_rust_string(env, lang);
+    retain(env, string);
+    // Loosely assume 2-char lang code here
+    // TODO: locale identifier parsing
+    assert_eq!(2, str.len());
+    assert!(str.to_lowercase().eq(&str));
+    assert!(!str.contains('_') && !str.contains('-'));
     assert!(env.objc.borrow::<NSLocaleHostObject>(this).language_code == nil);
-    env.objc.borrow_mut::<NSLocaleHostObject>(this).language_code = lang_ns_string;
+    env.objc.borrow_mut::<NSLocaleHostObject>(this).language_code = string;
     this
 }
 
@@ -186,16 +197,8 @@ pub const CLASSES: ClassExports = objc_classes! {
     retain(env, this)
 }
 
-- (id)displayNameForKey:(id)key value:(id)value {
-    // Return the value string as-is as a safe stub.
-    // A full implementation would return a localized display name.
-    log_dbg!(
-        "TODO: [(NSLocale*){:?} displayNameForKey:{:?} value:{:?}]",
-        this,
-        key,
-        value
-    );
-    value
+- (id)localeIdentifier {
+    nil
 }
 
 - (id)objectForKey:(id)key {
@@ -203,7 +206,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     match key_str {
         // Note: this is not the cleanest separation between NS and CF parts
         // But it does work on the iOS Simulator
-        // TODO: Define NSLocaleCountryCode as kCFLocaleCountryCode
+        // TODO: Define NSLocaleCountryCode _as_ kCFLocaleCountryCode
         NSLocaleCountryCode | kCFLocaleCountryCode => {
             let &NSLocaleHostObject { country_code, .. } = env.objc.borrow(this);
             country_code
@@ -215,4 +218,3 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 };
-

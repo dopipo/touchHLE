@@ -6,25 +6,23 @@
 //! The `NSValue` class cluster, including `NSNumber`.
 
 use super::ns_string::{from_rust_ordering, from_rust_string};
-use super::{NSComparisonResult, NSOrderedSame, NSUInteger, _nib_archive_decoder};
+use super::{NSComparisonResult, NSOrderedSame, NSUInteger};
+use crate::frameworks::core_graphics::CGRect;
 use crate::frameworks::core_foundation::cf_number::{
     kCFNumberCharType, kCFNumberFloat32Type, kCFNumberFloatType, kCFNumberIntType,
     kCFNumberSInt16Type, kCFNumberSInt32Type, kCFNumberSInt8Type, kCFNumberShortType, CFNumberType,
 };
-use crate::frameworks::core_graphics::{CGPoint, CGRect, CGSize};
 use crate::frameworks::foundation::NSInteger;
 use crate::mem::{ConstVoidPtr, MutVoidPtr};
 use crate::objc::{
-    autorelease, id, msg, msg_class, objc_classes, release, retain, Class, ClassExports,
-    HostObject, NSZonePtr,
+    autorelease, id, msg, msg_class, objc_classes, retain, Class, ClassExports, HostObject,
+    NSZonePtr,
 };
 use crate::Environment;
 use std::cmp::Ordering;
 
 #[derive(Debug)]
 pub(super) enum NSValueHostObject {
-    CGPoint(CGPoint),
-    CGSize(CGSize),
     CGRect(CGRect),
 }
 impl HostObject for NSValueHostObject {}
@@ -42,7 +40,6 @@ macro_rules! impl_AsValue {
                 NSNumberHostObject::Float(x) => *x as _,
                 NSNumberHostObject::Double(x) => *x as _,
                 NSNumberHostObject::Short(x) => *x as _,
-                NSNumberHostObject::UnsignedShort(x) => *x as _,
                 NSNumberHostObject::Char(x) => *x as _,
             }
         }
@@ -59,7 +56,6 @@ pub(super) enum NSNumberHostObject {
     Float(f32),
     Double(f64),
     Short(i16),
-    UnsignedShort(u16),
     Char(i8),
 }
 impl HostObject for NSNumberHostObject {}
@@ -75,7 +71,6 @@ impl NSNumberHostObject {
             NSNumberHostObject::Float(x) => *x != 0.0,
             NSNumberHostObject::Double(x) => *x != 0.0,
             NSNumberHostObject::Short(x) => *x != 0,
-            NSNumberHostObject::UnsignedShort(x) => *x != 0,
             NSNumberHostObject::Char(x) => *x != 0,
         }
     }
@@ -92,7 +87,6 @@ impl NSNumberHostObject {
     impl_AsValue!(as_float, f32);
     impl_AsValue!(as_double, f64);
     impl_AsValue!(as_short, i16);
-    impl_AsValue!(as_unsigned_short, u16);
     impl_AsValue!(as_char, i8);
     impl_AsValue!(as_i128, i128);
 }
@@ -110,46 +104,47 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg_class![env; NSNumber numberWithUnsignedInt:(ptr.to_bits())]
 }
 
-+ (id)valueWithCGPoint:(CGPoint)value {
-    let host_object = Box::new(NSValueHostObject::CGPoint(value));
-    let new = env.objc.alloc_object(this, host_object, &mut env.mem);
-    autorelease(env, new)
-}
-
-+ (id)valueWithCGSize:(CGSize)value {
-    let host_object = Box::new(NSValueHostObject::CGSize(value));
-    let new = env.objc.alloc_object(this, host_object, &mut env.mem);
-    autorelease(env, new)
++ (id)allocWithZone:(NSZonePtr)_zone {
+    let host_object = Box::new(NSValueHostObject::CGRect(CGRect::default()));
+    env.objc.alloc_object(this, host_object, &mut env.mem)
 }
 
 + (id)valueWithCGRect:(CGRect)value {
-    let host_object = Box::new(NSValueHostObject::CGRect(value));
-    let new = env.objc.alloc_object(this, host_object, &mut env.mem);
+    let new: id = msg![env; this alloc];
+    *env.objc.borrow_mut(new) = NSValueHostObject::CGRect(value);
     autorelease(env, new)
 }
 
-- (CGPoint)CGPointValue {
-    let host_object = env.objc.borrow::<NSValueHostObject>(this);
-    match host_object {
-        NSValueHostObject::CGPoint(cg_point) => *cg_point,
-        _ => unimplemented!()
-    }
++ (id)valueWithCATransform3D:(u64)value {
+    // TODO: for greater efficiency we could return a static-lifetime value
+
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithUnsignedLongLong:value];
+    autorelease(env, new)
 }
 
-- (CGSize)CGSizeValue {
-    let host_object = env.objc.borrow::<NSValueHostObject>(this);
-    match host_object {
-        NSValueHostObject::CGSize(cg_size) => *cg_size,
-        _ => unimplemented!()
-    }
++ (id)valueWithCGPoint:(u64)value {
+    // TODO: for greater efficiency we could return a static-lifetime value
+
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithUnsignedLongLong:value];
+    autorelease(env, new)
 }
 
-- (CGRect)CGRectValue {
-    let host_object = env.objc.borrow::<NSValueHostObject>(this);
-    match host_object {
-        NSValueHostObject::CGRect(cg_rect) => *cg_rect,
-        _ => unimplemented!()
-    }
++ (id)valueWithNonretainedObject:(u64)value {
+    // TODO: for greater efficiency we could return a static-lifetime value
+
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithUnsignedLongLong:value];
+    autorelease(env, new)
+}
+
++ (())value:(NSInteger)value withObjCType:(bool)_type {
+    // TODO
+}
+
++ (())valueWithBytes:(NSInteger)bytes objCType:(bool)_type {
+    // TODO
 }
 
 // NSCopying implementation
@@ -164,6 +159,13 @@ pub const CLASSES: ClassExports = objc_classes! {
     // a pointer-sized data item, the result is undefined.`
     let val = msg![env; this unsignedIntValue];
     MutVoidPtr::from_bits(val)
+}
+
+- (CGRect)CGRectValue {
+    let host_object = env.objc.borrow::<NSValueHostObject>(this);
+    match host_object {
+        NSValueHostObject::CGRect(cg_rect) => *cg_rect
+    }
 }
 
 @end
@@ -256,14 +258,6 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, new)
 }
 
-+ (id)numberWithUnsignedShort:(u16)value {
-    // TODO: for greater efficiency we could return a static-lifetime value
-
-    let new: id = msg![env; this alloc];
-    let new: id = msg![env; new initWithUnsignedShort:value];
-    autorelease(env, new)
-}
-
 + (id)numberWithChar:(i8)value {
     // TODO: for greater efficiency we could return a static-lifetime value
 
@@ -272,20 +266,15 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, new)
 }
 
-// TODO: types other than booleans and long longs
++ (id)numberWithUnsignedChar:(i8)value {
+    // TODO: for greater efficiency we could return a static-lifetime value
 
-// NSCoding implementation
-- (id)initWithCoder:(id)coder {
-    let class: Class = msg![env; coder class];
-    let nib_archive_class: Class = msg_class![env; _touchHLE_NIBArchiveDecoder class];
-    let new_num = if env.objc.class_is_subclass_of(class, nib_archive_class) {
-        _nib_archive_decoder::decode_current_number(env, coder)
-    } else {
-        unimplemented!();
-    };
-    release(env, this);
-    new_num
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithChar:value];
+    autorelease(env, new)
 }
+
+// TODO: types other than booleans and long longs
 
 - (id)initWithBool:(bool)value {
     *env.objc.borrow_mut(this) = NSNumberHostObject::Bool(value);
@@ -337,12 +326,12 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
-- (id)initWithUnsignedShort:(u16)value {
-    *env.objc.borrow_mut(this) = NSNumberHostObject::UnsignedShort(value);
+- (id)initWithChar:(i8)value {
+    *env.objc.borrow_mut(this) = NSNumberHostObject::Char(value);
     this
 }
 
-- (id)initWithChar:(i8)value {
+- (id)initWithUnsignedChar:(i8)value {
     *env.objc.borrow_mut(this) = NSNumberHostObject::Char(value);
     this
 }
@@ -391,12 +380,16 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.borrow::<NSNumberHostObject>(this).as_short()
 }
 
-- (u16)unsignedShortValue {
-    env.objc.borrow::<NSNumberHostObject>(this).as_unsigned_short()
-}
-
 - (i8)charValue {
     env.objc.borrow::<NSNumberHostObject>(this).as_char()
+}
+
+- (i8)unsignedcharValue {
+    env.objc.borrow::<NSNumberHostObject>(this).as_char()
+}
+
+- (bool)stringValue {
+    env.objc.borrow::<NSNumberHostObject>(this).as_bool()
 }
 
 - (id)description {
@@ -409,7 +402,6 @@ pub const CLASSES: ClassExports = objc_classes! {
         NSNumberHostObject::Float(value) => from_rust_string(env, value.to_string()),
         NSNumberHostObject::Double(value) => from_rust_string(env, value.to_string()),
         NSNumberHostObject::Short(value) => from_rust_string(env, value.to_string()),
-        NSNumberHostObject::UnsignedShort(value) => from_rust_string(env, value.to_string()),
         NSNumberHostObject::Char(value) => from_rust_string(env, value.to_string()),
     };
     autorelease(env, desc)
@@ -429,7 +421,6 @@ pub const CLASSES: ClassExports = objc_classes! {
         NSNumberHostObject::Float(value) => value.to_bits() as u64,
         NSNumberHostObject::Double(value) => value.to_bits(),
         NSNumberHostObject::Short(value) => *value as u64,
-        NSNumberHostObject::UnsignedShort(value) => *value as u64,
         NSNumberHostObject::Char(value) => *value as u64,
     };
     super::hash_helper(&value)
@@ -472,6 +463,80 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 // TODO: accessors etc
+
+@end
+
+@implementation NSNumberFormatter: NSNumber
++ (())setDefaultFormatterBehavior:(bool)behavior {
+    log!("TODO: setDefaultFormatterBehavior:{}", behavior);
+}
+
+- (id)numberFromString:(NSUInteger)_string {
+    msg![env; this init]
+}
+
+- (id)stringFromNumber:(NSUInteger)_string {
+    msg![env; this init]
+}
+
+- (())setGroupingSize:(bool)size {
+    log!("TODO: setGroupingSize:{}", size);
+}
+
+- (())setDecimalSeparator:(bool)separator {
+    log!("TODO: setDecimalSeparator:{}", separator);
+}
+
+- (())setNumberStyle:(bool)style {
+    log!("TODO: setNumberStyle:{}", style);
+}
+
+- (())setMinimumIntegerDigits:(bool)digits {
+    log!("TODO: setMinimumIntegerDigits:{}", digits);
+}
+
+- (())setMaximumIntegerDigits:(bool)digits {
+    log!("TODO: setMaximumIntegerDigits:{}", digits);
+}
+
+- (())setMinimumFractionDigits:(bool)digits {
+    log!("TODO: setMinimumFractionDigits:{}", digits);
+}
+
+- (())setMaximumFractionDigits:(bool)digits {
+    log!("TODO: setMaximumFractionDigits:{}", digits);
+}
+
+- (())setPositiveFormat:(bool)format {
+    log!("TODO: setPositiveFormat:{}", format);
+}
+
+- (())setFormatWidth:(bool)width {
+    log!("TODO: setFormatWidth:{}", width);
+}
+
+- (())setPaddingCharacter:(bool)character {
+    log!("TODO: setPaddingCharacter:{}", character);
+}
+
+- (())setFormatterBehavior:(bool)behavior {
+    log!("TODO: setFormatterBehavior:{}", behavior);
+}
+
+- (())setUsesGroupingSeparator:(bool)separator {
+    log!("TODO: setUsesGroupingSeparator:{}", separator);
+}
+
+- (())setGroupingSeparator:(bool)separator {
+    log!("TODO: setGroupingSeparator:{}", separator);
+}
+
+@end
+
+@implementation NSDecimalNumber: NSNumber
++ (id)decimalNumberWithString:(NSUInteger)_string {
+    msg![env; this init]
+}
 
 @end
 

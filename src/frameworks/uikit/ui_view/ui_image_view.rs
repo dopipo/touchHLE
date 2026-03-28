@@ -41,6 +41,8 @@ pub const CLASSES: ClassExports = objc_classes! {
     this
 }
 
+- (()) setAnimationRepeatCount: (NSTimeInterval) _count {}
+
 - (())dealloc {
     let &UIImageViewHostObject {
         superclass: _,

@@ -1,10 +1,4 @@
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-#include "system_headers.h"
+#include "system_headers_objc.h"
 static int dealloc_counter = 0;
 @implementation DeallocDetection : NSObject
 - (void)dealloc {
@@ -51,13 +45,11 @@ int test_AutoreleasePool(void) {
     NSAutoreleasePool *arp3 = [NSAutoreleasePool new];
     DeallocDetection *obj3 = [[DeallocDetection new] autorelease];
     [arp3 drain];
-    if (dealloc_counter != 1 || [obj0 retainCount] != 1 ||
-        [obj1 retainCount] != 1 || [obj2 retainCount] != 1) {
+    if (dealloc_counter != 1 || [obj0 retainCount] != 1 || [obj1 retainCount] != 1 || [obj2 retainCount] != 1) {
       return -3;
     }
     [arp2 drain];
-    if (dealloc_counter != 2 || [obj0 retainCount] != 1 ||
-        [obj1 retainCount] != 1) {
+    if (dealloc_counter != 2 || [obj0 retainCount] != 1 || [obj1 retainCount] != 1) {
       return -3;
     }
     [arp1 drain];
@@ -67,7 +59,7 @@ int test_AutoreleasePool(void) {
     [obj0 release];
   }
 
-  // Check atypical
+  // Check atypical 
   {
     dealloc_counter = 0;
     // Should not be added to autoreleasepool
