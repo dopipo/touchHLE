@@ -5,7 +5,7 @@
  */
 //! `NSURLRequest and NSMutableURLRequest`.
 
-use super::{ns_string, NSTimeInterval, NSInteger, NSUInteger};
+use super::{ns_string, NSTimeInterval, NSUInteger};
 use crate::frameworks::foundation::ns_string::to_rust_string;
 use crate::objc::{
     autorelease, id, nil, objc_classes, release, ClassExports, HostObject, NSZonePtr,
