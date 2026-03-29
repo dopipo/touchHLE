@@ -5,7 +5,7 @@
  */
 //! `UIScreen`.
 
-use crate::frameworks::core_graphics::{CGFloat, CGPoint, CGRect, CGSize};
+use crate::frameworks::core_graphics::{CGPoint, CGRect, CGSize};
 use crate::objc::{id, msg, objc_classes, ClassExports, TrivialHostObject};
 
 #[derive(Default)]
@@ -41,14 +41,11 @@ pub const CLASSES: ClassExports = objc_classes! {
 // TODO: more accessors
 
 - (CGRect)bounds {
-    // While Apple's documentation says this changes with the interface
-    // orientation, https://useyourloaf.com/blog/uiscreen-bounds-in-ios-8/ says
-    // this wasn't the case prior to iOS 8.
-    // Fixed: Ensure we access device_family correctly via the window or environment options.
-    let (width, height) = env.window().device_family().portrait_size();
+    // Prior to iOS 8, bounds was always in portrait orientation regardless of
+    // the interface orientation. iPhone OS targets a 320x480 screen.
     CGRect {
         origin: CGPoint { x: 0.0, y: 0.0 },
-        size: CGSize { width: width as f32, height: height as f32 },
+        size: CGSize { width: 320.0, height: 480.0 },
     }
 }
 
