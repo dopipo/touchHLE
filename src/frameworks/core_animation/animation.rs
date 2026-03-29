@@ -25,7 +25,6 @@ use crate::frameworks::core_animation::ca_animation::{
 use crate::frameworks::core_animation::ca_layer::remove_anonymous_animation;
 use crate::frameworks::core_animation::{ca_layer::CALayerHostObject, CACurrentMediaTime};
 use crate::frameworks::core_foundation::time::CFTimeInterval;
-use crate::frameworks::core_graphics::cg_color::CGColorHostObject;
 use crate::frameworks::foundation::ns_string::{from_rust_string, to_rust_string};
 use crate::objc::{id, msg, nil, release, retain};
 use crate::Environment;
@@ -68,7 +67,7 @@ impl State {
             // TODO: Convert to local time
             let current_time = CACurrentMediaTime(env);
             let begin_time: CFTimeInterval = msg![env; animation beginTime];
-            let start_time = get_animation_start_time(env, animation);
+            let mut start_time = get_animation_start_time(env, animation);
 
             if current_time >= begin_time {
                 if start_time.is_none() {
@@ -167,20 +166,17 @@ impl State {
                     presentation.anchor_point = from_value + by_value * interpolation_amount;
                 }
                 "backgroundColor" => {
-                    let from_value = id_as_option(from_value)
-                        .map(|obj| *env.objc.borrow::<CGColorHostObject>(obj));
-                    let to_value = id_as_option(to_value)
-                        .map(|obj| *env.objc.borrow::<CGColorHostObject>(obj));
-                    let by_value = id_as_option(by_value)
-                        .map(|obj| *env.objc.borrow::<CGColorHostObject>(obj));
-                    let (from_value, by_value) = get_from_and_by_values(
-                        presentation.background_color,
-                        from_value,
-                        to_value,
-                        by_value,
-                    );
-                    presentation.background_color =
-                        Some(from_value + by_value * interpolation_amount)
+                    // background_color is a CGColorRef (id), not a numeric type.
+                    // Full component interpolation is a future TODO; for now
+                    // we switch at the halfway point.
+                    let chosen = if interpolation_amount < 0.5 {
+                        id_as_option(from_value)
+                            .unwrap_or(presentation.background_color)
+                    } else {
+                        id_as_option(to_value)
+                            .unwrap_or(presentation.background_color)
+                    };
+                    presentation.background_color = chosen;
                 }
                 "bounds" => {
                     let from_value = id_as_option(from_value).map(|obj| msg![env; obj CGRectValue]);
