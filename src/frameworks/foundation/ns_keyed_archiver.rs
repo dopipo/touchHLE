@@ -10,7 +10,6 @@ use crate::objc::{
     autorelease, id, msg, msg_class, nil, objc_classes, ClassExports, HostObject,
     NSZonePtr,
 };
-use crate::Environment;
 use plist::Dictionary;
 
 struct NSKeyedArchiverHostObject {
