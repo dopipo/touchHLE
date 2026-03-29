@@ -212,7 +212,7 @@ pub const CLASSES: ClassExports = objc_classes! {
         .uikit
         .ui_view
         .ui_window
-        .visible_windows
+        .windows
         .contains(&key_window));
     key_window
 }
@@ -224,7 +224,7 @@ pub const CLASSES: ClassExports = objc_classes! {
         .uikit
         .ui_view
         .ui_window
-        .visible_windows).to_vec();
+        .windows).to_vec();
     for window in &visible_windows {
         retain(env, *window);
     }
@@ -512,3 +512,4 @@ pub const CONSTANTS: ConstantExports = &[
 ];
 
 pub const FUNCTIONS: FunctionExports = &[export_c_func!(UIApplicationMain(_, _, _, _))];
+
