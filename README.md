@@ -1,4 +1,4 @@
-huy# touchHLE: high-level emulator for iPhone OS apps
+hu2y# touchHLE: high-level emulator for iPhone OS apps
 
 **touchHLE** is a high-level emulator for iPhone OS apps. It runs on modern desktop operating systems and Android, and is written in Rust.
 
