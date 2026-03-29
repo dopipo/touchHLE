@@ -20,7 +20,6 @@
 
 use super::gl21compat_raw as gl21;
 use super::gl21compat_raw::types::*;
-use super::gles11_raw as gles11; // constants only
 use super::gles_generic::GLES;
 use super::util::{
     fixed_to_float, matrix_fixed_to_float, try_decode_pvrtc, PalettedTextureFormat, ParamTable,
@@ -1163,5 +1162,3 @@ impl GLES for GLES1OnGL2 {
         gl21::UnmapBuffer(target)
     }
 }
-
-
