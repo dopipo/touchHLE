@@ -138,7 +138,7 @@ fn handle_touches_down(env: &mut Environment, map: HashMap<FingerId, Coords>) {
         .uikit
         .ui_view
         .ui_window
-        .visible_windows
+        .windows
         .last()
     else {
         log!("No visible window, touch events ignored");

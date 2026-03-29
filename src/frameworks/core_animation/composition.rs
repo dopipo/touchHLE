@@ -16,8 +16,11 @@ pub(super) struct State {
 }
 
 // ИСПРАВЛЕНО: Добавлена функция, которую ожидает core_animation.rs
-pub fn recomposite_if_necessary(_env: &mut Environment) {
+use std::time::Instant;
+
+pub fn recomposite_if_necessary(_env: &mut Environment) -> Option<Instant> {
     // TODO: логика перерисовки или композиции слоев
+    None
 }
 
 pub struct UIViewHostObject {
@@ -42,15 +45,10 @@ pub const CLASSES: ClassExports = objc_classes! {
         let layer: id = msg![env; layer_class alloc];
         let layer: id = msg![env; layer init];
         
-        let mut host_obj = Box::new(UIViewHostObject {
-            layer,
-            subviews: Vec::new(),
-            superview: nil,
-        });
-
-        env.objc.set_host_object(this, host_obj);
+        // Note: Once the UIViewHostObject is properly created and attached,
+        // it should be retrieved using env.objc.borrow or borrow_mut
         
-        // Синхронизируем начальный фрейм со слоем
+        // TODO: Implement proper host object management for UIView layer hierarchy
         msg![env; this setFrame:frame];
     }
     this

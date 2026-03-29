@@ -137,6 +137,33 @@ impl ParamTable {
             _ => setiv(params),
         }
     }
+
+    /// Check if a parameter is of integer type.
+    pub fn is_int(&self, pname: GLenum) -> bool {
+        let (type_, _) = self.get_type_info(pname);
+        type_ == ParamType::Int
+    }
+
+    /// Convert a vector of fixed-point parameters to floating-point.
+    /// This will panic if the name is not recognized.
+    pub unsafe fn convert_fixed_to_float_vec(&self, pname: GLenum, params: *const GLfixed) -> Vec<GLfloat> {
+        let (type_, count) = self.get_type_info(pname);
+        let mut result = Vec::with_capacity(usize::from(count));
+        match type_ {
+            ParamType::Float | ParamType::FloatSpecial => {
+                for i in 0..usize::from(count) {
+                    result.push(fixed_to_float(params.add(i).read()))
+                }
+            }
+            _ => {
+                // For non-float types, still convert but just cast
+                for i in 0..usize::from(count) {
+                    result.push(params.add(i).read() as GLfloat)
+                }
+            }
+        }
+        result
+    }
 }
 
 /// Helper for implementing `glCompressedTexImage2D`: if `internalformat` is

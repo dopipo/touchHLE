@@ -299,16 +299,8 @@ impl Mem {
     /// Note that, since there is no protection against writing outside an
     /// allocation, there might be stray bytes preserved in the result.
     pub fn refurbish(mut mem: Mem) -> Mem {
-        let Mem {
-            bytes: _,
-            null_segment_size: _,
-            ref mut allocator,
-            ..
-        } = mem;
-        let used_chunks = allocator.reset_and_drain_used_chunks();
-        for allocator::Chunk { base, size } in used_chunks {
-            mem.bytes_mut()[base as usize..][..size.get() as usize].fill(0);
-        }
+        // Simply zero out all guest memory for now
+        mem.bytes_mut().fill(0);
         mem.null_segment_size = 0;
         mem
     }

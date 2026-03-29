@@ -171,7 +171,7 @@ pub fn main<T: Iterator<Item = String>>(mut args: T) -> Result<(), String> {
 
     if options.dumping_options.symbols {
         let mut file = std::fs::File::create(&options.dumping_file).map_err(|e| e.to_string())?;
-        dyld::Dyld::dump_dyld_host_symbols(&mut file).unwrap();
+        dyld::Dyld::dump_host_symbols(&mut file).unwrap();
         objc::ObjC::dump_host_class_symbols(&mut file).unwrap();
         return Ok(());
     }
