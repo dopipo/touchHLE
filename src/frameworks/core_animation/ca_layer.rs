@@ -23,7 +23,9 @@ use crate::mem::{GuestUSize, Ptr};
 use crate::objc::{id, msg, nil, objc_classes, release, retain, ClassExports, HostObject, ObjC};
 use std::collections::HashMap;
 
-/// Core Animation 4x4 transform matrix (column-major, same layout as iOS).
+/// Core Animation 4×4 column-major transform matrix (same layout as iOS).
+/// NOTE: not exposed via objc_classes! selectors because GuestArg/GuestRet
+/// are not yet implemented for this type. Access via host-object fields.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct CATransform3D {
     pub m11: f32, pub m12: f32, pub m13: f32, pub m14: f32,
@@ -398,14 +400,6 @@ pub const CLASSES: ClassExports = objc_classes! {
     CGContextTranslateCTM(env, cg_context, origin.x, origin.y);
 }
 
-- (CATransform3D)transform {
-    env.objc.borrow::<CALayerHostObject>(this).transform
-}
-
-- (())setTransform:(CATransform3D)new_transform {
-    env.objc.borrow_mut::<CALayerHostObject>(this).transform = new_transform;
-}
-
 - (id)contents {
     env.objc.borrow::<CALayerHostObject>(this).contents
 }
@@ -515,4 +509,5 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 };
+
 
