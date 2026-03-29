@@ -45,6 +45,7 @@ impl CATransform3D {
 }
 
 // ИСПРАВЛЕНО: Изменено с pub(super) на pub
+#[derive(Clone)]
 pub struct CALayerHostObject {
     /// Possibly nil, usually a UIView. This is a weak reference.
     pub delegate: id,
@@ -75,11 +76,19 @@ pub struct CALayerHostObject {
     pub gles_texture: Option<crate::gles::gles11_raw::types::GLuint>,
     /// Internal state for compositor
     pub gles_texture_is_up_to_date: bool,
+    /// Named animations (key → CAAnimation id). Strong references.
+    pub animations: HashMap<String, id>,
+    /// Anonymous (implicit) animations. Strong references.
+    pub anonymous_animations: Vec<id>,
 }
 impl HostObject for CALayerHostObject {}
 
 // ДОБАВЛЕНО: функция, необходимая для работы системы анимаций
-pub(crate) fn remove_anonymous_animation(_env: &mut crate::Environment, _layer: id) {
+pub(crate) fn remove_anonymous_animation(
+    _env: &mut crate::Environment,
+    _layer: id,
+    _animation: id,
+) {
     // TODO: реализация удаления неявных анимаций при необходимости
 }
 
@@ -130,6 +139,8 @@ pub const CLASSES: ClassExports = objc_classes! {
         cg_context: None,
         gles_texture: None,
         gles_texture_is_up_to_date: false,
+        animations: HashMap::new(),
+        anonymous_animations: Vec::new(),
     });
     env.objc.alloc_object(this, host_object, &mut env.mem)
 }
@@ -367,10 +378,9 @@ pub const CLASSES: ClassExports = objc_classes! {
     let int_width = size.width.round() as GuestUSize;
     let int_height = size.height.round() as GuestUSize;
 
-    let need_new_context = cg_context.is_none_or(|existing| (
-            CGBitmapContextGetWidth(env, existing) != int_width ||
-            CGBitmapContextGetHeight(env, existing) != int_height
-        )
+    let need_new_context = cg_context.is_none_or(|existing|
+        CGBitmapContextGetWidth(env, existing) != int_width
+            || CGBitmapContextGetHeight(env, existing) != int_height
     );
     let cg_context = if need_new_context {
         if let Some(old_context) = cg_context {
@@ -446,7 +456,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     let mut other_superlayer = other;
     let mut other_origin = CGPoint { x: 0.0, y: 0.0 };
     
-    let (common_ancestor, this_origin, other_origin) = loop {
+    let (_common_ancestor, this_origin, other_origin) = loop {
         if this_superlayer != nil {
             let next: id = msg![env; this_superlayer superlayer];
             if next == nil {
@@ -509,5 +519,3 @@ pub const CLASSES: ClassExports = objc_classes! {
 @end
 
 };
-
-
