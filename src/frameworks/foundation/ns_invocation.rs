@@ -5,7 +5,7 @@
  */
 //! `NSInvocation`.
 
-use crate::abi::{extend_stack_for_args, write_next_arg, GuestArg, GuestRet};
+use crate::abi::{extend_stack_for_args, write_next_arg, GuestArg};
 use crate::cpu::Cpu;
 use crate::frameworks::foundation::{NSInteger, NSUInteger};
 use crate::mem::{ConstPtr, MutPtr, MutVoidPtr};
