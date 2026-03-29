@@ -538,7 +538,7 @@ fn app_picker_inner(
         }
     }
     fn update_scale_hack_buttons(env: &mut Environment, buttons: &[id], value: Option<NonZeroU32>) {
-        update_quick_option_buttons(env, buttons, value.map_or(0, |v| (v.get() as usize)));
+        update_quick_option_buttons(env, buttons, value.map_or(0, |v| v.get() as usize));
     }
     fn update_orientation_buttons(
         env: &mut Environment,
@@ -582,7 +582,7 @@ fn app_picker_inner(
                     // Redraw screen, even if this makes the next frame early
                     // (the app picker will never be redrawn after this).
                     crate::frameworks::core_animation::recomposite_if_necessary(
-                        env, /* force: */ true,
+                        env,
                     );
                     // Ensure touchHLE is responsive from the OS perspective,
                     // otherwise screen redraw might not show up? (Unclear if
@@ -1405,3 +1405,4 @@ fn setup_quick_options(
         orientation_buttons: button_rows[1][..].try_into().unwrap(),
     }
 }
+
