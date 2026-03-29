@@ -54,6 +54,25 @@ impl std::fmt::Display for CGPoint {
         write!(f, "{{{x}, {y}}}")
     }
 }
+impl std::ops::Add for CGPoint {
+    type Output = CGPoint;
+    fn add(self, rhs: CGPoint) -> CGPoint {
+        CGPoint { x: self.x + rhs.x, y: self.y + rhs.y }
+    }
+}
+impl std::ops::Sub for CGPoint {
+    type Output = CGPoint;
+    fn sub(self, rhs: CGPoint) -> CGPoint {
+        CGPoint { x: self.x - rhs.x, y: self.y - rhs.y }
+    }
+}
+impl std::ops::Mul<f32> for CGPoint {
+    type Output = CGPoint;
+    fn mul(self, rhs: f32) -> CGPoint {
+        CGPoint { x: self.x * rhs, y: self.y * rhs }
+    }
+}
+
 impl CGPoint {
     /// Utility host function that isn't availible for some reason
     pub fn distance_from_squared(self, other: CGPoint) -> CGFloat {
@@ -161,6 +180,43 @@ impl std::fmt::Display for CGRect {
         write!(f, "{{{origin}, {size}}}")
     }
 }
+impl std::ops::Add for CGRect {
+    type Output = CGRect;
+    fn add(self, rhs: CGRect) -> CGRect {
+        CGRect {
+            origin: self.origin + rhs.origin,
+            size: CGSize {
+                width: self.size.width + rhs.size.width,
+                height: self.size.height + rhs.size.height,
+            },
+        }
+    }
+}
+impl std::ops::Sub for CGRect {
+    type Output = CGRect;
+    fn sub(self, rhs: CGRect) -> CGRect {
+        CGRect {
+            origin: self.origin - rhs.origin,
+            size: CGSize {
+                width: self.size.width - rhs.size.width,
+                height: self.size.height - rhs.size.height,
+            },
+        }
+    }
+}
+impl std::ops::Mul<f32> for CGRect {
+    type Output = CGRect;
+    fn mul(self, rhs: f32) -> CGRect {
+        CGRect {
+            origin: self.origin * rhs,
+            size: CGSize {
+                width: self.size.width * rhs,
+                height: self.size.height * rhs,
+            },
+        }
+    }
+}
+
 // This function is rare because it is usually inlined.
 fn CGRectEqualToRect(_env: &mut Environment, a: CGRect, b: CGRect) -> bool {
     a == b
