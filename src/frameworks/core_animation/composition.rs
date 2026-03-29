@@ -5,10 +5,8 @@
  */
 //! `UIView`.
 
-use crate::frameworks::core_graphics::{CGRect, cg_color};
-use crate::objc::{id, msg, msg_class, nil, objc_classes, release, retain, ClassExports, HostObject};
-// ИСПРАВЛЕНО: путь quartz_core заменен на core_animation
-use crate::frameworks::core_animation::ca_layer::CALayerHostObject;
+use crate::frameworks::core_graphics::CGRect;
+use crate::objc::{id, msg, msg_class, nil, objc_classes, retain, ClassExports, HostObject};
 use crate::Environment;
 
 // ИСПРАВЛЕНО: Добавлена структура State для соответствия core_animation.rs
@@ -67,7 +65,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; layer frame]
 }
 
-- ((()))setFrame:(CGRect)frame {
+- (())setFrame:(CGRect)frame {
     let layer = msg![env; this layer];
     // Важно: изменение фрейма вью должно менять фрейм слоя
     msg![env; layer setFrame:frame];
@@ -78,29 +76,29 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; layer bounds]
 }
 
-- ((()))setBounds:(CGRect)bounds {
+- (())setBounds:(CGRect)bounds {
     let layer = msg![env; this layer];
     msg![env; layer setBounds:bounds];
 }
 
-- ((()))setBackgroundColor:(id)color {
+- (())setBackgroundColor:(id)color {
     let layer = msg![env; this layer];
     // Извлечение CGColor из UIColor и передача слою
     let cg_color = if color != nil { msg![env; color CGColor] } else { nil };
     msg![env; layer setBackgroundColor:cg_color];
 }
 
-- ((()))setAlpha:(f32)alpha {
+- (())setAlpha:(f32)alpha {
     let layer = msg![env; this layer];
     msg![env; layer setOpacity:alpha];
 }
 
-- ((()))setHidden:(bool)hidden {
+- (())setHidden:(bool)hidden {
     let layer = msg![env; this layer];
     msg![env; layer setHidden:hidden];
 }
 
-- ((()))addSubview:(id)view {
+- (())addSubview:(id)view {
     if view == nil { return; }
     retain(env, view);
     
@@ -114,7 +112,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     host_obj.subviews.push(view);
 }
 
-- ((()))removeFromSuperview {
+- (())removeFromSuperview {
     let superview = msg![env; this superview];
     if superview != nil {
         let layer = msg![env; this layer];
