@@ -376,45 +376,38 @@ const TEX_PARAMETER_PARAMS: ParamTable = ParamTable(&[
 ]);
 
 pub struct GLES1OnGL2 {
-    pub(super) window: Window,
     gl: GLContext,
 }
 
 impl GLES1OnGL2 {
-    pub fn new(window: Window) -> Self {
+    pub fn description() -> &'static str {
+        "OpenGL ES 1.1 on OpenGL 2.1 compatibility profile"
+    }
+
+    pub fn new(window: &mut Window) -> Result<Self, String> {
         let gl = window.gl_create_context(GLVersion::V2_1Compat);
         gl.make_current();
 
         unsafe {
             let mut extensions = HashSet::new();
-            let mut i = 0;
-            loop {
-                let extension = gl21::GetString(gl21::EXTENSIONS);
-                if extension.is_null() {
-                    break;
-                }
+            let extension = gl21::GetString(gl21::EXTENSIONS);
+            if !extension.is_null() {
                 let extension = CStr::from_ptr(extension as *const i8)
                     .to_str()
                     .unwrap_or_default();
-                for extension in extension.split(' ') {
-                    extensions.insert(extension.to_string());
-                }
-                i += 1;
-                if i > 0 {
-                    break;
+                for ext in extension.split(' ') {
+                    extensions.insert(ext.to_string());
                 }
             }
 
-            // check for required extensions
             if !extensions.contains("GL_EXT_framebuffer_object") {
-                panic!("Required OpenGL extension GL_EXT_framebuffer_object is missing.");
+                return Err(
+                    "Required OpenGL extension GL_EXT_framebuffer_object is missing.".to_string()
+                );
             }
         }
 
-        Self {
-            window,
-            gl,
-        }
+        Ok(Self { gl })
     }
 }
 
