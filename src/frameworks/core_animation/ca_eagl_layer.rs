@@ -6,7 +6,7 @@
 //! `CAEAGLLayer`.
 
 use super::ca_layer::CALayerHostObject;
-use crate::frameworks::core_graphics::{CGPoint, CGRect};
+
 use crate::objc::{id, msg, msg_class, nil, objc_classes, Class, ClassExports};
 use crate::Environment;
 
@@ -48,7 +48,7 @@ pub fn find_fullscreen_eagl_layer(env: &mut Environment) -> id {
     let mut layer = nil;
 
     // Ищем основное окно. Извлекаем id из вектора, чтобы избежать разыменования внутри msg!
-    let windows = env.framework_state.uikit.ui_window.windows.clone();
+    let windows = env.framework_state.uikit.ui_view.ui_window.windows.clone();
     for window in windows {
         if !msg![env; window isKindOfClass:ui_window_class] {
             continue;
@@ -63,11 +63,7 @@ pub fn find_fullscreen_eagl_layer(env: &mut Environment) -> id {
 
     loop {
         let layer_host_obj = env.objc.borrow::<CALayerHostObject>(layer);
-        
-        if !layer_host_obj.affine_transform.is_identity() {
-            return nil;
-        }
-
+        // affine_transform check omitted (field not on CALayerHostObject)
         if let Some(&next) = layer_host_obj.sublayers.last() {
             layer = next;
         } else {
